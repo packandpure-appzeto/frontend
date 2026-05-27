@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from '../context/LocationContext';
 import { useHomePage } from '../hooks/useHomePage';
 import HomeReviewHeader from '../components/home/HomeReviewHeader';
@@ -17,6 +17,14 @@ const Home = () => {
     const { currentLocation } = useLocation();
     const [locationOpen, setLocationOpen] = useState(false);
 
+    useEffect(() => {
+        const hasPrompted = localStorage.getItem('hasPromptedLocation');
+        if (!hasPrompted && currentLocation?.name === "Please select your location") {
+            setLocationOpen(true);
+            localStorage.setItem('hasPromptedLocation', 'true');
+        }
+    }, [currentLocation]);
+
     const {
         deliveryLabel,
         outlet,
@@ -30,7 +38,7 @@ const Home = () => {
     } = useHomePage(currentLocation);
 
     return (
-        <div className="min-h-screen bg-brand-50/40 pb-4">
+        <div className="min-h-full bg-brand-50/40 pb-4">
             <HomeReviewHeader
                 deliveryLabel={deliveryLabel}
                 outlet={outlet}

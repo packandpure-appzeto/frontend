@@ -55,8 +55,8 @@ const HomeHeroBanners = ({ slides = [] }) => {
   if (!count) return null;
 
   return (
-    <section className="w-full -mt-px">
-      <div className="relative overflow-hidden bg-slate-100">
+    <section className="w-full max-w-lg mx-auto md:max-w-3xl -mt-px px-0 md:px-4">
+      <div className="relative overflow-hidden bg-slate-100 md:rounded-2xl">
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}

@@ -123,7 +123,7 @@ const CategoryProductRow = ({ product }) => {
                 </p>
               )}
               {product.deliveryTime && inStock && (
-                <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                <p className="text-[10px] text-rose-700 font-semibold mt-0.5">
                   {product.deliveryTime}
                 </p>
               )}

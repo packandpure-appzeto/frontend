@@ -68,7 +68,7 @@ const SlideToPay = ({
                 "relative h-16 w-full rounded-full overflow-hidden select-none touch-none shadow-[0_18px_45px_rgba(4,120,87,0.35)] border border-white/10 transition-all duration-300",
                 disabled 
                     ? "bg-slate-200 shadow-none border-slate-300 opacity-60 grayscale cursor-not-allowed" 
-                    : "bg-linear-to-r from-[#0c831f] via-[#16a34a] to-[#0c831f]"
+                    : "bg-linear-to-r from-[#E23744] via-[#16a34a] to-[#E23744]"
             )}
             ref={(el) => el && setContainerWidth(el.offsetWidth)}
         >
@@ -108,7 +108,7 @@ const SlideToPay = ({
                     {!disabled && (
                         <>
                             <span className="text-white/40">|</span> 
-                            <span className="text-emerald-50 font-extrabold">₹{amount}</span>
+                            <span className="text-rose-50 font-extrabold">₹{amount}</span>
                         </>
                     )}
                 </span>
@@ -137,7 +137,7 @@ const SlideToPay = ({
                     "absolute left-1 top-1 bottom-1 w-14 h-14 rounded-full flex items-center justify-center z-20 border",
                     disabled 
                         ? "bg-slate-300 border-slate-400 cursor-not-allowed" 
-                        : "bg-white cursor-grab active:cursor-grabbing shadow-[0_6px_18px_rgba(15,118,110,0.35)] border-emerald-100"
+                        : "bg-white cursor-grab active:cursor-grabbing shadow-[0_6px_18px_rgba(15,118,110,0.35)] border-rose-100"
                 )}
                 drag={!isCompleted && !isLoading && !disabled ? "x" : false}
                 dragConstraints={{ left: 0, right: maxDrag }}
@@ -151,19 +151,19 @@ const SlideToPay = ({
             >
                 {isLoading || isCompleted ? (
                     <motion.div
-                        className="h-6 w-6 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"
+                        className="h-6 w-6 border-2 border-slate-300 border-t-rose-600 rounded-full animate-spin"
                     />
                 ) : (
                     <motion.div
                         className="relative w-full h-full flex items-center justify-center"
                         style={{ rotate }}
                     >
-                        <motion.div className={disabled ? "text-slate-400" : "text-[#0c831f]"} style={{ opacity: arrowsOpacity }}>
+                        <motion.div className={disabled ? "text-slate-400" : "text-[#E23744]"} style={{ opacity: arrowsOpacity }}>
                             <ChevronRight size={28} strokeWidth={3} />
                         </motion.div>
                         {!disabled && (
                             <motion.div
-                                className="absolute inset-0 flex items-center justify-center text-[#0c831f]"
+                                className="absolute inset-0 flex items-center justify-center text-[#E23744]"
                                 style={{ opacity: checkOpacity }}
                             >
                                 <Check size={24} strokeWidth={3} />

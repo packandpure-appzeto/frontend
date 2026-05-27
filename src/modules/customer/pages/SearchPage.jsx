@@ -212,7 +212,7 @@ const SearchPage = () => {
   const showSearchLoading = isSearching || isPendingSearch;
 
   return (
-    <div className="flex flex-col min-h-screen bg-white max-w-lg mx-auto relative font-sans shadow-xl">
+    <div className="flex flex-col min-h-full bg-white max-w-lg mx-auto relative font-sans shadow-xl">
       {/* Header */}
       <header
         className={cn(
@@ -282,7 +282,7 @@ const SearchPage = () => {
         </div>
       </header>
 
-      <main className="flex-1 pb-28">
+      <main className="flex-1 pb-4">
         {!hasValidLocation && (
           <div className="mx-3 mt-4 p-4 rounded-xl bg-[#FFF5F5] border border-[#FFE4E4] flex gap-3">
             <MapPin size={20} className="text-[#E23744] shrink-0 mt-0.5" />

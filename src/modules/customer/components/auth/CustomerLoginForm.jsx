@@ -173,7 +173,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                 Mobile number
                             </label>
-                            <div className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 overflow-hidden focus-within:ring-2 focus-within:ring-[#0c831f]/30 focus-within:border-[#0c831f]">
+                            <div className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 overflow-hidden focus-within:ring-2 focus-within:ring-[#E23744]/30 focus-within:border-[#E23744]">
                                 <span className="pl-3 pr-2 text-sm font-semibold text-slate-500 border-r border-slate-200">
                                     +91
                                 </span>
@@ -194,7 +194,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                         <button
                             type="submit"
                             disabled={isLoading || phone.length !== 10}
-                            className="w-full py-3 rounded-xl bg-[#0c831f] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
+                            className="w-full py-3 rounded-xl bg-[#E23744] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
                         >
                             {isLoading ? 'Sending...' : 'Continue'}
                         </button>
@@ -216,14 +216,14 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                                     value={otp[i] || ''}
                                     onChange={(e) => handleOtpDigit(i, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 focus:border-[#0c831f] focus:ring-2 focus:ring-[#0c831f]/20 outline-none"
+                                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 focus:border-[#E23744] focus:ring-2 focus:ring-[#E23744]/20 outline-none"
                                 />
                             ))}
                         </div>
                         <button
                             type="submit"
                             disabled={isLoading || otp.length !== OTP_LENGTH}
-                            className="w-full py-3 rounded-xl bg-[#0c831f] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
+                            className="w-full py-3 rounded-xl bg-[#E23744] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
                         >
                             {isLoading ? 'Verifying...' : 'Verify & continue'}
                         </button>
@@ -231,7 +231,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                             type="button"
                             disabled={timer > 0 || isLoading}
                             onClick={handleSendOtp}
-                            className="w-full text-sm text-[#0c831f] font-medium disabled:text-slate-400"
+                            className="w-full text-sm text-[#E23744] font-medium disabled:text-slate-400"
                         >
                             {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
                         </button>
@@ -259,7 +259,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                                 Or call:{' '}
                                 <a
                                     href={`tel:${suspendedInfo.supportPhone}`}
-                                    className="font-semibold text-[#0c831f]"
+                                    className="font-semibold text-[#E23744]"
                                 >
                                     {suspendedInfo.supportPhone}
                                 </a>

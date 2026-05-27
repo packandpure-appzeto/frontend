@@ -139,10 +139,10 @@ const DeliveryOtpDisplay = ({ orderId }) => {
   // Show delivery confirmation
   if (isDelivered) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="bg-rose-50 border border-green-200 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-center mb-3">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-10 h-10 text-rose-600" />
           </div>
         </div>
         <h3 className="text-lg font-bold text-green-900 mb-1">

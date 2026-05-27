@@ -361,9 +361,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'home' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'work' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${addForm.type === 'other' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setAddForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
 
@@ -372,17 +372,17 @@ const AddressesPage = () => {
                             <Button 
                                 type="button" 
                                 variant="outline" 
-                                className={`w-full flex items-center gap-2 h-12 border-dashed ${addForm.location ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-slate-300'}`}
+                                className={`w-full flex items-center gap-2 h-12 border-dashed ${addForm.location ? 'bg-rose-50 border-rose-500 text-rose-700' : 'border-slate-300'}`}
                                 onClick={() => {
                                     setMapMode('add');
                                     setIsMapOpen(true);
                                 }}
                             >
-                                <MapPin size={18} className={addForm.location ? 'fill-emerald-500' : ''} />
+                                <MapPin size={18} className={addForm.location ? 'fill-rose-500' : ''} />
                                 {addForm.location ? 'Location Pinned ✅' : 'Select on Map (Required)'}
                             </Button>
                             {addForm.location && (
-                                <p className="text-[10px] text-emerald-600 font-bold px-1">
+                                <p className="text-[10px] text-rose-600 font-bold px-1">
                                     Coords: {addForm.location.lat.toFixed(4)}, {addForm.location.lng.toFixed(4)}
                                 </p>
                             )}
@@ -426,7 +426,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={saving}>Cancel</Button>
-                        <Button className="bg-[#0c831f] hover:bg-[#0b721b]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
+                        <Button className="bg-[#E23744] hover:bg-[#C92C3A]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -444,9 +444,9 @@ const AddressesPage = () => {
                         <div className="grid gap-2">
                             <Label>Address Type</Label>
                             <div className="flex gap-2">
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
-                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#0c831f] text-[#0c831f] bg-green-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'home' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'home' }))}>Home</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'work' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'work' }))}>Work</Button>
+                                <Button type="button" variant="outline" className={`flex-1 ${editForm.type === 'other' ? 'border-[#E23744] text-[#E23744] bg-rose-50' : ''}`} onClick={() => setEditForm(f => ({ ...f, type: 'other' }))}>Other</Button>
                             </div>
                         </div>
 
@@ -455,17 +455,17 @@ const AddressesPage = () => {
                             <Button 
                                 type="button" 
                                 variant="outline" 
-                                className={`w-full flex items-center gap-2 h-12 border-dashed ${editForm.location ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-slate-300'}`}
+                                className={`w-full flex items-center gap-2 h-12 border-dashed ${editForm.location ? 'bg-rose-50 border-rose-500 text-rose-700' : 'border-slate-300'}`}
                                 onClick={() => {
                                     setMapMode('edit');
                                     setIsMapOpen(true);
                                 }}
                             >
-                                <MapPin size={18} className={editForm.location ? 'fill-emerald-500' : ''} />
+                                <MapPin size={18} className={editForm.location ? 'fill-rose-500' : ''} />
                                 {editForm.location ? 'Location Pinned ✅' : 'Select on Map (Required)'}
                             </Button>
                             {editForm.location && (
-                                <p className="text-[10px] text-emerald-600 font-bold px-1">
+                                <p className="text-[10px] text-rose-600 font-bold px-1">
                                     Coords: {editForm.location.lat.toFixed(4)}, {editForm.location.lng.toFixed(4)}
                                 </p>
                             )}
@@ -509,7 +509,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={updating}>Cancel</Button>
-                        <Button className="bg-[#0c831f] hover:bg-[#0b721b]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
+                        <Button className="bg-[#E23744] hover:bg-[#C92C3A]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

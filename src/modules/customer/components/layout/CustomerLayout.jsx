@@ -52,7 +52,7 @@ const CustomerLayout = ({ children, showHeader: showHeaderProp, fullHeight = fal
             {showCart && <MiniCart />}
             <ProductDetailSheet />
 
-            <div className="hidden md:block">
+            <div className="w-full">
                 <Footer />
             </div>
 

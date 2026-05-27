@@ -1,15 +1,16 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Logo from '@/assets/packnpure.png';
 import { useSettings } from '@core/context/SettingsContext';
 
 const Footer = () => {
     const { settings } = useSettings();
     const logoUrl = settings?.logoUrl || Logo;
-    const primaryColor = settings?.primaryColor || '#0c831f';
+    const primaryColor = settings?.primaryColor || '#E23744';
 
     return (
-        <footer className="relative bg-[#051108] pt-20 pb-10 mt-20 text-slate-300 md:bg-gradient-to-br md:from-emerald-700 md:via-green-800 md:to-emerald-900 md:pt-32 md:pb-16 md:mt-32 overflow-hidden">
+        <footer className="relative max-w-lg mx-auto md:max-w-3xl bg-[#110505] pt-16 pb-24 mt-8 text-slate-300 md:bg-gradient-to-br md:from-rose-700 md:via-rose-800 md:to-rose-900 md:pt-20 md:pb-16 md:mt-12 overflow-hidden md:rounded-t-3xl shadow-2xl">
             {/* Subtle Texture/Glow Overlay */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
                 <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-30 blur-[150px]" style={{ backgroundColor: primaryColor }} />
@@ -23,13 +24,13 @@ const Footer = () => {
                 </svg>
             </div>
 
-            <div className="container mx-auto px-4 z-10 relative">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-16">
+            <div className="container mx-auto px-6 md:px-10 z-10 relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
 
                     {/* Brand Info */}
-                    <div className="space-y-4 md:space-y-8">
+                    <div className="space-y-4 md:space-y-6">
                         <div className="flex items-center">
-                            <img src={logoUrl} alt={`${settings?.appName || 'App'} Logo`} className="h-12 md:h-16 w-auto object-contain" />
+                            <img src={logoUrl} alt={`${settings?.appName || 'App'} Logo`} className="h-12 md:h-14 w-auto object-contain" />
                         </div>
                         <p className="text-sm leading-relaxed md:text-base md:leading-loose text-white/90 md:max-w-xs transition-opacity hover:opacity-100 font-medium">
                             Your daily dose of fresh, organic, and healthy products delivered straight to your door. Freshness guaranteed.
@@ -43,63 +44,63 @@ const Footer = () => {
                     </div>
 
                     {/* Quick Links */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
+                    <div className="sm:pt-4">
+                        <h3 className="text-white font-bold text-base mb-3 md:text-lg md:font-black md:uppercase md:tracking-widest md:mb-6 flex items-center gap-2">
                             <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Quick Links
                         </h3>
-                        <ul className="space-y-2 md:space-y-4">
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Home</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>About Us</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Shop</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Blogs</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Contact</a></li>
+                        <ul className="space-y-2 md:space-y-3">
+                            <li><Link to="/" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Home</Link></li>
+                            <li><Link to="/about" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>About Us</Link></li>
+                            <li><Link to="/categories" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Shop</Link></li>
+                            <li><Link to="/blogs" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Blogs</Link></li>
+                            <li><Link to="/support" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Contact</Link></li>
                         </ul>
                     </div>
 
                     {/* Categories */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
+                    <div className="sm:pt-4">
+                        <h3 className="text-white font-bold text-base mb-3 md:text-lg md:font-black md:uppercase md:tracking-widest md:mb-6 flex items-center gap-2">
                             <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Categories
                         </h3>
-                        <ul className="space-y-2 md:space-y-4">
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Fruits & Vegetables</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Dairy Products</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Meat & Fish</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Bakery & Snacks</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Beverages</a></li>
+                        <ul className="space-y-2 md:space-y-3">
+                            <li><Link to="/category/fruits-vegetables" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Fruits & Vegetables</Link></li>
+                            <li><Link to="/category/dairy-products" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Dairy Products</Link></li>
+                            <li><Link to="/category/meat-fish" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Meat & Fish</Link></li>
+                            <li><Link to="/category/bakery-snacks" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Bakery & Snacks</Link></li>
+                            <li><Link to="/category/beverages" className="hover:text-rose- transition-colors text-sm md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Beverages</Link></li>
                         </ul>
                     </div>
 
                     {/* Contact Info */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
+                    <div className="sm:pt-4">
+                        <h3 className="text-white font-bold text-base mb-3 md:text-lg md:font-black md:uppercase md:tracking-widest md:mb-6 flex items-center gap-2">
                             <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Contact Us
                         </h3>
-                        <ul className="space-y-4 md:space-y-6">
-                            <li className="flex items-start gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><MapPin size={22} /></div>
-                                <MapPin className="mt-1 shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white md:pt-1 font-medium">{settings?.address || '—'}</span>
+                        <ul className="space-y-3 md:space-y-5">
+                            <li className="flex items-start gap-3 md:gap-4 group">
+                                <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><MapPin size={20} /></div>
+                                <MapPin className="mt-0.5 shrink-0 md:hidden" size={16} style={{ color: primaryColor }} />
+                                <span className="text-sm md:text-base text-white md:pt-1 font-medium">{settings?.address || '—'}</span>
                             </li>
-                            <li className="flex items-center gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Phone size={22} /></div>
-                                <Phone className="shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white font-medium">{settings?.supportPhone || '—'}</span>
+                            <li className="flex items-center gap-3 md:gap-4 group">
+                                <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Phone size={20} /></div>
+                                <Phone className="shrink-0 md:hidden" size={16} style={{ color: primaryColor }} />
+                                <span className="text-sm md:text-base text-white font-medium">{settings?.supportPhone || '—'}</span>
                             </li>
-                            <li className="flex items-center gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Mail size={22} /></div>
-                                <Mail className="shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white font-medium">{settings?.supportEmail || '—'}</span>
+                            <li className="flex items-center gap-3 md:gap-4 group">
+                                <div className="hidden md:flex h-10 w-10 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Mail size={20} /></div>
+                                <Mail className="shrink-0 md:hidden" size={16} style={{ color: primaryColor }} />
+                                <span className="text-sm md:text-base text-white font-medium">{settings?.supportEmail || '—'}</span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm md:flex md:justify-between md:text-left md:mt-24 md:pt-12">
-                    <p className="md:text-base text-white/60">&copy; {new Date().getFullYear()} {settings?.appName || 'App'}. All rights reserved.</p>
-                    <div className="flex gap-6 justify-center md:justify-end mt-4 md:mt-0 md:gap-12">
-                        <a href="#" className="hover:text-emerald-300 md:text-base text-white/60 transition-all">Privacy Policy</a>
-                        <a href="#" className="hover:text-emerald-300 md:text-base text-white/60 transition-all">Terms of Service</a>
+                <div className="border-t border-white/10 mt-10 pt-6 text-center text-xs md:flex md:justify-between md:text-left md:mt-16 md:pt-8">
+                    <p className="text-xs md:text-sm text-white/60">&copy; {new Date().getFullYear()} {settings?.appName || 'App'}. All rights reserved.</p>
+                    <div className="flex gap-4 justify-center md:justify-end mt-4 md:mt-0 md:gap-8">
+                        <Link to="/privacy" className="hover:text-rose- text-xs md:text-sm text-white/60 transition-all">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-rose- text-xs md:text-sm text-white/60 transition-all">Terms of Service</Link>
                     </div>
                 </div>
             </div>
@@ -108,4 +109,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

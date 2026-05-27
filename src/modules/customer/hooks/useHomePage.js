@@ -9,12 +9,12 @@ import { buildHomeCategorySections } from '../utils/categoryTree';
 import { normalizeCustomerProducts } from '@shared/utils/productDisplay';
 
 /** Full live bundle (products, offers, experience) — same as before */
-const ENABLE_HOME_API = import.meta.env.VITE_ENABLE_HOME_API === 'true';
+const ENABLE_HOME_API = true; // Always enable API to fetch products
 /**
  * When `true`, home never calls category/hero APIs (fully static catalog + hero).
  * Default: fetch public category tree + hero so admin changes show without enabling full home API.
  */
-const STATIC_CATALOG = import.meta.env.VITE_HOME_STATIC_CATALOG === 'true';
+const STATIC_CATALOG = false; // Always fetch categories
 
 const emptyApiState = {
   categorySections: STATIC_HOME_REVIEW.categorySections,
@@ -157,9 +157,7 @@ export function useHomePage(currentLocation) {
       }
 
       const [prodRes, expRes, offerRes] = await Promise.all([
-        hasLocation
-          ? homeService.getProducts(productParams)
-          : Promise.resolve({ data: { success: true, result: { items: [] } } }),
+        homeService.getProducts(productParams),
         ENABLE_HOME_API
           ? homeService.getExperienceSections({ pageType: 'home' })
           : Promise.resolve(null),

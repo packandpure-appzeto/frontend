@@ -24,7 +24,7 @@ import LuggageIcon from '@mui/icons-material/Luggage';
 
 const DEFAULT_CATEGORY_THEME = {
   gradient: "linear-gradient(to bottom, #25D366, #4ADE80)",
-  shadow: "shadow-green-500/20",
+  shadow: "shadow-rose-500/20",
   accent: "text-[#1A1A1A]",
 };
 

@@ -21,7 +21,7 @@ export const STATIC_HERO_SLIDES = [
       'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600',
     bgFrom: '#E6F5EC',
     bgTo: '#ffffff',
-    accent: '#0c831f',
+    accent: '#E23744',
     ctaBg: '#E23744',
   },
   {

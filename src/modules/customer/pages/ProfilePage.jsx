@@ -64,7 +64,7 @@ const ProfilePage = () => {
                                 label="Your Orders"
                                 sub="Track, return or buy things again"
                                 path="/orders"
-                                color="#0c831f"
+                                color="#E23744"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
