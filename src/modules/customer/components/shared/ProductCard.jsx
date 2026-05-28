@@ -1,7 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { Heart, Plus, Minus, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
@@ -9,7 +7,6 @@ import { useToast } from "@shared/components/ui/Toast";
 import { useCartAnimation } from "../../context/CartAnimationContext";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock } from "lucide-react";
 
 import { useProductDetail } from "../../context/ProductDetailContext";
 
@@ -29,9 +26,13 @@ const ProductCard = React.memo(
     const cartItem = React.useMemo(
       () =>
         cart.find(
-          (item) => (item.id || item._id) === (product.id || product._id),
+          (item) =>
+            String(item.productId || item.id || item._id) ===
+              String(product.id || product._id) &&
+            String(item.variantId || item.selectedVariantId || "") ===
+              String(product.selectedVariantId || ""),
         ),
-      [cart, product.id, product._id],
+      [cart, product.id, product._id, product.selectedVariantId],
     );
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = isInWishlist(product.id || product._id);
@@ -71,6 +72,14 @@ const ProductCard = React.memo(
       (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (product.inStock === false) return;
+        const mustPickVariant =
+          product.hasMultipleVariants &&
+          (product.variantCount > 1 || (product.variants?.length || 0) > 1);
+        if (mustPickVariant) {
+          openProduct?.(product);
+          return;
+        }
         if (imageRef.current) {
           animateAddToCart(
             imageRef.current.getBoundingClientRect(),
@@ -79,16 +88,20 @@ const ProductCard = React.memo(
         }
         addToCart(product);
       },
-      [animateAddToCart, product, addToCart],
+      [animateAddToCart, product, addToCart, openProduct],
     );
 
     const handleIncrement = React.useCallback(
       (e) => {
         e.preventDefault();
         e.stopPropagation();
-        updateQuantity(product.id || product._id, 1);
+        updateQuantity(
+          product.id || product._id,
+          1,
+          product.selectedVariantId || undefined,
+        );
       },
-      [updateQuantity, product.id, product._id],
+      [updateQuantity, product.id, product._id, product.selectedVariantId],
     );
 
     const handleDecrement = React.useCallback(
@@ -98,9 +111,16 @@ const ProductCard = React.memo(
 
         if (quantity === 1) {
           animateRemoveFromCart(product.image);
-          removeFromCart(product.id || product._id);
+          removeFromCart(
+            product.id || product._id,
+            product.selectedVariantId || undefined,
+          );
         } else {
-          updateQuantity(product.id || product._id, -1);
+          updateQuantity(
+            product.id || product._id,
+            -1,
+            product.selectedVariantId || undefined,
+          );
         }
       },
       [
@@ -110,6 +130,7 @@ const ProductCard = React.memo(
         removeFromCart,
         product.id,
         product._id,
+        product.selectedVariantId,
         updateQuantity,
       ],
     );
@@ -118,12 +139,12 @@ const ProductCard = React.memo(
       <motion.div
         whileHover={{ scale: 1.02 }}
         className={cn(
-          "flex-shrink-0 w-full rounded-2xl overflow-hidden flex flex-col h-full shadow-sm cursor-pointer transition-all duration-300",
+          "shrink-0 w-full rounded-2xl overflow-hidden flex flex-col h-full shadow-sm cursor-pointer transition-all duration-300",
           compact
-            ? "bg-white border-[1.5px] border-rose-50 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
+            ? "bg-white border border-slate-100 shadow-sm"
             : neutralBg
               ? "bg-white border border-slate-100 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.08)]"
-              : "bg-[#FAFEF0] border border-rose-100",
+              : "bg-white border border-slate-100",
           className,
         )}
         onClick={handleProductClick}>
@@ -135,7 +156,7 @@ const ProductCard = React.memo(
             product.originalPrice > product.price) && (
             <div
               className={cn(
-                "absolute z-10 bg-[#E23744] text-white font-[900] rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
+                "absolute z-10 bg-[#E23744] text-white font-black rounded-md shadow-sm uppercase tracking-wider flex items-center justify-center",
                 compact
                   ? "top-2 left-2 px-1.5 py-0.5 text-[7px]"
                   : "top-3 left-3 px-2 py-1 text-[9px]",
@@ -181,7 +202,7 @@ const ProductCard = React.memo(
 
           <div
             className={cn(
-              "block aspect-square w-full overflow-hidden flex items-center justify-center p-2 transition-transform duration-500 group-hover:scale-105",
+              "flex aspect-square w-full items-center justify-center overflow-hidden p-2 transition-transform duration-500 group-hover:scale-105",
               compact || neutralBg
                 ? "rounded-xl bg-white/70"
                 : "rounded-xl bg-white/50",
@@ -199,105 +220,75 @@ const ProductCard = React.memo(
         <div
           className={cn(
             "flex flex-col flex-1",
-            compact ? "p-3 pt-2 gap-0" : "bg-white/40 p-3 pt-4 gap-0.5",
+            compact ? "gap-1 p-3 pt-2" : "bg-white/40 p-3 pt-4 gap-0.5",
           )}>
-          <div className="flex items-center gap-1.5 mb-1">
-            <div
-              className={cn(
-                "border-2 border-rose-500 rounded-full flex items-center justify-center",
-                compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5",
-              )}>
-              <div
-                className={cn(
-                  "bg-rose-500 rounded-full",
-                  compact ? "h-0.5 w-0.5" : "h-1 w-1",
-                )}
-              />
-            </div>
-            <div
-              className={cn(
-                "bg-blue-50 text-blue-600 font-bold rounded px-1.5 py-0.2 tracking-wide",
-                compact ? "text-[8px]" : "text-[9px]",
-              )}>
-              {product.weight || "1 unit"}
-            </div>
-            {product.fulfillmentSource ? (
-              <div
-                className={cn(
-                  "font-bold rounded px-1.5 py-0.2 tracking-wide uppercase",
-                  compact ? "text-[8px]" : "text-[9px]",
-                  product.fulfillmentSource === "hub"
-                    ? "bg-rose-50 text-rose-700"
-                    : product.fulfillmentSource === "hybrid"
-                      ? "bg-indigo-50 text-indigo-700"
-                      : "bg-slate-100 text-slate-600",
-                )}>
-                {product.fulfillmentSource}
-              </div>
+          <div className="mb-1 flex flex-wrap items-center gap-1">
+            {product.brand ? (
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-600">
+                {product.brand}
+              </span>
             ) : null}
-          </div>
-
-          <div className={cn(compact ? "h-9" : "h-9")}>
-            <h4
-              className={cn(
-                "font-[600] text-[#1A1A1A] leading-tight line-clamp-2",
-                compact ? "text-[12px]" : "text-[13px]",
-              )}>
-              {product.name}
-            </h4>
-          </div>
-
-          {product.description ? (
-            <p
-              className={cn(
-                "text-gray-500 line-clamp-1",
-                compact ? "text-[9px] mt-0.5" : "text-[10px] mt-1",
-              )}>
-              {String(product.description).replace(/<[^>]*>/g, "").trim()}
-            </p>
-          ) : null}
-
-          {/* Variant hint + delivery */}
-          <div className="flex flex-col gap-0.5 mt-1 mb-2">
-            {product.variantLabel && (
-              <span
-                className={cn(
-                  "font-bold text-violet-600",
-                  compact ? "text-[9px]" : "text-[10px]",
-                )}>
-                {product.variantLabel}
+            {product.fulfillmentLabel ? (
+              <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">
+                {product.fulfillmentLabel}
+              </span>
+            ) : null}
+            {!product.inStock && (
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">
+                Out of stock
               </span>
             )}
-            <div className="flex items-center gap-1.5 text-gray-500">
-              <Clock size={compact ? 10 : 11} className="text-rose-500/80" />
-              <span
-                className={cn(
-                  "font-semibold",
-                  compact ? "text-[9px]" : "text-[10px]",
-                )}>
-                {product.weight || product.deliveryTime || "8-12 mins"}
-              </span>
-            </div>
           </div>
 
-          {/* Price Row / ADD Button Combination for compact */}
-          <div className="mt-auto flex items-center justify-between gap-1.5">
-            <div className="flex flex-col">
+          <h4
+            className={cn(
+              "font-semibold text-slate-900 leading-tight line-clamp-2",
+              compact ? "text-[12px] min-h-10" : "text-[13px] min-h-9",
+            )}>
+            {product.name}
+          </h4>
+
+          {(product.subcategoryName || product.categoryName) && (
+            <p
+              className={cn(
+                "line-clamp-1 text-slate-500",
+                compact ? "text-[10px]" : "text-[11px]",
+              )}>
+              {[product.subcategoryName, product.categoryName].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
+          {(product.variantLabel || product.unit) && (
+            <p
+              className={cn(
+                "line-clamp-1 font-semibold text-brand-600",
+                compact ? "text-[10px]" : "text-[11px]",
+              )}>
+              {[product.variantLabel || product.weight, product.unit].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
+          {product.stockQty != null && product.inStock !== false && (
+            <p className={cn("text-slate-500", compact ? "text-[9px]" : "text-[10px]")}>
+              {product.stockQty} available
+            </p>
+          )}
+
+          {/* Price Row / ADD Button */}
+          <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
+            <div className="flex min-w-0 flex-col">
               <span
                 className={cn(
-                  "font-[1000] text-[#1A1A1A]",
+                  "font-bold text-slate-900",
                   compact ? "text-[13px]" : "text-sm",
                 )}>
                 {product.hasMultipleVariants && product.displayPrice != null
-                  ? `From ₹${product.displayPrice}`
-                  : `₹${product.price}`}
+                  ? `From ₹${Number(product.displayPrice).toLocaleString('en-IN')}`
+                  : `₹${Number(product.price || 0).toLocaleString('en-IN')}`}
               </span>
-              {product.originalPrice > product.price && (
-                <span
-                  className={cn(
-                    "font-medium text-gray-400 line-through text-[10px] leading-none",
-                  )}>
-                  ₹{product.originalPrice}
+              {product.originalPrice > product.price && product.inStock !== false && (
+                <span className="text-[10px] font-medium leading-none text-slate-400 line-through">
+                  ₹{Number(product.originalPrice).toLocaleString('en-IN')}
                 </span>
               )}
             </div>
@@ -307,24 +298,24 @@ const ProductCard = React.memo(
               {quantity > 0 ? (
                 <div
                   className={cn(
-                    "flex items-center bg-white border-[1.5px] border-[#E23744] rounded-lg p-0.5 justify-between",
+                    "flex items-center rounded-lg border-2 border-brand-600 bg-white p-0.5 justify-between",
                     compact ? "min-w-[80px]" : "min-w-[90px] md:min-w-[100px]",
                   )}>
                   <button
                     onClick={handleDecrement}
-                    className="p-1 px-1.5 text-[#E23744] active:scale-90 transition-transform">
+                    className="p-1 px-1.5 text-brand-600 active:scale-90 transition-transform">
                     <Minus size={compact ? 12 : 14} strokeWidth={3.5} />
                   </button>
                   <span
                     className={cn(
-                      "font-black text-[#E23744]",
+                      "font-bold text-brand-600",
                       compact ? "text-[12px]" : "text-[13px] md:text-sm",
                     )}>
                     {quantity}
                   </span>
                   <button
                     onClick={handleIncrement}
-                    className="p-1 px-1.5 text-[#E23744] active:scale-90 transition-transform">
+                    className="p-1 px-1.5 text-brand-600 active:scale-90 transition-transform">
                     <Plus size={compact ? 12 : 14} strokeWidth={3.5} />
                   </button>
                 </div>
@@ -332,13 +323,19 @@ const ProductCard = React.memo(
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAddToCart}
+                  disabled={product.inStock === false}
                   className={cn(
-                    "bg-white border-[1.5px] border-[#E23744] text-[#E23744] rounded-lg font-black shadow-sm hover:bg-[#E23744]/5 mb-0 transition-all uppercase tracking-wide leading-none",
+                    "rounded-lg border-2 font-bold uppercase tracking-wide leading-none shadow-sm transition-all",
+                    product.inStock === false
+                      ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
+                      : "border-brand-600 bg-white text-brand-600 hover:bg-brand-50",
                     compact
                       ? "px-5 py-1.5 text-[12px]"
                       : "px-7 py-2 text-[13px] md:text-sm md:px-8 md:py-2.5",
                   )}>
-                  ADD
+                  {product.hasMultipleVariants && product.inStock !== false
+                    ? 'OPTIONS'
+                    : 'ADD'}
                 </motion.button>
               )}
             </div>

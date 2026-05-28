@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@core/context/SettingsContext';
+import { brandColor, brandSoftGradient } from '../../constants/brandTheme';
+import { HOME_HERO_OUTER } from './homeLayout';
 
 const SLIDE_MS = 4500;
-const SLIDE_H = 'min-h-[168px] sm:min-h-[188px]';
+const SLIDE_H = 'min-h-[168px] sm:min-h-[188px] md:min-h-[280px] lg:min-h-[360px]';
 
 function goToHeroLink(navigate, linkType, linkValue) {
   const v = linkValue != null ? String(linkValue).trim() : '';
@@ -31,10 +34,13 @@ function goToHeroLink(navigate, linkType, linkValue) {
 }
 
 /**
- * Full-width hero carousel — Pack & Pure style (split promo + full-bleed slides).
+ * Full-width hero carousel — brand gradient promo slides (no green/orange tints).
  */
 const HomeHeroBanners = ({ slides = [] }) => {
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const primary = brandColor(settings);
+  const promoBg = brandSoftGradient(settings);
   const [index, setIndex] = useState(0);
   const count = slides.length;
 
@@ -55,8 +61,8 @@ const HomeHeroBanners = ({ slides = [] }) => {
   if (!count) return null;
 
   return (
-    <section className="w-full max-w-lg mx-auto md:max-w-3xl -mt-px px-0 md:px-4">
-      <div className="relative overflow-hidden bg-slate-100 md:rounded-2xl">
+    <section className={cn(HOME_HERO_OUTER, '-mt-px px-0 md:px-6 lg:px-8')}>
+      <div className={cn('relative overflow-hidden bg-brand-50', 'md:mx-auto md:max-w-[1400px] md:rounded-2xl')}>
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
@@ -76,28 +82,26 @@ const HomeHeroBanners = ({ slides = [] }) => {
                     alt={slide.alt || ''}
                     className="absolute inset-0 h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-900/50 via-brand-900/10 to-transparent" />
                 </button>
               ) : (
                 <div
                   className={cn(
-                    'flex items-center border-y border-black/[0.04] px-5 py-5 sm:px-8',
+                    'relative flex items-center border-y border-brand-100/80 px-5 py-5 sm:px-8',
                     SLIDE_H,
                   )}
-                  style={{
-                    background: `linear-gradient(135deg, ${slide.bgFrom} 0%, ${slide.bgTo} 100%)`,
-                  }}
+                  style={{ background: promoBg }}
                 >
                   <div className="relative z-10 flex max-w-[58%] flex-col items-start gap-1.5 text-left">
-                    <h3 className="text-2xl font-black leading-none tracking-tight text-[#1A1A1A] sm:text-[1.65rem]">
+                    <h3 className="text-2xl font-black leading-none tracking-tight text-slate-900 sm:text-[1.65rem]">
                       {slide.headline}{' '}
-                      <span style={{ color: slide.accent }}>{slide.headlineAccent}</span>
+                      <span style={{ color: primary }}>{slide.headlineAccent}</span>
                     </h3>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
                       <span className="text-xs font-bold text-slate-600">at</span>
                       <span
                         className="rounded-lg px-2 py-0.5 text-lg font-black text-white shadow-sm"
-                        style={{ backgroundColor: slide.accent }}
+                        style={{ backgroundColor: primary }}
                       >
                         {slide.badge}
                       </span>
@@ -109,8 +113,8 @@ const HomeHeroBanners = ({ slides = [] }) => {
                     <button
                       type="button"
                       onClick={() => navigate('/categories')}
-                      className="mt-2 flex items-center gap-1 rounded-2xl px-5 py-2.5 text-xs font-black tracking-wide text-white shadow-lg shadow-rose-200/60"
-                      style={{ backgroundColor: slide.ctaBg || '#E23744' }}
+                      className="mt-2 flex items-center gap-1 rounded-2xl px-5 py-2.5 text-xs font-black tracking-wide text-white shadow-lg shadow-brand-200/60"
+                      style={{ backgroundColor: primary }}
                     >
                       {slide.cta}
                       <ChevronRight className="h-4 w-4" strokeWidth={3} />
@@ -139,7 +143,7 @@ const HomeHeroBanners = ({ slides = [] }) => {
                 onClick={() => setIndex(i)}
                 className={cn(
                   'h-1.5 rounded-full transition-all',
-                  i === index ? 'w-6 bg-[#E23744]' : 'w-1.5 bg-white/80 ring-1 ring-slate-300/80',
+                  i === index ? 'w-6 bg-brand-600' : 'w-1.5 bg-white/80 ring-1 ring-brand-200/80',
                 )}
               />
             ))}

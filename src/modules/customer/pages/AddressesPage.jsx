@@ -426,7 +426,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={saving}>Cancel</Button>
-                        <Button className="bg-[#E23744] hover:bg-[#C92C3A]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
+                        <Button className="bg-[#E23744] hover:bg-[#C41E35]" onClick={handleSaveNewAddress} disabled={saving}>{saving ? 'Saving...' : 'Save Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -509,7 +509,7 @@ const AddressesPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={updating}>Cancel</Button>
-                        <Button className="bg-[#E23744] hover:bg-[#C92C3A]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
+                        <Button className="bg-[#E23744] hover:bg-[#C41E35]" onClick={handleUpdateAddress} disabled={updating}>{updating ? 'Updating...' : 'Update Address'}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

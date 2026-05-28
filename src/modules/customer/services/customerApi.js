@@ -33,9 +33,10 @@ export const customerApi = {
     invalidateCache("/cart");
     return axiosInstance.put("/cart/update", data);
   },
-  removeFromCart: (productId) => {
+  removeFromCart: (productId, variantId) => {
     invalidateCache("/cart");
-    return axiosInstance.delete(`/cart/remove/${productId}`);
+    const qs = variantId ? `?variantId=${encodeURIComponent(String(variantId))}` : "";
+    return axiosInstance.delete(`/cart/remove/${productId}${qs}`);
   },
   clearCart: () => {
     invalidateCache("/cart");

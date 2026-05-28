@@ -19,7 +19,7 @@ export const STATIC_HERO_SLIDES = [
     cta: 'Order now',
     image:
       'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600',
-    bgFrom: '#E6F5EC',
+    bgFrom: '#FFF1F2',
     bgTo: '#ffffff',
     accent: '#E23744',
     ctaBg: '#E23744',
@@ -42,9 +42,9 @@ export const STATIC_HERO_SLIDES = [
     cta: 'View offers',
     image:
       'https://images.unsplash.com/photo-1556910096-6f5e66d2f8c5?auto=format&fit=crop&q=80&w=600',
-    bgFrom: '#fff7ed',
+    bgFrom: '#FFF1F2',
     bgTo: '#ffffff',
-    accent: '#c2410c',
+    accent: '#E23744',
     ctaBg: '#E23744',
   },
 ];
@@ -58,8 +58,8 @@ export const STATIC_PROMO_BELOW_CATEGORIES = {
   cta: 'Explore deals',
   image:
     'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=400&h=400',
-  gradientFrom: '#fef2f2',
-  gradientTo: '#fff7ed',
+  gradientFrom: '#FFF1F2',
+  gradientTo: '#ffffff',
 };
 
 export const STATIC_HOME_CATEGORIES = [

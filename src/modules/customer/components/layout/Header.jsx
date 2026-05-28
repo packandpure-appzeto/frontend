@@ -6,10 +6,13 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useLocation as useAppLocation } from "../../context/LocationContext";
 import { useSettings } from '@core/context/SettingsContext';
+import { brandLogo } from '../../constants/brandTheme';
 import LocationDrawer from '../shared/LocationDrawer';
 
 const Header = () => {
     const { settings } = useSettings();
+    const logoUrl = brandLogo(settings);
+    const appName = settings?.appName || 'App';
     const { count: wishlistCount } = useWishlist();
     const { cartCount } = useCart();
     const location = useLocation();
@@ -101,13 +104,7 @@ const Header = () => {
 
                 {/* Main Header Capsule */}
                 <div className="px-4 md:px-8 h-18 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl flex items-center justify-between border border-white/20">
-                    {/* Logo */}
-                    <div className="flex items-center gap-6 mr-4 md:mr-12">
-                        <Link to="/" className="flex items-center gap-1">
-                            <span className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: settings?.primaryColor || 'var(--primary)' }}>{settings?.appName || 'App'}</span>
-                        </Link>
-
-                        {/* Location Selector (Desktop ONLY) */}
+                    <div className="flex shrink-0 flex-col gap-1.5 mr-4 md:mr-8">
                         <button
                             type="button"
                             data-lenis-prevent
@@ -116,17 +113,23 @@ const Header = () => {
                                 refreshLocation();
                                 setIsLocationOpen(true);
                             }}
-                            className="hidden md:flex items-center gap-2 pl-6 border-l border-slate-200 cursor-pointer active:scale-95 transition-transform border-0 bg-transparent p-0"
+                            className="hidden md:flex flex-col items-start leading-none cursor-pointer active:scale-95 transition-transform border-0 bg-transparent p-0 text-left group"
                         >
-                            <div className="flex flex-col items-start leading-none group">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 group-hover:text-[var(--primary)] transition-colors">
-                                    Delivery in {currentLocation.time}
-                                </span>
-                                <div className="flex items-center gap-1 font-bold text-slate-700 text-sm group-hover:text-[var(--primary)] transition-colors">
-                                    <span className="max-w-[150px] truncate">{currentLocation.name}</span> <MapPin size={14} className="fill-current" />
-                                </div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 group-hover:text-[var(--primary)] transition-colors">
+                                Delivery in {currentLocation.time}
+                            </span>
+                            <div className="flex items-center gap-1 font-bold text-slate-700 text-sm group-hover:text-[var(--primary)] transition-colors">
+                                <span className="max-w-[150px] truncate">{currentLocation.name}</span>
+                                <MapPin size={14} className="fill-current" />
                             </div>
                         </button>
+                        <Link to="/" className="flex items-center">
+                            <img
+                                src={logoUrl}
+                                alt={appName}
+                                className="h-9 w-auto max-w-[140px] object-contain md:h-10"
+                            />
+                        </Link>
                     </div>
 
                     {/* Desktop Navigation */}

@@ -6,6 +6,35 @@ const CartContext = createContext();
 
 export const useCart = () => useContext(CartContext);
 
+function cartKey(productId, variantId) {
+  return `${String(productId || "").trim()}::${variantId ? String(variantId).trim() : ""}`;
+}
+
+function resolveVariant(product, variantId) {
+  if (!variantId) return null;
+  const variants = product?.variants;
+  if (!Array.isArray(variants) || variants.length === 0) return null;
+  return variants.find((v) => String(v?._id || v?.id) === String(variantId)) || null;
+}
+
+function applyVariantToProduct(product, variantId) {
+  if (!product) return product;
+  const v = resolveVariant(product, variantId);
+  if (!v) return { ...product, selectedVariantId: variantId || null };
+  const sale = Number(v.salePrice ?? v.price) || 0;
+  const mrp = Number(v.price) || sale;
+  const stock = Number(v.stock);
+  return {
+    ...product,
+    selectedVariantId: String(v?._id || v?.id || variantId || ""),
+    price: sale || product.price,
+    originalPrice: mrp || product.originalPrice,
+    weight: v.name || product.weight,
+    variantLabel: v.name || product.variantLabel,
+    stockQty: Number.isFinite(stock) ? stock : product.stockQty,
+  };
+}
+
 export const CartProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState(() => {
@@ -24,12 +53,24 @@ export const CartProvider = ({ children }) => {
   // Clear cart locally when user logs out is handled by the useEffect dependency on isAuthenticated
   const normalizeBackendCart = (items) => {
     if (!items) return [];
-    return items.map((item) => ({
-      ...item.productId,
-      id: item.productId._id, // Normalize ID
-      quantity: item.quantity,
-      image: item.productId.mainImage, // Handle mapping for frontend
-    }));
+    return items.map((item) => {
+      const base = {
+        ...item.productId,
+        selectedVariantId: item.variantId || null,
+      };
+      const withVariant = applyVariantToProduct(base, item.variantId);
+      const productId = item.productId?._id;
+      const variantId = item.variantId || null;
+      return {
+        ...withVariant,
+        id: productId, // product id (kept for backward compat)
+        productId, // explicit
+        variantId, // explicit
+        key: cartKey(productId, variantId),
+        quantity: item.quantity,
+        image: item.productId.mainImage, // Handle mapping for frontend
+      };
+    });
   };
 
   const syncCart = (backendItems) => {
@@ -77,14 +118,22 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (product) => {
     const id = product.id || product._id;
+    const variantId = product.selectedVariantId || product.variantId || null;
+    const key = cartKey(id, variantId);
 
     // Optimistic UI update for instant feedback
     setCart((prev) => {
-      const existingItem = prev.find((item) => (item.id || item._id) === id);
+      const existingItem = prev.find(
+        (item) => cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) === key,
+      );
       if (existingItem) {
         return prev.map((item) =>
-          (item.id || item._id) === id
-            ? { ...item, quantity: item.quantity + 1 }
+          cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) === key
+            ? {
+                ...item,
+                ...applyVariantToProduct({ ...item, ...product }, variantId),
+                quantity: item.quantity + 1,
+              }
             : item,
         );
       }
@@ -92,8 +141,11 @@ export const CartProvider = ({ children }) => {
       return [
         ...prev,
         {
-          ...product,
+          ...applyVariantToProduct(product, variantId),
           id,
+          productId: id,
+          variantId,
+          key,
           quantity: 1,
           image: product.image || product.mainImage,
         },
@@ -106,6 +158,7 @@ export const CartProvider = ({ children }) => {
         const response = await customerApi.addToCart({
           productId: id,
           quantity: 1,
+          variantId: variantId || undefined,
         });
         pendingRequestsRef.current -= 1;
         await syncCart(response.data.result.items);
@@ -120,16 +173,15 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = async (productId, variantId) => {
+    const key = cartKey(productId, variantId);
     // Optimistic update
-    setCart((prev) =>
-      prev.filter((item) => (item.id || item._id) !== productId),
-    );
+    setCart((prev) => prev.filter((item) => cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) !== key));
 
     if (isAuthenticated) {
       pendingRequestsRef.current += 1;
       try {
-        const response = await customerApi.removeFromCart(productId);
+        const response = await customerApi.removeFromCart(productId, variantId);
         pendingRequestsRef.current -= 1;
         await syncCart(response.data.result.items);
       } catch (error) {
@@ -142,23 +194,35 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, delta) => {
-    const currentItem = cart.find(
-      (item) => (item.id || item._id) === productId,
-    );
+  const updateQuantity = async (productId, delta, variantId) => {
+    const key = cartKey(productId, variantId);
+    const currentItem = cart.find((item) => {
+      const itemKey = cartKey(
+        item.productId || item.id || item._id,
+        item.variantId || item.selectedVariantId,
+      );
+      return itemKey === key;
+    });
     if (!currentItem) return;
 
     const newQty = Math.max(0, currentItem.quantity + delta);
 
     if (newQty === 0) {
-      removeFromCart(productId);
+      removeFromCart(
+        productId,
+        variantId || currentItem.variantId || currentItem.selectedVariantId,
+      );
       return;
     }
 
     // Optimistic update
     setCart((prev) =>
       prev.map((item) => {
-        if ((item.id || item._id) === productId) {
+        const itemKey = cartKey(
+          item.productId || item.id || item._id,
+          item.variantId || item.selectedVariantId,
+        );
+        if (itemKey === key) {
           return { ...item, quantity: newQty };
         }
         return item;
@@ -171,6 +235,11 @@ export const CartProvider = ({ children }) => {
         const response = await customerApi.updateCartQuantity({
           productId,
           quantity: newQty,
+          variantId:
+            variantId ||
+            currentItem.variantId ||
+            currentItem.selectedVariantId ||
+            undefined,
         });
         pendingRequestsRef.current -= 1;
         await syncCart(response.data.result.items);

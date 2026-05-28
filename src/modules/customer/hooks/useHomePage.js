@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STATIC_HOME_REVIEW } from '../constants/homeStaticData';
 import { homeService } from '../services/homeService';
-import {
-  BACKGROUND_COLOR_OPTIONS,
-  getSideImageByKey,
-} from '@/shared/constants/offerSectionOptions';
+import { getSideImageByKey } from '@/shared/constants/offerSectionOptions';
+import { BRAND_COLOR_LIGHT } from '../constants/brandTheme';
 import { buildHomeCategorySections } from '../utils/categoryTree';
 import { normalizeCustomerProducts } from '@shared/utils/productDisplay';
 
@@ -45,9 +43,6 @@ function normalizeHeroSlidesFromApi(heroResult) {
 
 function promoFromFirstOfferSection(section) {
   if (!section?.title) return null;
-  const bgOpt =
-    BACKGROUND_COLOR_OPTIONS.find((o) => o.value === section.backgroundColor) ||
-    BACKGROUND_COLOR_OPTIONS[0];
   return {
     id: `offer-${section._id || 'promo'}`,
     eyebrow: 'Near you',
@@ -55,8 +50,8 @@ function promoFromFirstOfferSection(section) {
     subtitle: 'Offers from stores in your delivery zone.',
     cta: 'View offers',
     image: getSideImageByKey(section.sideImageKey),
-    gradientFrom: bgOpt.start,
-    gradientTo: bgOpt.end,
+    gradientFrom: BRAND_COLOR_LIGHT,
+    gradientTo: '#ffffff',
   };
 }
 

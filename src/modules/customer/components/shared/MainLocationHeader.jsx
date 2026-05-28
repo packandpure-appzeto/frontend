@@ -13,7 +13,7 @@ import {
   buildSearchBarBackgroundColor,
   shiftHex,
 } from "../../utils/headerTheme";
-import LogoImage from "../../../../assets/packnpure.png";
+import { brandLogo } from "../../constants/brandTheme";
 import shoppingCartAnimation from "../../../../assets/lottie/shopping-cart.json";
 
 // MUI Icons
@@ -153,7 +153,7 @@ const MainLocationHeader = ({
   const { isOpen: isProductDetailOpen } = useProductDetail();
   const { settings } = useSettings();
   const appName = settings?.appName || "App";
-  const logoUrl = settings?.logoUrl || LogoImage;
+  const logoUrl = brandLogo(settings);
   const navigate = useNavigate();
 
   // Search Logic
@@ -330,22 +330,9 @@ const MainLocationHeader = ({
 
           {/* Desktop/Tablet Header Layout (md and above) */}
           <div className="hidden md:flex items-center justify-between relative z-20 px-2 lg:px-6 mb-4 mt-1">
-            {/* Left Section: Logo + Location row */}
-            <div className="flex items-center gap-4 lg:gap-8">
-              <div
-                onClick={() => navigate("/")}
-                className="flex items-center gap-3 cursor-pointer group shrink-0">
-                <div className="group-hover:scale-110 transition-all duration-300 drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]">
-                  <img
-                    src={logoUrl}
-                    alt={`${appName} Logo`}
-                    className="h-14 w-auto object-contain"
-                  />
-                </div>
-              </div>
-
-              {/* Location Block (Desktop inline row) */}
-              <div className="flex flex-col border-l border-black/10 pl-4 lg:pl-8 h-10 justify-center">
+            {/* Left Section: Location above logo */}
+            <div className="flex shrink-0 flex-col gap-2">
+              <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 opacity-70">
                   <AccessTimeIcon sx={{ fontSize: 13, color: "#111827" }} />
                   <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none">
@@ -370,6 +357,17 @@ const MainLocationHeader = ({
                     sx={{ fontSize: 12, opacity: 0.5, color: "#111827" }}
                   />
                 </button>
+              </div>
+              <div
+                onClick={() => navigate("/")}
+                className="flex cursor-pointer items-center group">
+                <div className="group-hover:scale-105 transition-all duration-300 drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]">
+                  <img
+                    src={logoUrl}
+                    alt={`${appName} Logo`}
+                    className="h-10 w-auto max-w-[160px] object-contain"
+                  />
+                </div>
               </div>
             </div>
 
@@ -436,19 +434,7 @@ const MainLocationHeader = ({
                 overflow: "hidden",
               }}
               className="relative z-10">
-              <div className="mb-0.5 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("/")}
-                  className="flex items-center gap-2 border-0 bg-transparent p-0">
-                  <img
-                    src={logoUrl}
-                    alt={`${appName} Logo`}
-                    className="h-14 w-auto object-contain drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]"
-                  />
-                </button>
-              </div>
-              <div className="flex justify-between items-start">
+              <div className="mb-0.5 flex flex-col gap-2">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <AccessTimeIcon sx={{ fontSize: 16, color: "#111827" }} />
@@ -475,6 +461,16 @@ const MainLocationHeader = ({
                     />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="flex w-fit items-center gap-2 border-0 bg-transparent p-0">
+                  <img
+                    src={logoUrl}
+                    alt={`${appName} Logo`}
+                    className="h-12 w-auto max-w-[180px] object-contain drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]"
+                  />
+                </button>
               </div>
             </motion.div>
           </div>

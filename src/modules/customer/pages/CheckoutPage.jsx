@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../../../core/context/AuthContext";
-import { useWishlist } from "../context/WishlistContext";
 import { customerApi } from "../services/customerApi";
 import { useLocation as useAppLocation } from "../context/LocationContext";
 import {
@@ -14,14 +13,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Share2,
-  Gift,
-  ShoppingBag,
   ChevronDown,
-  ChevronUp,
-  Heart,
-  Truck,
   Tag,
-  Sparkles,
+  Trash2,
   Plus,
   Minus,
   Search,
@@ -37,13 +31,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@shared/components/ui/Toast";
 import { useSettings } from "@core/context/SettingsContext";
 import SlideToPay from "../components/shared/SlideToPay";
+import { useCustomerLogin } from "../context/CustomerLoginContext";
 import {
   getOrderSocket,
   joinOrderRoom,
   leaveOrderRoom,
   onOrderStatusUpdate,
 } from "@/core/services/orderSocket";
-import ProductCard from "../components/shared/ProductCard";
+import CheckoutCollapsible from "../components/checkout/CheckoutCollapsible";
+import { BRAND_COLOR } from "../constants/brandTheme";
 import {
   Dialog,
   DialogContent,
@@ -59,25 +55,16 @@ import emptyBoxAnimation from "../../../assets/lottie/Empty box.json";
 const CheckoutPage = () => {
   const {
     cart,
-    addToCart,
     cartTotal,
     cartCount,
     updateQuantity,
     removeFromCart,
     clearCart,
   } = useCart();
-  const { wishlist, addToWishlist, fetchFullWishlist, isFullDataFetched } =
-    useWishlist();
   const { showToast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  const { openCustomerLogin } = useCustomerLogin();
   const { settings } = useSettings();
-
-  // Fetch full wishlist data if not already fetched
-  useEffect(() => {
-    if (isAuthenticated && !isFullDataFetched) {
-      fetchFullWishlist();
-    }
-  }, [isAuthenticated, isFullDataFetched, fetchFullWishlist]);
 
   const appName = settings?.appName || "App";
   const { savedAddresses: locationSavedAddresses, currentLocation, refreshLocation, isFetchingLocation: isLocationFetching } =
@@ -87,8 +74,8 @@ const CheckoutPage = () => {
   // State management
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("now");
   const [selectedPayment, setSelectedPayment] = useState("cash");
-  const [selectedTip, setSelectedTip] = useState(0);
-  const [showAllCartItems, setShowAllCartItems] = useState(false);
+  const [couponsExpanded, setCouponsExpanded] = useState(false);
+  const [paymentExpanded, setPaymentExpanded] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -196,70 +183,40 @@ const CheckoutPage = () => {
   });
   const [savedRecipient, setSavedRecipient] = useState(null);
 
-  // Mock data for recommendations
-  const recommendedProducts = [
-    {
-      id: 101,
-      name: "Uncle Chips",
-      price: 20,
-      image:
-        "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=200",
-    },
-    {
-      id: 102,
-      name: "Lay's Chips",
-      price: 20,
-      image:
-        "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=200",
-    },
-    {
-      id: 103,
-      name: "Bread",
-      price: 35,
-      image:
-        "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200",
-    },
-  ];
-
   const [coupons, setCoupons] = useState([]);
   const [manualCode, setManualCode] = useState("");
 
-  const deliveryAddress = {
-    type: "Home",
-    name: "John Doe",
-    address: "Flat 402, Sunshine Apartments, Sector 12, Dwarka",
-    city: "New Delhi - 110075",
-  };
+  const allPaymentMethods = useMemo(
+    () => [
+      {
+        id: "cash",
+        label: "Cash on Delivery",
+        icon: Banknote,
+        sublabel: "Pay after delivery",
+      },
+      {
+        id: "wallet",
+        label: "Wallet",
+        icon: CreditCard,
+        sublabel: "Use wallet balance",
+      },
+    ],
+    [],
+  );
 
-  const timeSlots = [
-    { id: "now", label: "Now", sublabel: "10-15 min" },
-    { id: "30min", label: "30 min", sublabel: "Standard" },
-    { id: "1hour", label: "1 hour", sublabel: "Scheduled" },
-    { id: "2hours", label: "2 hours", sublabel: "Scheduled" },
-  ];
+  const paymentMethods = useMemo(
+    () =>
+      isAuthenticated
+        ? allPaymentMethods
+        : allPaymentMethods.filter((m) => m.id !== "wallet"),
+    [allPaymentMethods, isAuthenticated],
+  );
 
-  // COD + Wallet enabled. Online gateway flow can be plugged in next.
-  const paymentMethods = [
-    {
-      id: "cash",
-      label: "Cash on Delivery",
-      icon: Banknote,
-      sublabel: "Pay after delivery",
-    },
-    {
-      id: "wallet",
-      label: "Wallet",
-      icon: CreditCard,
-      sublabel: "Use wallet balance",
-    },
-  ];
-
-  const tipAmounts = [
-    { value: 0, label: "No Tip" },
-    { value: 10, label: "₹10" },
-    { value: 20, label: "₹20" },
-    { value: 30, label: "₹30" },
-  ];
+  useEffect(() => {
+    if (!isAuthenticated && selectedPayment === "wallet") {
+      setSelectedPayment("cash");
+    }
+  }, [isAuthenticated, selectedPayment]);
 
   // const deliveryFee = 0; // Now handled by state
   // const platformFee = 3; // Now handled by state
@@ -280,9 +237,10 @@ const CheckoutPage = () => {
   const gst = Math.round(itemGst);
 
   const totalAmount =
-    cartTotal - discountAmount + deliveryFee + platformFee + gst + selectedTip;
+    cartTotal - discountAmount + deliveryFee + platformFee + gst;
 
-  const displayCartItems = showAllCartItems ? cart : cart;
+  const selectedPaymentLabel =
+    paymentMethods.find((m) => m.id === selectedPayment)?.label ?? "Cash on Delivery";
 
   const RECIPIENT_STORAGE_KEY = "appzeto_checkout_recipient_v1";
 
@@ -318,12 +276,6 @@ const CheckoutPage = () => {
       // ignore storage errors
     }
     showToast("Recipient details saved!", "success");
-  };
-
-  const handleMoveToWishlist = (item) => {
-    addToWishlist(item);
-    removeFromCart(item.id);
-    showToast(`${item.name} moved to wishlist`, "success");
   };
 
   const handleOpenEditAddress = () => {
@@ -390,13 +342,6 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleAddToCart = (product) => {
-    addToCart(product);
-    showToast(`${product.name} added to cart!`, "success");
-  };
-
-  const getCartItem = (productId) => cart.find((item) => item.id === productId);
-
   useEffect(() => {
     // Hydrate "order for someone else" address from localStorage, if present
     try {
@@ -428,7 +373,7 @@ const CheckoutPage = () => {
     fetchCoupons();
   }, []);
 
-  const handlePlaceOrder = async () => {
+  const executePlaceOrder = useCallback(async () => {
     setIsPlacingOrder(true);
     try {
       // Create order object for API
@@ -467,7 +412,7 @@ const CheckoutPage = () => {
           deliveryFee,
           platformFee,
           gst,
-          tip: selectedTip,
+          tip: 0,
           discount: discountAmount,
           total: totalAmount,
         },
@@ -511,7 +456,37 @@ const CheckoutPage = () => {
     } finally {
       setIsPlacingOrder(false);
     }
-  };
+  }, [
+    savedRecipient,
+    currentAddress,
+    currentLocation,
+    selectedPayment,
+    cartTotal,
+    deliveryFee,
+    platformFee,
+    gst,
+    discountAmount,
+    totalAmount,
+    selectedTimeSlot,
+    cart,
+    clearCart,
+    showToast,
+    navigate,
+  ]);
+
+  const handlePlaceOrder = useCallback(() => {
+    if (!isAuthenticated) {
+      openCustomerLogin({
+        title: 'Log in to complete payment',
+        subtitle: 'Quick OTP login — then your order is placed',
+        onSuccess: () => {
+          executePlaceOrder();
+        },
+      });
+      return;
+    }
+    executePlaceOrder();
+  }, [isAuthenticated, openCustomerLogin, executePlaceOrder]);
 
   // After place order: listen for seller timeout / rejection (customer room + order room) and poll as fallback
   useEffect(() => {
@@ -566,160 +541,80 @@ const CheckoutPage = () => {
 
   if (cart.length === 0 && !showSuccess) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-        {/* Artistic Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-rose-50/50 via-transparent to-transparent pointer-events-none" />
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-20 -right-20 w-80 h-80 bg-rose-100/30 rounded-full blur-3xl pointer-events-none"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.5, 1],
-            rotate: [0, -45, 0],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-40 -left-20 w-60 h-60 bg-yellow-100/40 rounded-full blur-3xl pointer-events-none"
-        />
-
-        <motion.div className="relative z-10 flex flex-col items-center text-center max-w-sm mx-auto">
-          {/* Empty Cart Illustration */}
-          <div className="relative w-56 h-56 md:w-64 md:h-64 mb-8 flex items-center justify-center">
-            <motion.div
-              animate={{ y: [-8, 8, -8] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="relative z-10 rounded-[2rem] bg-white/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-rose-100">
-              <Lottie
-                animationData={emptyBoxAnimation}
-                loop
-                className="h-36 w-36 md:h-44 md:w-44"
-              />
-            </motion.div>
-
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 border-2 border-dashed border-slate-200 rounded-full"
-            />
-          </div>
-
-          <h2 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">
-            Your Cart is Empty
-          </h2>
-          <p className="text-slate-500 mb-8 leading-relaxed font-medium">
-            It feels lighter than air! <br />
-            Explore our aisles and fill it with goodies.
-          </p>
-
-          <Link
-            to="/"
-            className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-[#E23744] to-[#10b981] text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-rose-600/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            <span className="relative flex items-center gap-2 text-lg">
-              Start Shopping <ChevronRight size={20} />
-            </span>
-          </Link>
-
-          <div className="mt-8 flex gap-6 text-slate-400">
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-3 bg-slate-50 rounded-2xl">
-                <Clock size={20} />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                Fast Delivery
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-3 bg-slate-50 rounded-2xl">
-                <Tag size={20} />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                Daily Deals
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-3 bg-slate-50 rounded-2xl">
-                <Sparkles size={20} />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                Fresh Items
-              </span>
-            </div>
-          </div>
-        </motion.div>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 font-sans">
+        <div className="mb-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <Lottie
+            animationData={emptyBoxAnimation}
+            loop
+            className="h-36 w-36 md:h-40 md:w-40"
+          />
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-slate-800">
+          Your cart is empty
+        </h2>
+        <p className="mb-6 max-w-xs text-center text-sm text-slate-500">
+          Add items from home to checkout here.
+        </p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: BRAND_COLOR }}
+        >
+          Browse products <ChevronRight size={18} />
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] pb-32 font-sans">
-      {/* Premium Header - Curved on mobile, integrated on desktop */}
-      <div className="bg-gradient-to-br from-[#0a5f17] via-[#C92C3A] to-[#084a12] pt-6 pb-12 md:pb-24 relative z-10 shadow-lg md:rounded-b-[4rem] rounded-b-[2rem] overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -mr-32 -mt-64 pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-green-400/10 rounded-full blur-[80px] pointer-events-none" />
-
-        {/* Header Content */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl transition-all active:scale-95">
-              <ChevronLeft size={28} className="text-white" />
-            </button>
-
-            <div className="flex flex-col items-center">
-              <h1 className="text-xl md:text-3xl font-[1000] text-white tracking-tight uppercase">
-                Checkout
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse" />
-                <p className="text-rose-100/90 text-[10px] md:text-xs font-black tracking-[0.2em] uppercase">
-                  {cartCount} {cartCount === 1 ? "Item" : "Items"} in cart
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleShare}
-              className="h-12 px-4 flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl transition-all active:scale-95">
-              <Share2 size={20} className="text-white" />
-              <span className="text-xs font-black text-white uppercase tracking-widest hidden sm:block">
-                Share
-              </span>
-            </button>
+    <div className="min-h-screen bg-slate-50 pb-28 font-sans">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition-colors hover:bg-slate-50"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <div className="text-center">
+            <h1 className="text-base font-bold text-slate-900">Checkout</h1>
+            <p className="text-xs text-slate-500">
+              {cartCount} {cartCount === 1 ? "item" : "items"} · ₹{totalAmount}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition-colors hover:bg-slate-50"
+            aria-label="Share cart"
+          >
+            <Share2 size={18} />
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-12 md:-mt-16 lg:-mt-20 relative z-20">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-start">
-          {/* Left Column: Delivery & Items */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6 pb-8">
-            {/* Delivery Time Banner */}
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mt-3">
+      <div className="mx-auto max-w-5xl px-4 py-4">
+        <div className="grid items-start gap-4 lg:grid-cols-5 lg:gap-6">
+          <div className="space-y-4 lg:col-span-3">
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0">
-                  <Clock size={24} className="text-[#E23744]" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  <Clock size={20} />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-800 text-lg">
-                    Delivery in {deliveryTimeRange} mins
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    Shipment of {cartCount} items
+                  <p className="text-sm font-semibold text-slate-900">
+                    Delivery in {deliveryTimeRange} min
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {cartCount} items in this order
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </section>
 
-            {/* Delivery Address Section - New UI */}
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs text-slate-500 font-medium">
                   Ordering for someone else?
@@ -857,29 +752,25 @@ const CheckoutPage = () => {
 
                       <Button
                         onClick={handleSaveRecipient}
-                        className="w-full h-12 bg-[#2d8618] hover:bg-[#236b11] text-white font-bold rounded-xl">
+                        className="h-12 w-full rounded-xl bg-brand-600 font-semibold text-white hover:bg-brand-700">
                         Save address
                       </Button>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-              <div className="mb-3">
-                <h3 className="font-black text-slate-800 text-base">
-                  Delivery Address
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Delivery address
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Select or edit your saved address
-                </p>
               </div>
 
-              {/* Address Card */}
-              <div className="border rounded-xl p-3 mb-3 relative cursor-pointer transition-all border-[#E23744] bg-rose-50/50">
+              <div className="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
                 <div className="flex items-start gap-3">
                   {/* Radio/Check Button */}
                   <div className="mt-1">
-                    <div className="h-5 w-5 rounded-full bg-[#E23744] flex items-center justify-center">
-                      <Check size={12} className="text-white stroke-[4]" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
+                      <Check size={12} className="stroke-[4] text-white" />
                     </div>
                   </div>
 
@@ -902,7 +793,7 @@ const CheckoutPage = () => {
                             e.stopPropagation();
                             setIsAddressModalOpen(true);
                           }}
-                          className="text-[#E23744] text-xs font-bold hover:underline">
+                          className="text-xs font-semibold text-brand-600 hover:underline">
                           Change
                         </button>
                       </div>
@@ -951,25 +842,14 @@ const CheckoutPage = () => {
                 className="mt-3 w-full py-2.5 rounded-2xl border border-dashed border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                 Use current location (from last detected)
               </button>
-              {/* Manual address info banner */}
-              <motion.div className="mt-3 rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3 flex items-center gap-3 shadow-sm">
-                <div className="h-8 w-8 rounded-full bg-rose-600 flex items-center justify-center shadow-rose-500/40 shadow-md">
-                  <Check size={16} className="text-white stroke-[3]" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[13px] font-semibold text-rose-">
-                    Delivery address confirmed
-                  </p>
-                  <p className="text-[11px] font-medium text-rose-/80">
-                    We&apos;ll deliver to the address you&apos;ve entered above.
-                  </p>
-                </div>
-              </motion.div>
-            </motion.div>
+            </section>
 
-            {/* Cart Items */}
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
-              {displayCartItems.map((item) => (
+            <section className="rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                Your items
+              </h3>
+              <div className="space-y-4">
+              {cart.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
@@ -984,15 +864,16 @@ const CheckoutPage = () => {
                     <h4 className="font-bold text-slate-800 mb-1">
                       {item.name}
                     </h4>
-                    <p className="text-xs text-slate-500 mb-2">75 g</p>
                     <button
-                      onClick={() => handleMoveToWishlist(item)}
-                      className="text-xs text-slate-500 underline hover:text-[#E23744] transition-colors">
-                      Move to wishlist
+                      type="button"
+                      onClick={() => removeFromCart(item.id)}
+                      className="mt-1 flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
+                    >
+                      <Trash2 size={12} /> Remove
                     </button>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 bg-[#E23744] rounded-lg px-2 py-1">
+                    <div className="flex items-center gap-2 rounded-lg bg-brand-600 px-2 py-1">
                       <button
                         onClick={() =>
                           item.quantity > 1
@@ -1017,337 +898,214 @@ const CheckoutPage = () => {
                   </div>
                 </div>
               ))}
-            </motion.div>
-
-            {/* Your Wishlist */}
-            {wishlist.filter((item) => item.name).length > 0 && (
-              <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                <h3 className="font-black text-slate-800 text-lg mb-4">
-                  Your wishlist
-                </h3>
-                <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 snap-x">
-                  {wishlist
-                    .filter((item) => item.name)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex-shrink-0 w-[140px] snap-start">
-                        <ProductCard product={item} compact={true} />
-                      </div>
-                    ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* You might also like */}
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <h3 className="font-black text-slate-800 text-lg mb-4">
-                You might also like
-              </h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 snap-x">
-                {recommendedProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex-shrink-0 w-[140px] snap-start">
-                    <ProductCard product={product} compact={true} />
-                  </div>
-                ))}
               </div>
-            </motion.div>
+            </section>
           </div>
 
-          {/* Right Column: Order Summary & Payment - Sticky on Desktop */}
-          <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-8 pb-32 lg:pb-8">
-            {/* Summary Backdrop for desktop */}
-            <div className="hidden lg:block absolute inset-0 -m-4 bg-[#fcf9f2] rounded-[2.5rem] -z-10 shadow-inner group-hover:shadow-2xl transition-all duration-500" />
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Tag size={20} className="text-orange-500" />
-                  <h3 className="font-black text-slate-800">
-                    Available Coupons
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setIsCouponModalOpen(true)}
-                  className="text-[#E23744] text-sm font-bold hover:underline">
-                  See All
-                </button>
-              </div>
-              <div className="space-y-3">
-                {coupons.map((coupon) => (
-                  <div
-                    key={coupon.code}
-                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-100">
-                    <div className="flex-1">
-                      <p className="font-black text-slate-800 text-sm">
-                        {coupon.code}
-                      </p>
-                      <p className="text-xs text-slate-600">
-                        {coupon.description}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleApplyCoupon(coupon)}
-                      className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors ${selectedCoupon?.code === coupon.code
-                          ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                          : "bg-[#E23744] text-white hover:bg-[#C92C3A]"
-                        }`}
-                      disabled={selectedCoupon?.code === coupon.code}>
-                      {selectedCoupon?.code === coupon.code
-                        ? "Applied"
-                        : "Apply"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Tip for Partner */}
-            <motion.div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-4 border border-pink-100">
-              <div className="flex items-center gap-2 mb-3">
-                <Heart size={18} className="text-pink-500 fill-pink-500" />
-                <h3 className="font-black text-slate-800">
-                  Tip your delivery partner
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 mb-3">
-                100% of the tip goes to them
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {tipAmounts.map((tip) => (
-                  <button
-                    key={tip.value}
-                    onClick={() => setSelectedTip(tip.value)}
-                    className={`py-2 rounded-xl border-2 transition-all font-bold text-sm ${selectedTip === tip.value
-                        ? "border-pink-500 bg-pink-100 text-pink-700"
-                        : "border-pink-200 bg-white text-slate-700 hover:border-pink-300"
-                      }`}>
-                    {tip.label}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Payment Method */}
-            <motion.div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-              <h3 className="font-black text-slate-800 mb-4">Payment Method</h3>
-              <div className="space-y-2">
-                {paymentMethods.map((method) => {
-                  const Icon = method.icon;
-                  return (
-                    <button
-                      key={method.id}
-                      onClick={() => setSelectedPayment(method.id)}
-                      className={`w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${selectedPayment === method.id
-                          ? "border-[#E23744] bg-rose-50"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                        }`}>
-                      <div
-                        className={`h-10 w-10 rounded-full flex items-center justify-center ${selectedPayment === method.id
-                            ? "bg-rose-100"
-                            : "bg-slate-100"
-                          }`}>
-                        <Icon
-                          size={18}
-                          className={
-                            selectedPayment === method.id
-                              ? "text-[#E23744]"
-                              : "text-slate-600"
-                          }
-                        />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p
-                          className={`font-bold text-sm ${selectedPayment === method.id ? "text-[#E23744]" : "text-slate-800"}`}>
-                          {method.label}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {method.sublabel}
-                        </p>
-                      </div>
-                      <div
-                        className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedPayment === method.id
-                            ? "border-[#E23744]"
-                            : "border-slate-300"
-                          }`}>
-                        {selectedPayment === method.id && (
-                          <div className="h-3 w-3 rounded-full bg-[#E23744]" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-
-            {/* Bill Details */}
-            <motion.div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 border border-slate-100">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="h-10 w-10 rounded-2xl bg-rose-50 flex items-center justify-center">
-                  <Clipboard size={20} className="text-[#E23744]" />
-                </div>
-                <h3 className="font-[1000] text-slate-800 text-xl tracking-tight uppercase">
-                  Order Summary
-                </h3>
+          <div className="lg:col-span-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-20">
+              <div className="mb-4 flex items-center gap-2">
+                <Clipboard size={18} className="text-brand-600" />
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Order summary
+                </h2>
               </div>
 
               {isOutOfRange && (
-                <div className="mx-8 mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex gap-3 animate-pulse">
-                  <AlertCircle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-rose-900 uppercase">Out of Delivery Range</p>
-                    <p className="text-[10px] font-bold text-rose-600 leading-relaxed italic">
-                      Sorry! This location is beyond our current service radius. Please select a closer address.
-                    </p>
-                  </div>
+                <div className="mb-4 flex gap-2 rounded-lg border border-brand-200 bg-brand-50 p-3">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                  <p className="text-xs text-brand-800">
+                    This address is outside our delivery area. Choose a closer address.
+                  </p>
                 </div>
               )}
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-center px-2">
-                  <span className="text-slate-500 font-bold text-[13px] uppercase tracking-wider">
-                    Item Total
-                  </span>
-                  <span className="font-black text-slate-800">
-                    ₹{cartTotal}
-                  </span>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between text-slate-600">
+                  <span>Item total</span>
+                  <span className="font-semibold text-slate-900">₹{cartTotal}</span>
                 </div>
-                <div className="flex flex-col gap-1.5 px-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-slate-500 font-bold text-[13px] uppercase tracking-wider">
-                        Delivery Fee
-                      </span>
-                      <button
-                        onClick={refreshLocation}
-                        disabled={isCalculatingFee || isLocationFetching}
-                        className="flex items-center gap-1 text-[10px] text-rose-600 font-bold hover:text-rose-700 transition-colors disabled:opacity-50 w-fit"
-                      >
-                        {(isCalculatingFee || isLocationFetching) ? (
-                          <div className="h-2.5 w-2.5 border border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <MapPin size={10} />
-                        )}
-                        {distanceKm > 0 ? `📍 ${distanceKm} km · ` : ''}{isLocationFetching || isCalculatingFee ? 'Calculating...' : 'Refresh location'}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {deliveryFee === 0 ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-bold text-slate-400 line-through">₹{rawDeliveryFee}</span>
-                          <span className="font-black text-rose-600 text-sm">FREE 🎉</span>
-                        </div>
+                <div className="flex justify-between text-slate-600">
+                  <span className="flex flex-col">
+                    <span>Delivery</span>
+                    <button
+                      type="button"
+                      onClick={refreshLocation}
+                      disabled={isCalculatingFee || isLocationFetching}
+                      className="mt-0.5 flex w-fit items-center gap-1 text-[10px] font-medium text-brand-600 disabled:opacity-50"
+                    >
+                      {(isCalculatingFee || isLocationFetching) ? (
+                        <span className="inline-block h-2 w-2 animate-spin rounded-full border border-brand-500 border-t-transparent" />
                       ) : (
-                        <span className="font-black text-slate-800">
-                          {isCalculatingFee || isLocationFetching ? <span className="text-slate-400">...</span> : `₹${deliveryFee}`}
-                        </span>
+                        <MapPin size={10} />
                       )}
-                    </div>
-                  </div>
-                  {deliveryFee > 0 && freeDeliveryThreshold > 0 && cartTotal < freeDeliveryThreshold && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-rose-700 font-bold">
-                          🎁 Add ₹{freeDeliveryThreshold - cartTotal} more for FREE delivery!
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          ₹{cartTotal} / ₹{freeDeliveryThreshold}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-rose- to-rose-600 h-1.5 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min((cartTotal / freeDeliveryThreshold) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-between items-center px-2">
-                  <span className="text-slate-500 font-bold text-[13px] uppercase tracking-wider">
-                    Platform Fee
+                      {distanceKm > 0 ? `${distanceKm} km · ` : ""}
+                      {isLocationFetching || isCalculatingFee ? "Updating…" : "Refresh"}
+                    </button>
                   </span>
-                  <span className="font-black text-slate-800">
-                    ₹{platformFee}
+                  <span className="font-semibold text-slate-900">
+                    {deliveryFee === 0 ? (
+                      <span className="text-brand-600">FREE</span>
+                    ) : isCalculatingFee || isLocationFetching ? (
+                      "…"
+                    ) : (
+                      `₹${deliveryFee}`
+                    )}
                   </span>
                 </div>
-                <div className="flex justify-between items-center px-2">
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 font-bold text-[13px] uppercase tracking-wider">
-                      GST
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium italic">
-                      (Item-wise Breakdown)
-                    </span>
-                  </div>
-                  <span className="font-black text-slate-800">₹{gst}</span>
+                {deliveryFee > 0 && freeDeliveryThreshold > 0 && cartTotal < freeDeliveryThreshold && (
+                  <p className="text-[11px] font-medium text-brand-700">
+                    Add ₹{freeDeliveryThreshold - cartTotal} more for free delivery
+                  </p>
+                )}
+                <div className="flex justify-between text-slate-600">
+                  <span>Platform fee</span>
+                  <span className="font-semibold text-slate-900">₹{platformFee}</span>
                 </div>
-
+                <div className="flex justify-between text-slate-600">
+                  <span>GST</span>
+                  <span className="font-semibold text-slate-900">₹{gst}</span>
+                </div>
                 {selectedCoupon && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex justify-between items-center px-3 py-2 bg-rose-50 rounded-xl border border-rose-100">
-                    <span className="text-[#E23744] font-black text-xs flex items-center gap-2 uppercase tracking-wider">
-                      <Tag size={14} />
-                      Coupon Reserved
+                  <div className="flex justify-between text-brand-600">
+                    <span className="flex items-center gap-1">
+                      <Tag size={14} /> {selectedCoupon.code}
                     </span>
-                    <span className="font-black text-[#E23744]">
-                      -₹{selectedCoupon.discount}
-                    </span>
-                  </motion.div>
-                )}
-
-                {selectedTip > 0 && (
-                  <div className="flex justify-between items-center px-3 py-2 bg-pink-50 rounded-xl border border-pink-100 italic">
-                    <span className="text-pink-600 font-bold text-xs flex items-center gap-2">
-                      <Heart size={14} className="fill-pink-500" />
-                      Partner Support
-                    </span>
-                    <span className="font-black text-pink-600">
-                      ₹{selectedTip}
+                    <span className="font-semibold">
+                      -₹{selectedCoupon.discountAmount ?? selectedCoupon.discount ?? discountAmount}
                     </span>
                   </div>
                 )}
+              </div>
 
-                <div className="mt-4 pt-6 border-t-2 border-dashed border-slate-100">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex flex-col">
-                      <span className="font-[1000] text-slate-800 text-lg uppercase tracking-tight">
-                        To Pay
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-                        Safe & Secure Payment
-                      </span>
+              <CheckoutCollapsible
+                title="Coupons"
+                subtitle={
+                  selectedCoupon
+                    ? `${selectedCoupon.code} applied`
+                    : coupons.length
+                      ? `${coupons.length} available`
+                      : "No coupons"
+                }
+                icon={Tag}
+                open={couponsExpanded}
+                onToggle={() => setCouponsExpanded((v) => !v)}
+              >
+                {selectedCoupon ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCoupon(null)}
+                    className="w-full rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Remove {selectedCoupon.code}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setIsCouponModalOpen(true)}
+                  className="w-full rounded-lg bg-brand-600 py-2.5 text-xs font-semibold text-white hover:bg-brand-700"
+                >
+                  Browse coupons
+                </button>
+                {coupons.slice(0, 2).map((coupon) => (
+                  <div
+                    key={coupon.code}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-800">{coupon.code}</p>
+                      <p className="truncate text-[10px] text-slate-500">{coupon.description}</p>
                     </div>
-                    <span className="font-[1000] text-[#E23744] text-3xl tracking-tighter italic">
-                      ₹{totalAmount}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCoupon(coupon)}
+                      disabled={selectedCoupon?.code === coupon.code}
+                      className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1 text-[10px] font-semibold text-white disabled:bg-slate-200 disabled:text-slate-500"
+                    >
+                      Apply
+                    </button>
                   </div>
+                ))}
+              </CheckoutCollapsible>
 
-                  {/* Desktop Integrated Slide to Pay */}
-                  <div className="hidden lg:block">
-                    <SlideToPay
-                      amount={totalAmount}
-                      onSuccess={handlePlaceOrder}
-                      isLoading={isPlacingOrder}
-                      disabled={isOutOfRange}
-                      text="Order Now"
-                    />
-                    <p className="text-center text-[10px] text-slate-400 font-bold mt-4 uppercase tracking-[0.1em]">
-                      🔒 SSL encrypted secure checkout
-                    </p>
-                  </div>
+              <CheckoutCollapsible
+                title="Payment"
+                subtitle={selectedPaymentLabel}
+                icon={CreditCard}
+                open={paymentExpanded}
+                onToggle={() => setPaymentExpanded((v) => !v)}
+              >
+                <div className="space-y-2">
+                  {paymentMethods.map((method) => {
+                    const Icon = method.icon;
+                    const active = selectedPayment === method.id;
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setSelectedPayment(method.id)}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
+                          active
+                            ? "border-brand-600 bg-brand-50"
+                            : "border-slate-200 hover:border-slate-300",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-full",
+                            active ? "bg-brand-100 text-brand-600" : "bg-slate-100 text-slate-600",
+                          )}
+                        >
+                          <Icon size={18} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn("text-sm font-semibold", active ? "text-brand-600" : "text-slate-800")}>
+                            {method.label}
+                          </p>
+                          <p className="text-xs text-slate-500">{method.sublabel}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "h-4 w-4 shrink-0 rounded-full border-2",
+                            active ? "border-brand-600 bg-brand-600" : "border-slate-300",
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </CheckoutCollapsible>
+
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-900">To pay</span>
+                  <span className="text-xl font-bold text-brand-600">₹{totalAmount}</span>
+                </div>
+
+                {!isAuthenticated && (
+                  <p className="mb-3 rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-center text-xs text-brand-800">
+                    OTP login when you slide to pay — browse as guest until then.
+                  </p>
+                )}
+
+                <div className="hidden lg:block">
+                  <SlideToPay
+                    amount={totalAmount}
+                    onSuccess={handlePlaceOrder}
+                    isLoading={isPlacingOrder}
+                    disabled={isOutOfRange}
+                    text="Slide to pay"
+                  />
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Sticky Footer - Mobile Only */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 rounded-t-3xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-lg lg:hidden">
         <div className="max-w-4xl mx-auto">
           <SlideToPay
             amount={totalAmount}
@@ -1505,7 +1263,7 @@ const CheckoutPage = () => {
               </Button>
               <Button
                 onClick={handleSaveEditedAddress}
-                className="bg-[#E23744] hover:bg-[#C92C3A] text-white font-bold">
+                className="bg-[#E23744] hover:bg-[#C41E35] text-white font-bold">
                 Save changes
               </Button>
             </DialogFooter>
@@ -1537,7 +1295,7 @@ const CheckoutPage = () => {
                 )}
                 <div className="flex items-start gap-3">
                   <div
-                    className={`p-3 rounded-2xl ${selectedCoupon?.code === coupon.code ? "bg-[#E23744]/10 text-[#E23744]" : "bg-orange-50 text-orange-500"}`}>
+                    className={`p-3 rounded-2xl ${selectedCoupon?.code === coupon.code ? "bg-[#E23744]/10 text-[#E23744]" : "bg-brand-50 text-brand-600"}`}>
                     <Tag size={20} />
                   </div>
                   <div className="flex-1">
@@ -1552,7 +1310,7 @@ const CheckoutPage = () => {
                       disabled={selectedCoupon?.code === coupon.code}
                       className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${selectedCoupon?.code === coupon.code
                           ? "bg-white text-[#E23744] border-2 border-[#E23744] cursor-default"
-                          : "bg-[#E23744] text-white hover:bg-[#C92C3A]"
+                          : "bg-[#E23744] text-white hover:bg-[#C41E35]"
                         }`}>
                       {selectedCoupon?.code === coupon.code
                         ? "Applied"

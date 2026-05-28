@@ -29,7 +29,7 @@ const CartPage = () => {
         <div className="relative isolate w-full overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(12,131,31,0.14),_transparent_34%),linear-gradient(180deg,_#f8faf9_0%,_#eef6f0_100%)] animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="pointer-events-none absolute inset-0">
                 <div className="absolute -top-16 -right-16 h-52 w-52 rounded-full bg-rose-/20 blur-3xl" />
-                <div className="absolute top-24 left-[-5rem] h-56 w-56 rounded-full bg-lime-200/40 blur-3xl" />
+                <div className="absolute top-24 left-[-5rem] h-56 w-56 rounded-full bg-brand-100/40 blur-3xl" />
                 <div className="absolute bottom-0 right-1/3 h-36 w-36 rounded-full bg-white/60 blur-2xl" />
             </div>
 
@@ -192,7 +192,7 @@ const CartPage = () => {
                         <div className="relative px-6 py-12 md:px-12 md:py-16">
                             <div className="pointer-events-none absolute inset-0">
                                 <div className="absolute -right-8 top-0 h-32 w-32 rounded-full bg-rose-/40 blur-3xl" />
-                                <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-lime-200/50 blur-3xl" />
+                                <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-brand-100/50 blur-3xl" />
                             </div>
 
                             <div className="relative text-center">

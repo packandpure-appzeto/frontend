@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HOME_SECTION } from './homeLayout';
 
 const HomeCategoryGrid = ({ categories, title = 'Shop by category' }) => {
     const navigate = useNavigate();
 
     return (
-        <section className="px-4 py-4 max-w-lg mx-auto md:max-w-3xl">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">{title}</h2>
-            <div className="grid grid-cols-4 gap-3 md:gap-4">
+        <section className={`${HOME_SECTION} py-4 md:py-8`}>
+            <h2 className="mb-4 text-lg font-bold text-slate-900 md:text-2xl">{title}</h2>
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 md:gap-5 lg:grid-cols-8">
                 {categories.map((cat) => (
                     <button
                         key={String(cat.id)}
@@ -15,7 +16,7 @@ const HomeCategoryGrid = ({ categories, title = 'Shop by category' }) => {
                         onClick={() => navigate(`/category/${cat.id}`)}
                         className="flex flex-col items-center gap-2 text-center group"
                     >
-                        <div className="w-full aspect-square rounded-2xl bg-[#E8F4FC] flex items-center justify-center p-2 overflow-hidden border border-[#d4e8f5] group-active:scale-95 transition-transform">
+                        <div className="w-full aspect-square rounded-2xl bg-brand-50 flex items-center justify-center p-2 overflow-hidden border border-brand-100 group-active:scale-95 transition-transform group-hover:border-brand-200">
                             <img
                                 src={cat.image}
                                 alt={cat.name || 'Category'}

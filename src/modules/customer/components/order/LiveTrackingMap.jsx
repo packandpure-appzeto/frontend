@@ -246,7 +246,7 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="h-16 w-16 bg-[#E23744] rounded-full flex items-center justify-center shadow-lg shadow-green-200">
+          className="h-16 w-16 bg-[#E23744] rounded-full flex items-center justify-center shadow-lg shadow-brand-200">
           <Clock size={30} className="text-white" />
         </motion.div>
         <h3 className="text-lg font-black text-gray-800 text-center">
@@ -284,7 +284,7 @@ const LiveTrackingMap = memo(({
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="relative z-10 h-16 w-16 bg-[#E23744] rounded-full flex items-center justify-center shadow-xl shadow-green-200">
+          className="relative z-10 h-16 w-16 bg-[#E23744] rounded-full flex items-center justify-center shadow-xl shadow-brand-200">
           <Search size={28} className="text-white" />
         </motion.div>
 
