@@ -127,7 +127,7 @@ const EditProfilePage = () => {
 
             await refreshUser();
             toast.success('Profile updated successfully!');
-            navigate('/profile');
+            navigate('/profile', { replace: true });
         } catch (error) {
             const msg =
                 error.response?.data?.message ||
@@ -141,12 +141,27 @@ const EditProfilePage = () => {
 
     const hasPendingPhoto = Boolean(pendingAvatarFile);
 
+    const handleBack = () => {
+        const hasChanges =
+            formData.name !== (user?.name ?? '') ||
+            (formData.email || '') !== (user?.email || '') ||
+            hasPendingPhoto;
+
+        if (hasChanges) {
+            if (window.confirm("You have unsaved changes. Are you sure you want to go back without saving?")) {
+                navigate('/profile', { replace: true });
+            }
+        } else {
+            navigate('/profile', { replace: true });
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-10">
             <div className="bg-white sticky top-0 z-30 px-4 py-3 flex items-center gap-3 shadow-sm">
-                <Link to="/profile" className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
+                <button type="button" onClick={handleBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
                     <ArrowLeft size={24} className="text-slate-600" />
-                </Link>
+                </button>
                 <h1 className="text-lg font-black text-slate-800">Edit Profile</h1>
             </div>
 
@@ -168,7 +183,7 @@ const EditProfilePage = () => {
                             type="button"
                             disabled={isLoading}
                             onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-0 right-0 p-2 bg-[#0c831f] text-white rounded-full border-2 border-white shadow-sm hover:bg-[#0a701a] transition-colors disabled:opacity-60"
+                            className="absolute bottom-0 right-0 p-2 bg-[#E23744] text-white rounded-full border-2 border-white shadow-sm hover:bg-[#C41E35] transition-colors disabled:opacity-60"
                         >
                             <Camera size={18} />
                         </button>
@@ -180,7 +195,7 @@ const EditProfilePage = () => {
                             onChange={handleAvatarPick}
                         />
                     </div>
-                    <p className="mt-3 text-sm font-bold text-[#0c831f]">Change Photo</p>
+                    <p className="mt-3 text-sm font-bold text-[#E23744]">Change Photo</p>
                     {hasPendingPhoto && (
                         <p className="mt-1 text-[11px] font-medium text-amber-600">
                             New photo selected — tap Save to upload
@@ -192,7 +207,7 @@ const EditProfilePage = () => {
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
-                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#0c831f] focus-within:ring-4 focus-within:ring-[#0c831f]/10 transition-all">
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
                                 <User size={20} className="text-slate-400" />
                                 <input
                                     type="text"
@@ -222,7 +237,7 @@ const EditProfilePage = () => {
 
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
-                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#0c831f] focus-within:ring-4 focus-within:ring-[#0c831f]/10 transition-all">
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
                                 <Mail size={20} className="text-slate-400" />
                                 <input
                                     type="email"
@@ -239,7 +254,7 @@ const EditProfilePage = () => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 bg-[#0c831f] text-white font-bold rounded-2xl shadow-lg shadow-green-200 hover:bg-[#0a701a] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 bg-[#E23744] text-white font-bold rounded-2xl shadow-lg shadow-brand-200 hover:bg-[#C41E35] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

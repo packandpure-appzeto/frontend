@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS = {
   timezone: "Asia/Kolkata",
   logoUrl: "",
   faviconUrl: "",
-  primaryColor: "#0ea5e9",
+  primaryColor: "#E23744",
   secondaryColor: "#64748b",
   companyName: "",
   taxId: "",
@@ -46,10 +46,8 @@ const DEFAULT_SETTINGS = {
 function applyThemeVariables(settings) {
   if (!settings) return;
   const root = document.documentElement;
-  root.style.setProperty(
-    "--primary",
-    settings.primaryColor || DEFAULT_SETTINGS.primaryColor,
-  );
+  const primaryHex = settings.primaryColor || DEFAULT_SETTINGS.primaryColor;
+  root.style.setProperty("--primary", primaryHex);
   root.style.setProperty(
     "--secondary",
     settings.secondaryColor || DEFAULT_SETTINGS.secondaryColor,

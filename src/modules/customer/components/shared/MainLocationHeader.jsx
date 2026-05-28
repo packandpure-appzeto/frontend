@@ -13,7 +13,7 @@ import {
   buildSearchBarBackgroundColor,
   shiftHex,
 } from "../../utils/headerTheme";
-import LogoImage from "../../../../assets/packnpure.png";
+import { brandLogo } from "../../constants/brandTheme";
 import shoppingCartAnimation from "../../../../assets/lottie/shopping-cart.json";
 
 // MUI Icons
@@ -153,7 +153,7 @@ const MainLocationHeader = ({
   const { isOpen: isProductDetailOpen } = useProductDetail();
   const { settings } = useSettings();
   const appName = settings?.appName || "App";
-  const logoUrl = settings?.logoUrl || LogoImage;
+  const logoUrl = brandLogo(settings);
   const navigate = useNavigate();
 
   // Search Logic
@@ -330,22 +330,9 @@ const MainLocationHeader = ({
 
           {/* Desktop/Tablet Header Layout (md and above) */}
           <div className="hidden md:flex items-center justify-between relative z-20 px-2 lg:px-6 mb-4 mt-1">
-            {/* Left Section: Logo + Location row */}
-            <div className="flex items-center gap-4 lg:gap-8">
-              <div
-                onClick={() => navigate("/")}
-                className="flex items-center gap-3 cursor-pointer group shrink-0">
-                <div className="group-hover:scale-110 transition-all duration-300 drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]">
-                  <img
-                    src={logoUrl}
-                    alt={`${appName} Logo`}
-                    className="h-14 w-auto object-contain"
-                  />
-                </div>
-              </div>
-
-              {/* Location Block (Desktop inline row) */}
-              <div className="flex flex-col border-l border-black/10 pl-4 lg:pl-8 h-10 justify-center">
+            {/* Left Section: Location above logo */}
+            <div className="flex shrink-0 flex-col gap-2">
+              <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 opacity-70">
                   <AccessTimeIcon sx={{ fontSize: 13, color: "#111827" }} />
                   <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest leading-none">
@@ -371,6 +358,17 @@ const MainLocationHeader = ({
                   />
                 </button>
               </div>
+              <div
+                onClick={() => navigate("/")}
+                className="flex cursor-pointer items-center group">
+                <div className="group-hover:scale-105 transition-all duration-300 drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]">
+                  <img
+                    src={logoUrl}
+                    alt={`${appName} Logo`}
+                    className="h-10 w-auto max-w-[160px] object-contain"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Center Section: Search Bar */}
@@ -380,7 +378,7 @@ const MainLocationHeader = ({
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 style={{ backgroundColor: searchBarBg }}
-                className="rounded-full px-4 h-11 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-emerald-400/60 cursor-pointer">
+                className="rounded-full px-4 h-11 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-rose-/60 cursor-pointer">
                 <SearchIcon sx={{ color: "#000000", fontSize: 20 }} />
                 <input
                   type="text"
@@ -410,7 +408,7 @@ const MainLocationHeader = ({
                 onClick={() => navigate("/checkout")}
                 className="text-slate-900 hover:text-slate-700 transition-all relative group">
                 <ShoppingCartOutlinedIcon sx={{ fontSize: 24 }} />
-                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-emerald-900 text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-green-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
+                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-rose- text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-rose-800 shadow-sm transition-transform group-hover:-translate-y-0.5">
                   0
                 </span>
               </motion.button>
@@ -436,19 +434,7 @@ const MainLocationHeader = ({
                 overflow: "hidden",
               }}
               className="relative z-10">
-              <div className="mb-0.5 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate("/")}
-                  className="flex items-center gap-2 border-0 bg-transparent p-0">
-                  <img
-                    src={logoUrl}
-                    alt={`${appName} Logo`}
-                    className="h-14 w-auto object-contain drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]"
-                  />
-                </button>
-              </div>
-              <div className="flex justify-between items-start">
+              <div className="mb-0.5 flex flex-col gap-2">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <AccessTimeIcon sx={{ fontSize: 16, color: "#111827" }} />
@@ -475,6 +461,16 @@ const MainLocationHeader = ({
                     />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="flex w-fit items-center gap-2 border-0 bg-transparent p-0">
+                  <img
+                    src={logoUrl}
+                    alt={`${appName} Logo`}
+                    className="h-12 w-auto max-w-[180px] object-contain drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]"
+                  />
+                </button>
               </div>
             </motion.div>
           </div>
@@ -485,7 +481,7 @@ const MainLocationHeader = ({
               onClick={handleSearchClick}
               whileTap={{ scale: 0.98 }}
               style={{ backgroundColor: searchBarBg }}
-              className="flex-1 rounded-[10px] px-3 h-10 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-emerald-400/60 cursor-pointer">
+              className="flex-1 rounded-[10px] px-3 h-10 shadow-md flex items-center border border-white/50 transition-all duration-200 focus-within:ring-2 focus-within:ring-rose-/60 cursor-pointer">
               <SearchIcon sx={{ color: "#000000", fontSize: 18 }} />
               <input
                 type="text"

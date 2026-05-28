@@ -1,105 +1,206 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from 'lucide-react';
-import Logo from '@/assets/packnpure.png';
+import { Link } from 'react-router-dom';
 import { useSettings } from '@core/context/SettingsContext';
+import { brandColor, brandFooterGradient, BRAND_COLOR_DARK, brandLogoOnColor } from '../../constants/brandTheme';
+import AppStoreBadges from '../shared/AppStoreBadges';
 
 const Footer = () => {
     const { settings } = useSettings();
-    const logoUrl = settings?.logoUrl || Logo;
-    const primaryColor = settings?.primaryColor || '#0c831f';
+    const logoUrl = brandLogoOnColor(settings);
+    const primaryColor = brandColor(settings);
 
     return (
-        <footer className="relative bg-[#051108] pt-20 pb-10 mt-20 text-slate-300 md:bg-gradient-to-br md:from-emerald-700 md:via-green-800 md:to-emerald-900 md:pt-32 md:pb-16 md:mt-32 overflow-hidden">
-            {/* Subtle Texture/Glow Overlay */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-                <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-30 blur-[150px]" style={{ backgroundColor: primaryColor }} />
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full opacity-20 blur-[150px]" style={{ backgroundColor: primaryColor }} />
+        <footer
+            className="relative mt-8 w-full max-w-lg mx-auto overflow-hidden pt-16 pb-24 text-white shadow-2xl md:mt-12 md:max-w-none md:pb-16 md:pt-20"
+            style={{ background: brandFooterGradient(settings) }}
+        >
+            <div className="pointer-events-none absolute inset-0 opacity-25">
+                <div
+                    className="absolute -right-24 -top-24 h-96 w-96 rounded-full blur-[150px]"
+                    style={{ backgroundColor: primaryColor }}
+                />
+                <div
+                    className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-[150px]"
+                    style={{ backgroundColor: BRAND_COLOR_DARK }}
+                />
             </div>
 
-            {/* Top Curved Divider */}
             <div className="absolute top-[-1px] left-0 w-full overflow-hidden leading-[0]">
-                <svg className="relative block w-[calc(100%+1.3px)] h-[25px] md:h-[60px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,0 Q600,120 1200,0 V0 H0 Z" className="fill-white"></path>
+                <svg
+                    className="relative block h-[25px] w-[calc(100%+1.3px)] md:h-[60px]"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 1200 120"
+                    preserveAspectRatio="none"
+                >
+                    <path d="M0,0 Q600,120 1200,0 V0 H0 Z" className="fill-white" />
                 </svg>
             </div>
 
-            <div className="container mx-auto px-4 z-10 relative">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-16">
-
-                    {/* Brand Info */}
-                    <div className="space-y-4 md:space-y-8">
+            <div className="container relative z-10 mx-auto max-w-[1400px] px-6 md:px-10 lg:px-12">
+                <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:gap-12">
+                    <div className="space-y-4 md:space-y-6">
                         <div className="flex items-center">
-                            <img src={logoUrl} alt={`${settings?.appName || 'App'} Logo`} className="h-12 md:h-16 w-auto object-contain" />
+                            <img
+                                src={logoUrl}
+                                alt={`${settings?.appName || 'App'} Logo`}
+                                className="h-12 w-auto object-contain md:h-14"
+                            />
                         </div>
-                        <p className="text-sm leading-relaxed md:text-base md:leading-loose text-white/90 md:max-w-xs transition-opacity hover:opacity-100 font-medium">
-                            Your daily dose of fresh, organic, and healthy products delivered straight to your door. Freshness guaranteed.
+                        <p className="max-w-xs text-sm font-medium leading-relaxed text-white/90 md:text-base md:leading-loose">
+                            Your daily dose of fresh, organic, and healthy products delivered straight to your door.
+                            Freshness guaranteed.
                         </p>
+                        <div>
+                            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/70">
+                                Get the app
+                            </p>
+                            <AppStoreBadges badgeClassName="h-10 w-auto sm:h-11" />
+                        </div>
                         <div className="flex gap-4">
-                            {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 text-white rounded-full transition-all group active:scale-95 hover:opacity-90"><Facebook size={18} /></a>}
-                            {settings?.twitter && <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 text-white rounded-full transition-all group active:scale-95 hover:opacity-90"><Twitter size={18} /></a>}
-                            {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 text-white rounded-full transition-all group active:scale-95 hover:opacity-90"><Instagram size={18} /></a>}
-                            {settings?.youtube && <a href={settings.youtube} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 text-white rounded-full transition-all group active:scale-95 hover:opacity-90"><Youtube size={18} /></a>}
+                            {settings?.facebook && (
+                                <a
+                                    href={settings.facebook}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full bg-white/15 p-2 text-white transition-all hover:bg-white/25 active:scale-95"
+                                >
+                                    <Facebook size={18} />
+                                </a>
+                            )}
+                            {settings?.twitter && (
+                                <a
+                                    href={settings.twitter}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full bg-white/15 p-2 text-white transition-all hover:bg-white/25 active:scale-95"
+                                >
+                                    <Twitter size={18} />
+                                </a>
+                            )}
+                            {settings?.instagram && (
+                                <a
+                                    href={settings.instagram}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full bg-white/15 p-2 text-white transition-all hover:bg-white/25 active:scale-95"
+                                >
+                                    <Instagram size={18} />
+                                </a>
+                            )}
+                            {settings?.youtube && (
+                                <a
+                                    href={settings.youtube}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full bg-white/15 p-2 text-white transition-all hover:bg-white/25 active:scale-95"
+                                >
+                                    <Youtube size={18} />
+                                </a>
+                            )}
                         </div>
                     </div>
 
-                    {/* Quick Links */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
-                            <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Quick Links
+                    <div className="sm:pt-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-white md:mb-6 md:text-lg md:font-black md:uppercase md:tracking-widest">
+                            <span className="hidden h-1 w-4 rounded-full bg-white md:block" />
+                            Quick Links
                         </h3>
-                        <ul className="space-y-2 md:space-y-4">
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Home</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>About Us</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Shop</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Blogs</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Contact</a></li>
+                        <ul className="space-y-2 md:space-y-3">
+                            {[
+                                ['/', 'Home'],
+                                ['/about', 'About Us'],
+                                ['/categories', 'Shop'],
+                                ['/blogs', 'Blogs'],
+                                ['/support', 'Contact'],
+                            ].map(([to, label]) => (
+                                <li key={to}>
+                                    <Link
+                                        to={to}
+                                        className="group flex items-center text-sm text-white/95 hover:text-white md:text-base md:font-semibold"
+                                    >
+                                        <span className="hidden h-px w-0 bg-white transition-all group-hover:mr-2 group-hover:w-4 md:block" />
+                                        {label}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Categories */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
-                            <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Categories
+                    <div className="sm:pt-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-white md:mb-6 md:text-lg md:font-black md:uppercase md:tracking-widest">
+                            <span className="hidden h-1 w-4 rounded-full bg-white md:block" />
+                            Categories
                         </h3>
-                        <ul className="space-y-2 md:space-y-4">
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Fruits & Vegetables</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Dairy Products</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Meat & Fish</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Bakery & Snacks</a></li>
-                            <li><a href="#" className="hover:text-emerald-300 transition-colors md:text-base md:font-semibold flex items-center group text-white"><span className="hidden md:block w-0 h-px bg-white group-hover:w-4 group-hover:mr-2 transition-all"></span>Beverages</a></li>
+                        <ul className="space-y-2 md:space-y-3">
+                            {[
+                                ['/category/fruits-vegetables', 'Fruits & Vegetables'],
+                                ['/category/dairy-products', 'Dairy Products'],
+                                ['/category/meat-fish', 'Meat & Fish'],
+                                ['/category/bakery-snacks', 'Bakery & Snacks'],
+                                ['/category/beverages', 'Beverages'],
+                            ].map(([to, label]) => (
+                                <li key={to}>
+                                    <Link
+                                        to={to}
+                                        className="group flex items-center text-sm text-white/95 hover:text-white md:text-base md:font-semibold"
+                                    >
+                                        <span className="hidden h-px w-0 bg-white transition-all group-hover:mr-2 group-hover:w-4 md:block" />
+                                        {label}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Contact Info */}
-                    <div className="md:pt-4">
-                        <h3 className="text-white font-bold text-lg mb-4 md:text-xl md:font-black md:uppercase md:tracking-widest md:mb-8 flex items-center gap-2">
-                            <span className="h-1 w-4 hidden md:block" style={{ backgroundColor: primaryColor }}></span> Contact Us
+                    <div className="sm:pt-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-base font-bold text-white md:mb-6 md:text-lg md:font-black md:uppercase md:tracking-widest">
+                            <span className="hidden h-1 w-4 rounded-full bg-white md:block" />
+                            Contact Us
                         </h3>
-                        <ul className="space-y-4 md:space-y-6">
-                            <li className="flex items-start gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><MapPin size={22} /></div>
-                                <MapPin className="mt-1 shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white md:pt-1 font-medium">{settings?.address || '—'}</span>
+                        <ul className="space-y-3 md:space-y-5">
+                            <li className="group flex items-start gap-3 md:gap-4">
+                                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white md:flex">
+                                    <MapPin size={20} />
+                                </div>
+                                <MapPin className="mt-0.5 shrink-0 md:hidden" size={16} />
+                                <span className="text-sm font-medium text-white md:pt-1 md:text-base">
+                                    {settings?.address || '—'}
+                                </span>
                             </li>
-                            <li className="flex items-center gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Phone size={22} /></div>
-                                <Phone className="shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white font-medium">{settings?.supportPhone || '—'}</span>
+                            <li className="group flex items-center gap-3 md:gap-4">
+                                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white md:flex">
+                                    <Phone size={20} />
+                                </div>
+                                <Phone className="shrink-0 md:hidden" size={16} />
+                                <span className="text-sm font-medium text-white md:text-base">
+                                    {settings?.supportPhone || '—'}
+                                </span>
                             </li>
-                            <li className="flex items-center gap-3 md:gap-5 group">
-                                <div className="hidden md:flex h-12 w-12 rounded-xl bg-white/10 items-center justify-center text-white transition-all shrink-0 group-hover:opacity-90"><Mail size={22} /></div>
-                                <Mail className="shrink-0 md:hidden" size={18} style={{ color: primaryColor }} />
-                                <span className="md:text-base text-white font-medium">{settings?.supportEmail || '—'}</span>
+                            <li className="group flex items-center gap-3 md:gap-4">
+                                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white md:flex">
+                                    <Mail size={20} />
+                                </div>
+                                <Mail className="shrink-0 md:hidden" size={16} />
+                                <span className="text-sm font-medium text-white md:text-base">
+                                    {settings?.supportEmail || '—'}
+                                </span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm md:flex md:justify-between md:text-left md:mt-24 md:pt-12">
-                    <p className="md:text-base text-white/60">&copy; {new Date().getFullYear()} {settings?.appName || 'App'}. All rights reserved.</p>
-                    <div className="flex gap-6 justify-center md:justify-end mt-4 md:mt-0 md:gap-12">
-                        <a href="#" className="hover:text-emerald-300 md:text-base text-white/60 transition-all">Privacy Policy</a>
-                        <a href="#" className="hover:text-emerald-300 md:text-base text-white/60 transition-all">Terms of Service</a>
+                <div className="mt-10 border-t border-white/15 pt-6 text-center text-xs md:mt-16 md:flex md:justify-between md:pt-8 md:text-left">
+                    <p className="text-xs text-white/70 md:text-sm">
+                        &copy; {new Date().getFullYear()} {settings?.appName || 'App'}. All rights reserved.
+                    </p>
+                    <div className="mt-4 flex justify-center gap-4 md:mt-0 md:justify-end md:gap-8">
+                        <Link to="/privacy" className="text-xs text-white/70 transition-all hover:text-white md:text-sm">
+                            Privacy Policy
+                        </Link>
+                        <Link to="/terms" className="text-xs text-white/70 transition-all hover:text-white md:text-sm">
+                            Terms of Service
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -108,4 +209,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

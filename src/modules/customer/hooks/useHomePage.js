@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STATIC_HOME_REVIEW } from '../constants/homeStaticData';
 import { homeService } from '../services/homeService';
-import {
-  BACKGROUND_COLOR_OPTIONS,
-  getSideImageByKey,
-} from '@/shared/constants/offerSectionOptions';
+import { getSideImageByKey } from '@/shared/constants/offerSectionOptions';
+import { BRAND_COLOR_LIGHT } from '../constants/brandTheme';
 import { buildHomeCategorySections } from '../utils/categoryTree';
 import { normalizeCustomerProducts } from '@shared/utils/productDisplay';
 
 /** Full live bundle (products, offers, experience) — same as before */
-const ENABLE_HOME_API = import.meta.env.VITE_ENABLE_HOME_API === 'true';
+const ENABLE_HOME_API = true; // Always enable API to fetch products
 /**
  * When `true`, home never calls category/hero APIs (fully static catalog + hero).
  * Default: fetch public category tree + hero so admin changes show without enabling full home API.
  */
-const STATIC_CATALOG = import.meta.env.VITE_HOME_STATIC_CATALOG === 'true';
+const STATIC_CATALOG = false; // Always fetch categories
 
 const emptyApiState = {
   categorySections: STATIC_HOME_REVIEW.categorySections,
@@ -45,9 +43,6 @@ function normalizeHeroSlidesFromApi(heroResult) {
 
 function promoFromFirstOfferSection(section) {
   if (!section?.title) return null;
-  const bgOpt =
-    BACKGROUND_COLOR_OPTIONS.find((o) => o.value === section.backgroundColor) ||
-    BACKGROUND_COLOR_OPTIONS[0];
   return {
     id: `offer-${section._id || 'promo'}`,
     eyebrow: 'Near you',
@@ -55,8 +50,8 @@ function promoFromFirstOfferSection(section) {
     subtitle: 'Offers from stores in your delivery zone.',
     cta: 'View offers',
     image: getSideImageByKey(section.sideImageKey),
-    gradientFrom: bgOpt.start,
-    gradientTo: bgOpt.end,
+    gradientFrom: BRAND_COLOR_LIGHT,
+    gradientTo: '#ffffff',
   };
 }
 
@@ -157,9 +152,7 @@ export function useHomePage(currentLocation) {
       }
 
       const [prodRes, expRes, offerRes] = await Promise.all([
-        hasLocation
-          ? homeService.getProducts(productParams)
-          : Promise.resolve({ data: { success: true, result: { items: [] } } }),
+        homeService.getProducts(productParams),
         ENABLE_HOME_API
           ? homeService.getExperienceSections({ pageType: 'home' })
           : Promise.resolve(null),

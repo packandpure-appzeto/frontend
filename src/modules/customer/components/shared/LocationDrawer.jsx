@@ -303,14 +303,16 @@ const LocationDrawer = ({ isOpen, onClose }) => {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[600]"
           />
 
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            data-lenis-prevent
-            style={{ overscrollBehavior: "contain" }}
-            className="fixed bottom-0 left-0 right-0 bg-[#F3F4F6] rounded-t-[32px] z-[610] max-h-[90vh] overflow-y-auto outline-none shadow-2xl pb-8">
+          <div className="fixed inset-0 z-[610] flex flex-col justify-center items-center px-4 sm:px-0 pointer-events-none">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              data-lenis-prevent
+              style={{ overscrollBehavior: "contain" }}
+              className="w-full max-w-[500px] bg-[#F3F4F6] rounded-3xl max-h-[85vh] overflow-y-auto outline-none shadow-2xl pb-6 pointer-events-auto"
+            >
             {/* Header */}
             <div className="sticky top-0 bg-[#F3F4F6] px-6 pt-6 pb-4 flex flex-col gap-4 z-20">
               <div className="flex items-center justify-between">
@@ -329,7 +331,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                   <Search
                     size={20}
-                    className="text-[#1A1A1A]/40 group-focus-within:text-[#0c831f] transition-colors"
+                    className="text-[#1A1A1A]/40 group-focus-within:text-[#E23744] transition-colors"
                   />
                 </div>
                 <input
@@ -344,7 +346,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                   onBlur={() => {
                     window.setTimeout(() => setIsSearchFocused(false), 120);
                   }}
-                  className="w-full bg-white border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-semibold placeholder:text-[#1A1A1A]/40 shadow-sm focus:ring-2 focus:ring-[#0c831f]/20 transition-all outline-none"
+                  className="w-full bg-white border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-semibold placeholder:text-[#1A1A1A]/40 shadow-sm focus:ring-2 focus:ring-[#E23744]/20 transition-all outline-none"
                 />
               </div>
               <p className="text-[11px] font-semibold text-slate-400 px-1">
@@ -372,7 +374,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                       <div className="flex items-start gap-3">
                         <MapPin
                           size={16}
-                          className="text-[#0c831f] mt-0.5 flex-shrink-0"
+                          className="text-[#E23744] mt-0.5 flex-shrink-0"
                         />
                         <div className="min-w-0">
                           <p className="text-[13px] font-bold text-slate-800 truncate">
@@ -411,14 +413,14 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                 data-lenis-prevent-touch
                 onClick={handleSelectCurrentLocation}
                 className="flex items-center gap-4 bg-white p-4 rounded-2xl hover:bg-slate-50 transition-colors group text-left shadow-sm w-full">
-                <div className="h-10 w-10 flex items-center justify-center text-[#0c831f]">
+                <div className="h-10 w-10 flex items-center justify-center text-[#E23744]">
                   <MapPin
                     size={24}
                     className="group-hover:scale-110 transition-transform"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-[#0c831f] text-[15px]">
+                  <h3 className="font-bold text-[#E23744] text-[15px]">
                     {isFetchingLocation
                       ? "Detecting your location..."
                       : "Use your current location"}
@@ -440,14 +442,14 @@ const LocationDrawer = ({ isOpen, onClose }) => {
               <button
                 onClick={handleAddAddress}
                 className="flex items-center gap-4 bg-white p-4 rounded-2xl hover:bg-slate-50 transition-colors group text-left shadow-sm">
-                <div className="h-10 w-10 flex items-center justify-center text-[#0c831f]">
+                <div className="h-10 w-10 flex items-center justify-center text-[#E23744]">
                   <Plus
                     size={24}
                     className="group-hover:rotate-90 transition-transform"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-[#0c831f] text-[15px]">
+                  <h3 className="font-bold text-[#E23744] text-[15px]">
                     Add new address
                   </h3>
                 </div>
@@ -506,7 +508,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
                       {/* Selection Glow */}
                       {(addr.address === currentLocation.name ||
                         addr.isCurrent) && (
-                        <div className="absolute top-0 right-0 h-1 w-24 bg-gradient-to-l from-[#0c831f] to-transparent opacity-50" />
+                        <div className="absolute top-0 right-0 h-1 w-24 bg-gradient-to-l from-[#E23744] to-transparent opacity-50" />
                       )}
                     </div>
                   ))}
@@ -514,6 +516,7 @@ const LocationDrawer = ({ isOpen, onClose }) => {
               </div>
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

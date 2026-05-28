@@ -13,7 +13,7 @@ const banners = [
         badgeColor: "bg-orange-500 text-white",
         title: "Fresh",
         highlight: "Vegetables",
-        highlightColor: "text-green-300",
+        highlightColor: "text-brand-300",
         subtitle: "Hand-picked daily for maximum freshness and taste.",
         cta: "Shop Veggies"
     },
@@ -54,7 +54,7 @@ const Hero = () => {
     }, []);
 
     return (
-        <section className="relative w-full overflow-hidden bg-[#0c831f] pt-12 pb-12 md:pb-24 lg:pt-16">
+        <section className="relative w-full overflow-hidden bg-[#E23744] pt-12 pb-12 md:pb-24 lg:pt-16">
 
             {/* --- Corner Decorations (Leaves/Flowers) --- */}
             <div className="absolute top-0 left-0 w-64 h-64 -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
@@ -106,7 +106,7 @@ const Hero = () => {
                                             {banner.subtitle}
                                         </p>
 
-                                        <Button className="bg-white text-[#0c831f] hover:bg-[#f0fdf4] hover:scale-105 active:scale-95 font-bold px-6 py-5 md:px-8 md:py-7 rounded-xl md:rounded-2xl text-sm md:text-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all w-auto">
+                                        <Button className="bg-white text-[#E23744] hover:bg-brand-50 hover:scale-105 active:scale-95 font-bold px-6 py-5 md:px-8 md:py-7 rounded-xl md:rounded-2xl text-sm md:text-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all w-auto">
                                             {banner.cta} <ArrowRight className="ml-2 w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:translate-x-1" />
                                         </Button>
                                     </div>

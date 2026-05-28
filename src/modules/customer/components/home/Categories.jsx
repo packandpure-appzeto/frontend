@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 
 const categories = [
     { id: 1, name: 'Fruits', image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=200&auto=format&fit=crop', color: 'bg-red-50' },
-    { id: 2, name: 'Vegetables', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?q=80&w=200&auto=format&fit=crop', color: 'bg-green-50' },
+    { id: 2, name: 'Vegetables', image: 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?q=80&w=200&auto=format&fit=crop', color: 'bg-rose-50' },
     { id: 3, name: 'Dairy', image: 'https://images.unsplash.com/photo-1628088062854-d1870b4553da?q=80&w=200&auto=format&fit=crop', color: 'bg-blue-50' },
     { id: 4, name: 'Meat', image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?q=80&w=200&auto=format&fit=crop', color: 'bg-orange-50' },
     { id: 5, name: 'Bakery', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=200&auto=format&fit=crop', color: 'bg-yellow-50' },
@@ -19,7 +19,7 @@ const Categories = () => {
         <section className="py-8 bg-white">
             <div className="container w-full max-w-[1920px] mx-auto px-4 md:px-[50px]">
                 <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0c831f]">Shop by Category</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#E23744]">Shop by Category</h2>
                     <a href="/categories" className="text-sm font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 transition-colors">
                         See All <ArrowRight size={16} />
                     </a>

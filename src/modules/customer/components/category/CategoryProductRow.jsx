@@ -17,7 +17,12 @@ const CategoryProductRow = ({ product }) => {
   const { showToast } = useToast();
   const { openProduct } = useProductDetail();
   const productId = product.id || product._id;
-  const cartItem = cart.find((item) => (item.id || item._id) === productId);
+  const cartItem = cart.find(
+    (item) =>
+      String(item.productId || item.id || item._id) === String(productId) &&
+      String(item.variantId || item.selectedVariantId || "") ===
+        String(product.selectedVariantId || ""),
+  );
   const quantity = cartItem?.quantity || 0;
   const wishlisted = isInWishlist(productId);
 
@@ -123,7 +128,7 @@ const CategoryProductRow = ({ product }) => {
                 </p>
               )}
               {product.deliveryTime && inStock && (
-                <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                <p className="text-[10px] text-rose-700 font-semibold mt-0.5">
                   {product.deliveryTime}
                 </p>
               )}
@@ -169,8 +174,10 @@ const CategoryProductRow = ({ product }) => {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (quantity <= 1) removeFromCart(productId);
-                    else updateQuantity(productId, -1);
+                    if (quantity <= 1)
+                      removeFromCart(productId, product.selectedVariantId);
+                    else
+                      updateQuantity(productId, -1, product.selectedVariantId);
                   }}
                   className="p-1.5"
                   style={{ color: BLINKIT_RED }}
@@ -187,7 +194,7 @@ const CategoryProductRow = ({ product }) => {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    updateQuantity(productId, 1);
+                    updateQuantity(productId, 1, product.selectedVariantId);
                   }}
                   className="p-1.5"
                   style={{ color: BLINKIT_RED }}

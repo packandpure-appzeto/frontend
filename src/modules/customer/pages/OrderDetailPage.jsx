@@ -397,7 +397,7 @@ const OrderDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white">
-        <Loader2 className="animate-spin text-emerald-600" size={32} />
+        <Loader2 className="animate-spin text-rose-600" size={32} />
       </div>
     );
   }
@@ -478,7 +478,7 @@ const OrderDetailPage = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-white">
         <Package size={64} className="text-slate-300 mb-4" />
         <h3 className="text-lg font-bold text-slate-800">Order not found</h3>
-        <Link to="/orders" className="text-emerald-600 font-bold mt-4 hover:text-emerald-700">
+        <Link to="/orders" className="text-rose-600 font-bold mt-4 hover:text-rose-700">
           Back to my orders
         </Link>
       </div>
@@ -540,7 +540,7 @@ const OrderDetailPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-5 shadow-lg text-white"
+            className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-3xl p-5 shadow-lg text-white"
           >
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -551,7 +551,7 @@ const OrderDetailPage = () => {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 bg-white text-emerald-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md">
+                <div className="absolute -bottom-1 -right-1 bg-white text-rose-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md">
                   4.8 ★
                 </div>
               </div>
@@ -580,12 +580,12 @@ const OrderDetailPage = () => {
           className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100"
         >
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-              <Store size={24} className="text-orange-600" />
+            <div className="h-12 w-12 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+              <Store size={24} className="text-brand-600" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-bold text-orange-600 uppercase tracking-wider">Pickup Location</p>
+                <p className="text-xs font-bold text-brand-600 uppercase tracking-wider">Pickup Location</p>
               </div>
               <h4 className="font-bold text-slate-900 text-base mb-1">Store Location</h4>
               <p className="text-sm text-slate-500 leading-relaxed">
@@ -626,8 +626,8 @@ const OrderDetailPage = () => {
               {order.address?.location &&
                 typeof order.address.location.lat === "number" &&
                 typeof order.address.location.lng === "number" && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
-                    <CheckCircle size={14} className="text-emerald-600" />
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-1 rounded-lg">
+                    <CheckCircle size={14} className="text-rose-600" />
                     Precise location confirmed
                   </p>
                 )}
@@ -697,7 +697,7 @@ const OrderDetailPage = () => {
               <span>Delivery Fee</span>
               <span
                 className={
-                  order.pricing.deliveryFee === 0 ? "text-emerald-600 font-bold" : "font-semibold"
+                  order.pricing.deliveryFee === 0 ? "text-rose-600 font-bold" : "font-semibold"
                 }>
                 {order.pricing.deliveryFee === 0
                   ? "FREE"
@@ -718,7 +718,7 @@ const OrderDetailPage = () => {
               <span className="text-base font-bold text-slate-900">
                 Total Amount
               </span>
-              <span className="text-xl font-black text-emerald-600">
+              <span className="text-xl font-black text-rose-600">
                 ₹{order.pricing.total}
               </span>
             </div>
@@ -792,7 +792,7 @@ const OrderDetailPage = () => {
                 )}
                 {returnDetails.returnRefundAmount > 0 &&
                   returnDetails.returnStatus === "refund_completed" && (
-                    <p className="text-sm text-emerald-700 font-semibold bg-emerald-50 p-3 rounded-xl">
+                    <p className="text-sm text-rose-700 font-semibold bg-rose-50 p-3 rounded-xl">
                       ₹{returnDetails.returnRefundAmount} has been added to your
                       wallet for future purchases.
                     </p>

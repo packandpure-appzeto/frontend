@@ -5,19 +5,19 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@core/context/AuthContext';
 import { useSettings } from '@core/context/SettingsContext';
 import { customerApi } from '../../services/customerApi';
+import { brandColor, brandColorDark } from '../../constants/brandTheme';
 
 const OTP_LENGTH = 4;
 
 /**
- * Simple phone + OTP login. Supports suspended-account screen after valid OTP.
- * @param {'page'|'embedded'} variant
- * @param {() => void} [onSuccess]
- * @param {() => void} [onClose] — modal close / back
+ * Phone + OTP login (Blinkit-style fields when embedded in modal).
  */
 const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
     const navigate = useNavigate();
     const { login } = useAuth();
     const { settings } = useSettings();
+    const primary = brandColor(settings);
+    const primaryDark = brandColorDark(settings);
     const appName = settings?.appName || 'App';
     const defaultSupportEmail = settings?.supportEmail || 'support@packandpure.com';
 
@@ -56,6 +56,8 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
     }, [timer]);
 
     const isEmbedded = variant === 'embedded';
+    const canContinuePhone = phone.length === 10 && !isLoading;
+    const canVerifyOtp = otp.length === OTP_LENGTH && !isLoading;
 
     const handleSendOtp = async (e) => {
         e?.preventDefault();
@@ -135,16 +137,19 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         else navigate(-1);
     };
 
+    const inputRing = { '--tw-ring-color': `${primary}33` };
+    const focusBorder = { borderColor: primary, boxShadow: `0 0 0 3px ${primary}22` };
+
     return (
-        <div className={isEmbedded ? 'w-full' : 'min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-10'}>
+        <div className={isEmbedded ? 'w-full' : 'flex min-h-screen flex-col justify-center bg-slate-50 px-4 py-10'}>
             <div
                 className={
                     isEmbedded
                         ? 'w-full'
-                        : 'w-full max-w-sm mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6'
+                        : 'mx-auto w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm'
                 }
             >
-                {step !== 'suspended' && (
+                {step !== 'suspended' && !isEmbedded && (
                     <div className="mb-6">
                         {(step === 'otp' || isEmbedded) && (
                             <button
@@ -159,7 +164,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                         <h1 className="text-xl font-bold text-slate-900">
                             {step === 'phone' ? `Sign in to ${appName}` : 'Enter OTP'}
                         </h1>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <p className="mt-1 text-sm text-slate-500">
                             {step === 'phone'
                                 ? 'We will send a one-time code to your mobile'
                                 : `Code sent to +91 ${phone}`}
@@ -169,40 +174,60 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
 
                 {step === 'phone' && (
                     <form onSubmit={handleSendOtp} className="space-y-4">
-                        <div>
-                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                                Mobile number
-                            </label>
-                            <div className="mt-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 overflow-hidden focus-within:ring-2 focus-within:ring-[#0c831f]/30 focus-within:border-[#0c831f]">
-                                <span className="pl-3 pr-2 text-sm font-semibold text-slate-500 border-r border-slate-200">
-                                    +91
-                                </span>
-                                <input
-                                    type="tel"
-                                    inputMode="numeric"
-                                    maxLength={10}
-                                    value={phone}
-                                    onChange={(e) =>
-                                        setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))
-                                    }
-                                    placeholder="10-digit number"
-                                    className="flex-1 py-3 px-3 bg-transparent outline-none text-slate-900 font-medium"
-                                    autoFocus
-                                />
-                            </div>
+                        <div
+                            className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white transition-all focus-within:ring-2"
+                            style={inputRing}
+                        >
+                            <span className="border-r border-slate-200 py-4 pl-4 pr-3 text-sm font-bold text-slate-800">
+                                +91
+                            </span>
+                            <input
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={10}
+                                value={phone}
+                                onChange={(e) =>
+                                    setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))
+                                }
+                                placeholder="Enter mobile number"
+                                className="flex-1 bg-transparent py-4 pl-3 pr-4 text-base font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                                autoFocus
+                            />
                         </div>
                         <button
                             type="submit"
-                            disabled={isLoading || phone.length !== 10}
-                            className="w-full py-3 rounded-xl bg-[#0c831f] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
+                            disabled={!canContinuePhone}
+                            className="w-full rounded-xl py-3.5 text-base font-bold text-white transition-all disabled:cursor-not-allowed"
+                            style={{
+                                backgroundColor: canContinuePhone ? primary : '#9ca3af',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (canContinuePhone) e.currentTarget.style.backgroundColor = primaryDark;
+                            }}
+                            onMouseLeave={(e) => {
+                                if (canContinuePhone) e.currentTarget.style.backgroundColor = primary;
+                            }}
                         >
-                            {isLoading ? 'Sending...' : 'Continue'}
+                            {isLoading ? 'Sending…' : 'Continue'}
                         </button>
                     </form>
                 )}
 
                 {step === 'otp' && (
                     <form onSubmit={handleVerifyOtp} className="space-y-5">
+                        {isEmbedded && (
+                            <button
+                                type="button"
+                                onClick={goBack}
+                                className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800"
+                            >
+                                <ArrowLeft size={16} />
+                                Change number
+                            </button>
+                        )}
+                        <p className="text-center text-sm text-slate-600">
+                            OTP sent to <span className="font-bold text-slate-900">+91 {phone}</span>
+                        </p>
                         <div className="flex justify-center gap-2">
                             {[...Array(OTP_LENGTH)].map((_, i) => (
                                 <input
@@ -216,22 +241,31 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                                     value={otp[i] || ''}
                                     onChange={(e) => handleOtpDigit(i, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border border-slate-200 focus:border-[#0c831f] focus:ring-2 focus:ring-[#0c831f]/20 outline-none"
+                                    onFocus={(e) => Object.assign(e.target.style, focusBorder)}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = '';
+                                        e.target.style.boxShadow = '';
+                                    }}
+                                    className="h-14 w-12 rounded-xl border border-slate-300 text-center text-xl font-bold outline-none"
                                 />
                             ))}
                         </div>
                         <button
                             type="submit"
-                            disabled={isLoading || otp.length !== OTP_LENGTH}
-                            className="w-full py-3 rounded-xl bg-[#0c831f] text-white font-semibold disabled:opacity-50 hover:bg-[#0a701a] transition-colors"
+                            disabled={!canVerifyOtp}
+                            className="w-full rounded-xl py-3.5 text-base font-bold text-white transition-all disabled:cursor-not-allowed"
+                            style={{
+                                backgroundColor: canVerifyOtp ? primary : '#9ca3af',
+                            }}
                         >
-                            {isLoading ? 'Verifying...' : 'Verify & continue'}
+                            {isLoading ? 'Verifying…' : 'Verify & continue'}
                         </button>
                         <button
                             type="button"
                             disabled={timer > 0 || isLoading}
                             onClick={handleSendOtp}
-                            className="w-full text-sm text-[#0c831f] font-medium disabled:text-slate-400"
+                            className="w-full text-sm font-semibold disabled:text-slate-400"
+                            style={{ color: timer > 0 ? undefined : primary }}
                         >
                             {timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
                         </button>
@@ -239,17 +273,21 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                 )}
 
                 {step === 'suspended' && (
-                    <div className="text-center py-2">
-                        <div className="mx-auto w-14 h-14 rounded-full bg-rose-50 flex items-center justify-center mb-4">
-                            <ShieldAlert className="w-7 h-7 text-rose-600" />
+                    <div className="py-2 text-center">
+                        <div
+                            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+                            style={{ backgroundColor: `${primary}14` }}
+                        >
+                            <ShieldAlert className="h-7 w-7" style={{ color: primary }} />
                         </div>
                         <h2 className="text-lg font-bold text-slate-900">Account suspended</h2>
-                        <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                        <p className="mt-2 text-sm leading-relaxed text-slate-600">
                             Your account is currently suspended. Please contact the administrator.
                         </p>
                         <a
                             href={`mailto:${suspendedInfo.supportEmail}`}
-                            className="mt-5 inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800"
+                            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white hover:opacity-95"
+                            style={{ backgroundColor: primary }}
                         >
                             <Mail size={18} />
                             {suspendedInfo.supportEmail}
@@ -259,7 +297,8 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                                 Or call:{' '}
                                 <a
                                     href={`tel:${suspendedInfo.supportPhone}`}
-                                    className="font-semibold text-[#0c831f]"
+                                    className="font-semibold"
+                                    style={{ color: primary }}
                                 >
                                     {suspendedInfo.supportPhone}
                                 </a>
@@ -279,8 +318,8 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                     </div>
                 )}
 
-                {step === 'phone' && (
-                    <p className="mt-4 text-[11px] text-center text-slate-400">
+                {step === 'phone' && !isEmbedded && (
+                    <p className="mt-4 text-center text-[11px] text-slate-400">
                         New users are registered automatically. No password needed.
                     </p>
                 )}

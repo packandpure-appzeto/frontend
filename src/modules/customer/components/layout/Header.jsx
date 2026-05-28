@@ -6,10 +6,13 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useLocation as useAppLocation } from "../../context/LocationContext";
 import { useSettings } from '@core/context/SettingsContext';
+import { brandLogo } from '../../constants/brandTheme';
 import LocationDrawer from '../shared/LocationDrawer';
 
 const Header = () => {
     const { settings } = useSettings();
+    const logoUrl = brandLogo(settings);
+    const appName = settings?.appName || 'App';
     const { count: wishlistCount } = useWishlist();
     const { cartCount } = useCart();
     const location = useLocation();
@@ -101,13 +104,7 @@ const Header = () => {
 
                 {/* Main Header Capsule */}
                 <div className="px-4 md:px-8 h-18 bg-white/95 backdrop-blur-sm rounded-full shadow-2xl flex items-center justify-between border border-white/20">
-                    {/* Logo */}
-                    <div className="flex items-center gap-6 mr-4 md:mr-12">
-                        <Link to="/" className="flex items-center gap-1">
-                            <span className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: settings?.primaryColor || 'var(--primary)' }}>{settings?.appName || 'App'}</span>
-                        </Link>
-
-                        {/* Location Selector (Desktop ONLY) */}
+                    <div className="flex shrink-0 flex-col gap-1.5 mr-4 md:mr-8">
                         <button
                             type="button"
                             data-lenis-prevent
@@ -116,17 +113,23 @@ const Header = () => {
                                 refreshLocation();
                                 setIsLocationOpen(true);
                             }}
-                            className="hidden md:flex items-center gap-2 pl-6 border-l border-slate-200 cursor-pointer active:scale-95 transition-transform border-0 bg-transparent p-0"
+                            className="hidden md:flex flex-col items-start leading-none cursor-pointer active:scale-95 transition-transform border-0 bg-transparent p-0 text-left group"
                         >
-                            <div className="flex flex-col items-start leading-none group">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 group-hover:text-[var(--primary)] transition-colors">
-                                    Delivery in {currentLocation.time}
-                                </span>
-                                <div className="flex items-center gap-1 font-bold text-slate-700 text-sm group-hover:text-[var(--primary)] transition-colors">
-                                    <span className="max-w-[150px] truncate">{currentLocation.name}</span> <MapPin size={14} className="fill-current" />
-                                </div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 group-hover:text-[var(--primary)] transition-colors">
+                                Delivery in {currentLocation.time}
+                            </span>
+                            <div className="flex items-center gap-1 font-bold text-slate-700 text-sm group-hover:text-[var(--primary)] transition-colors">
+                                <span className="max-w-[150px] truncate">{currentLocation.name}</span>
+                                <MapPin size={14} className="fill-current" />
                             </div>
                         </button>
+                        <Link to="/" className="flex items-center">
+                            <img
+                                src={logoUrl}
+                                alt={appName}
+                                className="h-9 w-auto max-w-[140px] object-contain md:h-10"
+                            />
+                        </Link>
                     </div>
 
                     {/* Desktop Navigation */}
@@ -145,7 +148,7 @@ const Header = () => {
                                 <input
                                     type="search"
                                     placeholder={searchPlaceholder}
-                                    className="w-full rounded-full border-none bg-slate-100/50 md:bg-white md:border md:border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#0c831f] transition-all outline-none"
+                                    className="w-full rounded-full border-none bg-slate-100/50 md:bg-white md:border md:border-slate-200 pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#E23744] transition-all outline-none"
                                 />
                             </div>
                         </div>
@@ -156,7 +159,7 @@ const Header = () => {
                         <Link to="/wishlist" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group">
                             <Heart className="h-6 w-6 text-slate-600 group-hover:text-[var(--primary)] transition-colors" />
                             {wishlistCount > 0 && (
-                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#0c831f] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
+                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#E23744] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
                                     {wishlistCount}
                                 </span>
                             )}
@@ -165,7 +168,7 @@ const Header = () => {
                         <Link to="/checkout" id="header-cart-icon" className="relative flex items-center justify-center p-2 hover:bg-slate-50 rounded-full transition-colors group">
                             <ShoppingCart className="h-6 w-6 text-slate-600 group-hover:text-[var(--primary)] transition-colors" />
                             {cartCount > 0 && (
-                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#0c831f] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
+                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-[#E23744] text-[10px] font-bold text-white flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
                                     {cartCount}
                                 </span>
                             )}

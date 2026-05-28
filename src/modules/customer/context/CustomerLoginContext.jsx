@@ -46,6 +46,7 @@ export const CustomerLoginProvider = ({ children }) => {
                 open={open}
                 onClose={closeCustomerLogin}
                 title={modalOptions.title}
+                subtitle={modalOptions.subtitle}
                 onSuccess={modalOptions.onSuccess}
             />
         </CustomerLoginContext.Provider>

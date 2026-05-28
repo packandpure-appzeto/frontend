@@ -2,11 +2,12 @@ import React from 'react';
 import { X, Printer, Download, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@core/context/SettingsContext';
+import { brandColor } from '../../constants/brandTheme';
 
 const InvoiceModal = ({ isOpen, onClose, order }) => {
     const { settings } = useSettings();
     const appName = settings?.appName || 'App';
-    const primaryColor = settings?.primaryColor || '#0c831f';
+    const primaryColor = brandColor(settings);
     if (!order) return null;
 
     const handlePrint = () => {
