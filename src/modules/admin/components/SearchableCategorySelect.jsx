@@ -72,7 +72,11 @@ const SearchableCategorySelect = ({
             </button>
 
             {open && (
-                <div className="absolute z-[60] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <div 
+                    className="absolute z-[60] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                >
                     <div className="p-2 border-b border-slate-100">
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
                             <HiOutlineMagnifyingGlass className="w-4 h-4 text-slate-400 shrink-0" />
@@ -85,7 +89,7 @@ const SearchableCategorySelect = ({
                             />
                         </div>
                     </div>
-                    <ul className="max-h-56 overflow-y-auto custom-scrollbar">
+                    <ul className="max-h-56 overflow-y-auto overscroll-none touch-pan-y custom-scrollbar">
                         {filtered.length === 0 ? (
                             <li className="px-4 py-3 text-sm text-slate-400 font-medium">{emptyLabel}</li>
                         ) : (

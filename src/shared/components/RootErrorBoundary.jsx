@@ -140,9 +140,19 @@ const RootErrorBoundary = () => {
                         Refresh
                     </button>
                     <button
-                        type="button"
-                        onClick={() => navigate('/')}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50 flex items-center justify-center gap-2"
+                        onClick={() => {
+                            const path = window.location.pathname;
+                            if (path.startsWith('/seller')) {
+                                navigate('/seller');
+                            } else if (path.startsWith('/admin')) {
+                                navigate('/admin');
+                            } else if (path.startsWith('/delivery')) {
+                                navigate('/delivery');
+                            } else {
+                                navigate('/');
+                            }
+                        }}
+                        className="w-full bg-white border-2 border-gray-100 hover:border-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
                     >
                         <Home className="h-4 w-4" />
                         Back to home

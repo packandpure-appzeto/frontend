@@ -2,7 +2,15 @@ import axiosInstance from '@core/api/axios';
 
 export const adminApi = {
     login: (data) => axiosInstance.post('/admin/login', data),
+    forgotPasswordOtp: (data) => axiosInstance.post('/admin/forgot-password', data),
+    resetPasswordWithOtp: (data) => axiosInstance.post('/admin/reset-password', data),
     signup: (data) => axiosInstance.post('/admin/signup', data),
+    
+    // Notifications
+    getNotifications: () => axiosInstance.get('/notifications'),
+    markNotificationRead: (id) => axiosInstance.put(`/notifications/${id}/read`),
+    markAllNotificationsRead: () => axiosInstance.put('/notifications/mark-all-read'),
+
     getStats: () => axiosInstance.get('/admin/stats'),
     getUsers: (params) => axiosInstance.get('/admin/users', { params }),
     getUserById: (id) => axiosInstance.get(`/admin/users/${id}`),

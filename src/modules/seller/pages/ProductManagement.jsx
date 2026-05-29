@@ -48,6 +48,7 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import ShimmerButton from "@/components/ui/shimmer-button";
 import Pagination from "@shared/components/ui/Pagination";
 import { useDebouncedValue, useDebouncedCallback, DEBOUNCE_MS } from "@shared/hooks/useDebounce";
+import SearchableCategorySelect from "../../admin/components/SearchableCategorySelect";
 
 const ProductManagement = () => {
   const navigate = useNavigate();
@@ -165,6 +166,8 @@ const ProductManagement = () => {
     setFormData((prev) => ({
       ...prev,
       masterProductId: master._id,
+      name: master.name || prev.name,
+      description: master.description || prev.description,
       category: master.categoryId?._id || master.categoryId || prev.category,
       subcategory: master.subcategoryId?._id || master.subcategoryId || prev.subcategory,
       shelfLife: master.shelfLife || prev.shelfLife,
@@ -172,6 +175,15 @@ const ProductManagement = () => {
       fssaiLicense: master.fssaiLicense || prev.fssaiLicense,
       customerCare: master.customerCare || prev.customerCare,
       unit: master.unit || prev.unit,
+      variants: master.variants?.length > 0 ? master.variants.map((v, i) => ({
+        id: Date.now() + i,
+        name: v.name || "",
+        unit: v.unit || master.unit || prev.unit,
+        price: v.price || "",
+        salePrice: v.salePrice || "",
+        purchasePrice: v.purchasePrice || "",
+        stock: "", // Seller must enter their own stock
+      })) : prev.variants,
     }));
     setShowMasterSuggestions(false);
     toast.success(`Mapped to Catalog: ${master.name}`);
@@ -309,9 +321,9 @@ const ProductManagement = () => {
       item
         ? productToSellerForm(item)
         : {
-            ...EMPTY_SELLER_PRODUCT_FORM,
-            variants: [{ ...EMPTY_SELLER_PRODUCT_FORM.variants[0], id: Date.now() }],
-          },
+          ...EMPTY_SELLER_PRODUCT_FORM,
+          variants: [{ ...EMPTY_SELLER_PRODUCT_FORM.variants[0], id: Date.now() }],
+        },
     );
     setEditingItem(item || null);
     setModalTab("general");
@@ -421,7 +433,7 @@ const ProductManagement = () => {
                 if (e.target.value) next.set("q", e.target.value); else next.delete("q");
                 setSearchParams(next);
               }} placeholder="Search by name or SKU..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border-none rounded-lg text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-primary/5 transition-all outline-none" />
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border-none rounded-lg text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-primary/5 transition-all outline-none" />
             </div>
             <div className="relative flex gap-2 shrink-0 w-full lg:w-auto">
               <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
@@ -462,7 +474,7 @@ const ProductManagement = () => {
                     <p className="text-xs text-slate-500">{p.categoryId?.name || "N/A"}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center border-t border-slate-50 pt-3 mt-1">
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-slate-400">Supply price</span>
@@ -598,7 +610,11 @@ const ProductManagement = () => {
               </div>
 
               <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                <div className="lg:w-1/4 bg-slate-50/50 border-r border-slate-100 p-4 space-y-1 overflow-y-auto">
+                <div 
+                  className="lg:w-1/4 bg-slate-50/50 border-r border-slate-100 p-4 space-y-1 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar"
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   {[
                     { id: "general", label: "General", icon: HiOutlineTag },
                     { id: "variants", label: "Variants & stock", icon: HiOutlineSwatch },
@@ -612,7 +628,11 @@ const ProductManagement = () => {
                   ))}
                 </div>
 
-                <div className="flex-1 p-8 overflow-y-auto">
+                <div 
+                  className="flex-1 p-8 overflow-y-auto overscroll-contain touch-pan-y custom-scrollbar"
+                  onWheel={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
                   {modalTab === "general" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="space-y-1.5">
@@ -642,12 +662,12 @@ const ProductManagement = () => {
                           <div className="relative">
                             <div className="relative group/search">
                               <HiOutlineMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 group-focus-within/search:text-primary transition-all" />
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 autoComplete="off"
-                                placeholder="Search Master Catalog..." 
-                                onChange={(e) => searchMasterCatalog(e.target.value)} 
-                                className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white outline-none focus:ring-1 focus:ring-primary/50" 
+                                placeholder="Search Master Catalog..."
+                                onChange={(e) => searchMasterCatalog(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white outline-none focus:ring-1 focus:ring-primary/50"
                               />
                             </div>
                             {showMasterSuggestions && masterSuggestions.length > 0 && (
@@ -737,7 +757,7 @@ const ProductManagement = () => {
                                 className="w-full px-2 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-bold outline-none"
                               >
                                 {PRODUCT_UNITS.map((u) => (
-                                  <option key={u} value={u}>{u}</option>
+                                  <option key={u.value} value={u.value}>{u.label}</option>
                                 ))}
                               </select>
                             </div>
@@ -795,7 +815,7 @@ const ProductManagement = () => {
                             className="mt-1 w-full px-3 py-2 bg-white rounded-xl text-xs font-bold outline-none ring-1 ring-amber-100"
                           >
                             {PRODUCT_UNITS.map((u) => (
-                              <option key={u} value={u}>{u}</option>
+                              <option key={u.value} value={u.value}>{u.label}</option>
                             ))}
                           </select>
                         </div>
@@ -836,16 +856,25 @@ const ProductManagement = () => {
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Parent category</label>
-                          <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value, subcategory: "" })} className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-bold outline-none cursor-pointer">
-                            <option value="">Select parent</option>
-                            {categories.map(p => <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>)}
-                          </select>
+                          <SearchableCategorySelect
+                            value={formData.category}
+                            onChange={id => setFormData({ ...formData, category: id, subcategory: "" })}
+                            options={categories}
+                            placeholder="Select parent category"
+                            searchPlaceholder="Search parent categories..."
+                            emptyLabel="No parent category matches"
+                          />
                         </div>
                         <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Subcategory</label>
-                          <select value={formData.subcategory} onChange={e => setFormData({ ...formData, subcategory: e.target.value })} disabled={!formData.category} className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-bold outline-none cursor-pointer disabled:opacity-50">
-                            <option value="">Select subcategory</option>
-                            {categories.find(p => (p._id || p.id) === formData.category)?.children?.map(sc => <option key={sc._id || sc.id} value={sc._id || sc.id}>{sc.name}</option>)}
-                          </select>
+                          <SearchableCategorySelect
+                            value={formData.subcategory}
+                            onChange={id => setFormData({ ...formData, subcategory: id })}
+                            options={categories.find(p => (p._id || p.id) === formData.category)?.children || []}
+                            disabled={!formData.category}
+                            placeholder={formData.category ? "Select subcategory" : "Choose a parent category first"}
+                            searchPlaceholder="Search subcategories..."
+                            emptyLabel={formData.category ? "No subcategory matches" : "Select a parent category first"}
+                          />
                         </div>
                       </div>
                     </div>
@@ -857,7 +886,25 @@ const ProductManagement = () => {
                         <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Cover Photo</label>
                         <div className="w-48 aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center cursor-pointer overflow-hidden relative group hover:border-primary">
                           <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleImageUpload(e, "main")} />
-                          {formData.mainImage ? <img src={formData.mainImage} className="w-full h-full object-cover" /> : <HiOutlinePhoto className="h-10 w-10 text-slate-200" />}
+                          {formData.mainImage ? (
+                            <>
+                              <img src={formData.mainImage} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setFormData(prev => ({ ...prev, mainImage: "", mainImageFile: null }));
+                                }}
+                                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center z-20"
+                                title="Remove Cover Photo"
+                              >
+                                <HiOutlineXMark className="h-4 w-4 text-slate-700" />
+                              </button>
+                            </>
+                          ) : (
+                            <HiOutlinePhoto className="h-10 w-10 text-slate-200" />
+                          )}
                         </div>
                       </div>
 
@@ -916,7 +963,17 @@ const ProductManagement = () => {
 
               <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
                 <button onClick={() => setIsProductModalOpen(false)} className="px-6 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 uppercase tracking-widest">Cancel</button>
-                <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : "Save Changes"}</button>
+                {modalTab !== "details" ? (
+                  <button onClick={() => {
+                    const tabs = ["general", "variants", "category", "media", "details"];
+                    const currentIdx = tabs.indexOf(modalTab);
+                    if (currentIdx < tabs.length - 1) setModalTab(tabs[currentIdx + 1]);
+                  }} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest">
+                    Next
+                  </button>
+                ) : (
+                  <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : "Save Changes"}</button>
+                )}
               </div>
             </motion.div>
           </div>
