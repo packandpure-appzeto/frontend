@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
-import RootErrorBoundary from '@shared/components/RootErrorBoundary';
+import RootErrorBoundary, { NotFoundPage } from '@shared/components/RootErrorBoundary';
 import AppProviders from '@core/AppProviders';
 import { authRoutes, roleModuleRoutes } from './moduleRoutes';
 import { customerRouteChildren } from './customer/customerRouteConfig';
@@ -28,7 +28,8 @@ const AppRouter = () => {
             ...roleModuleRoutes,
             { path: 'unauthorized', element: <UnauthorizedPage /> },
             ...customerRouteChildren,
-            { path: '*', element: <Navigate to="/" replace /> },
+            // Keep this as an explicit route so unknown URLs show a branded 404 page
+            { path: '*', element: <NotFoundPage /> },
           ],
         },
       ]),

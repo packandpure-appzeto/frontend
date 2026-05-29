@@ -204,7 +204,7 @@ const ChatPage = () => {
                     )}
                 </AnimatePresence>
 
-                <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[1.5rem] border border-slate-200 focus-within:border-green-300 focus-within:shadow-[0_0_0_4px_rgba(12,131,31,0.1)] transition-all">
+                <div className="flex items-end gap-2 bg-slate-50 p-2 rounded-[1.5rem] border border-slate-200 focus-within:border-brand-300 focus-within:shadow-[0_0_0_4px_rgba(187,0,54,0.12)] transition-all">
                     <button
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                         className={`p-2.5 rounded-full hover:text-slate-600 hover:bg-slate-200 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-[#E23744] bg-rose-50' : 'text-slate-400'}`}
@@ -237,7 +237,7 @@ const ChatPage = () => {
                     <button
                         onClick={handleSend}
                         disabled={!inputText.trim() && !selectedImage}
-                        className="p-2.5 rounded-full bg-[#E23744] text-white hover:bg-[#0a701a] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-green-200 flex-shrink-0"
+                        className="p-2.5 rounded-full bg-[#E23744] text-white hover:bg-[#C41E35] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-brand-200 flex-shrink-0"
                     >
                         <Send size={20} className="ml-0.5" />
                     </button>

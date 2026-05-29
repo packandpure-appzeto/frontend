@@ -1,16 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Search } from 'lucide-react';
 import { customerApi } from '../services/customerApi';
 import { buildHomeCategorySections } from '../utils/categoryTree';
 import HomeCategorySections from '../components/home/HomeCategorySections';
+import { cn } from '@/lib/utils';
+import { useSettings } from '@core/context/SettingsContext';
+import { brandColor, brandLogo } from '../constants/brandTheme';
 
 /**
  * `/categories` — full “browse all” view (parent categories with name + image).
  * Linked from cart, wishlist, header, and “See all”.
  */
 const CategoriesPage = () => {
+  const navigate = useNavigate();
   const [sections, setSections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [query, setQuery] = useState('');
+
+  const { settings } = useSettings();
+  const primary = brandColor(settings);
+  const logoUrl = brandLogo(settings);
+  const appName = settings?.appName || 'App';
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
@@ -45,26 +57,106 @@ const CategoriesPage = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  return (
-    <div className="min-h-screen bg-brand-50/30 pb-24 md:pb-8">
-      <div className="max-w-lg mx-auto md:max-w-3xl px-4 pt-4 pb-8">
-        <h1 className="text-xl font-black text-slate-900 mb-2">All categories</h1>
-        <p className="text-sm text-slate-600 mb-6">
-          Browse by department, then open a category to see products.
-        </p>
+  const allItems = useMemo(() => {
+    const firstSection = sections?.[0];
+    const items = firstSection?.items || [];
+    return Array.isArray(items) ? items : [];
+  }, [sections]);
 
+  const filteredItems = useMemo(() => {
+    const q = String(query || '').trim().toLowerCase();
+    if (!q) return allItems;
+    return allItems.filter((c) => String(c?.name || '').toLowerCase().includes(q));
+  }, [allItems, query]);
+
+  return (
+    <div className="min-h-screen bg-white font-sans md:bg-slate-50">
+      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="md:hidden shrink-0 rounded-full p-1.5 hover:bg-slate-50"
+            aria-label="Back"
+          >
+            <ChevronLeft size={22} className="text-slate-900" />
+          </button>
+
+          <Link to="/" className="hidden shrink-0 items-center gap-2 md:flex">
+            <img
+              src={logoUrl}
+              alt={appName}
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base font-bold text-slate-900">Categories</h1>
+            <p className="text-xs text-slate-500">
+              Browse departments · Tap a category to see products
+            </p>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-5xl px-4 pb-3">
+          <div className="relative">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search categories…"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              style={{ caretColor: primary }}
+            />
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-4 md:pb-10 md:pt-6">
         {error && (
-          <p className="text-sm text-brand-700 font-medium mb-4">{error}</p>
+          <p className="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700">
+            {error}
+          </p>
         )}
 
         {isLoading ? (
-          <p className="text-center text-slate-400 text-sm py-12">Loading categories…</p>
-        ) : sections.length ? (
-          <HomeCategorySections sections={sections} />
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 md:gap-5 lg:grid-cols-8">
+            {Array.from({ length: 24 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-square w-full rounded-2xl border border-slate-100 bg-slate-100" />
+                <div className="mt-2 h-3 w-4/5 rounded bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : filteredItems.length ? (
+          <HomeCategorySections
+            sections={[
+              {
+                id: 'shop-by-category',
+                title: query ? `Results (${filteredItems.length})` : 'Shop by category',
+                items: filteredItems,
+              },
+            ]}
+            className={cn(query && 'pt-2')}
+          />
         ) : (
-          <p className="text-center text-slate-500 text-sm py-12">No categories to show yet.</p>
+          <div className="rounded-2xl border border-slate-100 bg-white px-4 py-12 text-center">
+            <p className="text-sm font-semibold text-slate-800">
+              No categories match “{query}”
+            </p>
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="mt-3 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Clear search
+            </button>
+          </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };

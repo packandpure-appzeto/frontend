@@ -68,7 +68,7 @@ const SlideToPay = ({
                 "relative h-16 w-full rounded-full overflow-hidden select-none touch-none shadow-[0_18px_45px_rgba(4,120,87,0.35)] border border-white/10 transition-all duration-300",
                 disabled 
                     ? "bg-slate-200 shadow-none border-slate-300 opacity-60 grayscale cursor-not-allowed" 
-                    : "bg-linear-to-r from-[#E23744] via-[#16a34a] to-[#E23744]"
+                    : "bg-[#E23744]"
             )}
             ref={(el) => el && setContainerWidth(el.offsetWidth)}
         >

@@ -80,7 +80,7 @@ const ProfilePage = () => {
                                 label="Wallet"
                                 sub="Balance & return refunds"
                                 path="/wallet"
-                                color="#10b981"
+                                color="#E23744"
                                 bg="rgba(16,185,129,0.10)"
                             />
                             <MenuItem
@@ -96,7 +96,7 @@ const ProfilePage = () => {
                                 label="Saved Addresses"
                                 sub="Manage your delivery locations"
                                 path="/addresses"
-                                color="#0ea5e9"
+                                color="#E23744"
                                 bg="rgba(56,189,248,0.10)"
                             />
                         </div>

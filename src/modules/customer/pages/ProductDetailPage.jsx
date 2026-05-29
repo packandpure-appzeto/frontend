@@ -152,7 +152,7 @@ const ProductDetailPage = () => {
                     <p className="text-slate-500 font-medium tracking-tight">The item you are looking for might have been moved or removed.</p>
                 </div>
                 <Link to="/products">
-                    <Button className="bg-[#E23744] hover:bg-[#C92C3A] text-white px-8 h-12 font-black rounded-xl">GO BACK SHOPPING</Button>
+                    <Button className="bg-[#E23744] hover:bg-[#C41E35] text-white px-8 h-12 font-black rounded-xl">GO BACK SHOPPING</Button>
                 </Link>
             </div>
         );
@@ -219,7 +219,7 @@ const ProductDetailPage = () => {
                             <span className="bg-[#E23744]/10 text-[#E23744] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-[#E23744]/20">
                                 {product.categoryId?.name || product.category || 'Product'}
                             </span>
-                            <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-50 px-3 py-0.5 rounded-full text-xs">
+                            <div className="flex items-center gap-1 text-brand-600 font-bold bg-brand-50 px-3 py-0.5 rounded-full text-xs">
                                 <Star size={12} fill="currentColor" /> {reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '4.8'} ({reviews.length > 0 ? reviews.length : '120+'})
                             </div>
                         </div>
@@ -269,7 +269,7 @@ const ProductDetailPage = () => {
                                     addToCart(product);
                                     showToast(`${product.name} added to cart`, 'success');
                                 }}
-                                className="h-16 w-full sm:w-64 bg-[#E23744] hover:bg-[#C92C3A] text-white text-lg font-black rounded-2xl shadow-xl shadow-rose-100 transition-all hover:-translate-y-1"
+                                className="h-16 w-full sm:w-64 bg-[#E23744] hover:bg-[#C41E35] text-white text-lg font-black rounded-2xl shadow-xl shadow-rose-100 transition-all hover:-translate-y-1"
                             >
                                 <Plus className="mr-2" size={24} strokeWidth={3} /> ADD TO CART
                             </Button>
@@ -316,7 +316,7 @@ const ProductDetailPage = () => {
                                                 onClick={() => setNewReview({ ...newReview, rating: star })}
                                                 className={cn(
                                                     "h-12 w-12 rounded-xl flex items-center justify-center transition-all",
-                                                    newReview.rating >= star ? "bg-orange-50 text-orange-500" : "bg-slate-50 text-slate-300"
+                                                    newReview.rating >= star ? "bg-brand-50 text-brand-600" : "bg-slate-50 text-slate-300"
                                                 )}
                                             >
                                                 <Star className={cn("h-6 w-6", newReview.rating >= star && "fill-current")} />
@@ -381,7 +381,7 @@ const ProductDetailPage = () => {
                                                             <Star
                                                                 key={i}
                                                                 size={12}
-                                                                className={cn(i < review.rating ? "text-orange-400 fill-orange-400" : "text-slate-200")}
+                                                                className={cn(i < review.rating ? "text-brand-500 fill-brand-500" : "text-slate-200")}
                                                             />
                                                         ))}
                                                     </div>

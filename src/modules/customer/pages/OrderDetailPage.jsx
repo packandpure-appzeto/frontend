@@ -580,12 +580,12 @@ const OrderDetailPage = () => {
           className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100"
         >
           <div className="flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-              <Store size={24} className="text-orange-600" />
+            <div className="h-12 w-12 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+              <Store size={24} className="text-brand-600" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-xs font-bold text-orange-600 uppercase tracking-wider">Pickup Location</p>
+                <p className="text-xs font-bold text-brand-600 uppercase tracking-wider">Pickup Location</p>
               </div>
               <h4 className="font-bold text-slate-900 text-base mb-1">Store Location</h4>
               <p className="text-sm text-slate-500 leading-relaxed">

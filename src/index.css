@@ -5,9 +5,9 @@
 
 :root {
   /* Brand colors: overridden at runtime by SettingsContext from API (settings.primaryColor, settings.secondaryColor) */
-  --primary: oklch(0.55 0.23 260);
-  --primary-color: var(--primary);
-  --primary-dark: #0369a1;
+  --primary: #E23744;
+  --primary-color: #E23744;
+  --primary-dark: #C41E35;
   --radius: 0.5rem;
   --background: oklch(0.99 0.005 260);
   --foreground: oklch(0.15 0.02 260);
@@ -34,7 +34,7 @@
   --glass-border: rgba(255, 255, 255, 0.4);
 
   /* Cart pill fill — overridden on Home by MainLocationHeader */
-  --customer-mini-cart-color: #1d7440;
+  --customer-mini-cart-color: #E23744;
 }
 
 body {

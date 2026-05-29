@@ -1,6 +1,51 @@
 /**
  * Customer catalog display — card price from first variant; keeps full variants[] for picker.
  */
+function resolveCategoryName(p) {
+  if (!p) return '';
+  if (typeof p.categoryId === 'object' && p.categoryId?.name) return p.categoryId.name;
+  return p.categoryName || '';
+}
+
+function resolveSubcategoryName(p) {
+  if (!p) return '';
+  if (typeof p.subcategoryId === 'object' && p.subcategoryId?.name) {
+    return p.subcategoryId.name;
+  }
+  return p.subcategoryName || '';
+}
+
+function resolveVariantLabel(p, variants, minSell, maxSell) {
+  if (p.variantLabel) return p.variantLabel;
+  if (variants.length === 1) {
+    return variants[0].name || null;
+  }
+  if (variants.length > 1) {
+    if (minSell !== maxSell) {
+      return `${variants.length} options · from ₹${minSell.toLocaleString('en-IN')}`;
+    }
+    return `${variants.length} sizes`;
+  }
+  return null;
+}
+
+function resolveFulfillmentLabel(source) {
+  if (source === 'hub') return 'Hub stock';
+  if (source === 'seller') return 'Vendor stock';
+  if (source === 'hybrid') return 'Hub + vendor';
+  return '';
+}
+
+function resolveStockQty(p, variants) {
+  if (Number.isFinite(p.totalAvailableQty)) return p.totalAvailableQty;
+  if (Number.isFinite(p.catalogStock)) return p.catalogStock;
+  if (Number.isFinite(p.stock)) return p.stock;
+  if (variants.length) {
+    return variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+  }
+  return null;
+}
+
 export function normalizeCustomerProduct(p) {
   if (!p || typeof p !== 'object') return p;
 
@@ -9,9 +54,16 @@ export function normalizeCustomerProduct(p) {
     .map((v) => Number(v.salePrice ?? v.price) || 0)
     .filter((n) => n > 0);
 
-  let price = Number(p.salePrice ?? p.price) || 0;
+  let price = Number(p.salePrice ?? p.displayPrice ?? p.price) || 0;
   let originalPrice = Number(p.price) || price;
   let weight = p.weight || p.unit || '1 pc';
+
+  const categoryName = resolveCategoryName(p);
+  const subcategoryName = resolveSubcategoryName(p);
+  const brand = p.brand || '';
+  const unit = p.unit || variants[0]?.unit || '';
+  const fulfillmentLabel = resolveFulfillmentLabel(p.fulfillmentSource);
+  const stockQty = resolveStockQty(p, variants);
 
   if (variants.length > 0) {
     const first = variants[0];
@@ -24,6 +76,10 @@ export function normalizeCustomerProduct(p) {
     originalPrice = firstMrp;
     weight = first.name ? String(first.name) : weight;
 
+    const variantLabel = resolveVariantLabel(p, variants, minSell, maxSell);
+    const hasMultipleVariants =
+      p.hasMultipleVariants === true || variants.length > 1;
+
     return {
       ...p,
       id: p._id || p.id,
@@ -31,24 +87,28 @@ export function normalizeCustomerProduct(p) {
       image: p.mainImage || p.image || '',
       price,
       originalPrice: originalPrice > price ? originalPrice : firstMrp,
-      displayPrice: minSell,
-      displayPriceMax: maxSell,
-      variantCount: variants.length,
-      hasMultipleVariants: variants.length > 1,
-      variantLabel:
-        variants.length > 1 && minSell !== maxSell
-          ? `${variants.length} options · from ₹${minSell.toLocaleString('en-IN')}`
-          : variants.length > 1
-            ? `${variants.length} sizes`
-            : null,
+      displayPrice: p.displayPrice ?? minSell,
+      displayPriceMax: p.displayPriceMax ?? maxSell,
+      variantCount: p.variantCount ?? variants.length,
+      hasMultipleVariants,
+      variantLabel,
       weight,
+      brand,
+      unit,
+      categoryName,
+      subcategoryName,
+      fulfillmentLabel,
+      stockQty,
       inStock:
-        (Number(p.stock) || 0) > 0 ||
-        variants.some((v) => (Number(v.stock) || 0) > 0) ||
-        p.inStock !== false,
+        p.inStock !== false &&
+        ((Number(p.stock) || 0) > 0 ||
+          variants.some((v) => (Number(v.stock) || 0) > 0) ||
+          (stockQty != null && stockQty > 0)),
       variants,
     };
   }
+
+  const variantLabel = p.variantLabel || null;
 
   return {
     ...p,
@@ -57,11 +117,21 @@ export function normalizeCustomerProduct(p) {
     image: p.mainImage || p.image || '',
     price,
     originalPrice,
+    displayPrice: p.displayPrice ?? price,
+    displayPriceMax: p.displayPriceMax ?? price,
     weight,
+    brand,
+    unit,
+    categoryName,
+    subcategoryName,
+    fulfillmentLabel,
+    stockQty,
     variantCount: 0,
     hasMultipleVariants: false,
-    variantLabel: null,
-    inStock: (Number(p.stock) || 0) > 0 || p.inStock !== false,
+    variantLabel,
+    inStock:
+      p.inStock !== false &&
+      ((Number(p.stock) || 0) > 0 || (stockQty != null && stockQty > 0)),
     variants: [],
   };
 }

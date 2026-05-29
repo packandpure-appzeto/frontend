@@ -183,7 +183,7 @@ const EditProfilePage = () => {
                             type="button"
                             disabled={isLoading}
                             onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-0 right-0 p-2 bg-[#E23744] text-white rounded-full border-2 border-white shadow-sm hover:bg-[#0a701a] transition-colors disabled:opacity-60"
+                            className="absolute bottom-0 right-0 p-2 bg-[#E23744] text-white rounded-full border-2 border-white shadow-sm hover:bg-[#C41E35] transition-colors disabled:opacity-60"
                         >
                             <Camera size={18} />
                         </button>
@@ -254,7 +254,7 @@ const EditProfilePage = () => {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-4 bg-[#E23744] text-white font-bold rounded-2xl shadow-lg shadow-green-200 hover:bg-[#0a701a] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 bg-[#E23744] text-white font-bold rounded-2xl shadow-lg shadow-brand-200 hover:bg-[#C41E35] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isLoading ? (
                             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
