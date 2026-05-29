@@ -9,6 +9,7 @@ import {
   HiOutlinePencilSquare,
   HiOutlineCheck,
   HiOutlineXMark,
+  HiOutlineLockClosed,
 } from "react-icons/hi2";
 import { sellerApi } from "../services/sellerApi";
 import { toast } from "sonner";
@@ -74,6 +75,12 @@ const SellerProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [formData, setFormData] = useState(profileToForm(null));
+  const [security, setSecurity] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -154,6 +161,32 @@ const SellerProfile = () => {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    if (security.newPassword !== security.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await sellerApi.updatePassword({
+        currentPassword: security.currentPassword,
+        newPassword: security.newPassword,
+      });
+      toast.success("Password updated successfully");
+      setSecurity({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -378,6 +411,51 @@ const SellerProfile = () => {
           )}
         </Card>
       </form>
+
+      {/* Security */}
+      <Card className="border-none p-5 shadow-sm ring-1 ring-slate-100">
+        <h3 className="mb-4 text-sm font-bold text-slate-900">Security & Password</h3>
+        <form onSubmit={handlePasswordUpdate} className="space-y-4">
+          <Field label="Current Password" icon={HiOutlineLockClosed}>
+            <Input
+              type="password"
+              value={security.currentPassword}
+              onChange={(e) => setSecurity({ ...security, currentPassword: e.target.value })}
+              className="h-10"
+              required
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="New Password" icon={HiOutlineLockClosed}>
+              <Input
+                type="password"
+                value={security.newPassword}
+                onChange={(e) => setSecurity({ ...security, newPassword: e.target.value })}
+                className="h-10"
+                required
+              />
+            </Field>
+            <Field label="Confirm New Password" icon={HiOutlineLockClosed}>
+              <Input
+                type="password"
+                value={security.confirmPassword}
+                onChange={(e) => setSecurity({ ...security, confirmPassword: e.target.value })}
+                className="h-10"
+                required
+              />
+            </Field>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button
+              type="submit"
+              disabled={isUpdatingPassword}
+              className="gap-2 text-xs font-bold"
+            >
+              {isUpdatingPassword ? "Updating…" : "Update password"}
+            </Button>
+          </div>
+        </form>
+      </Card>
 
       {/* Trust strip */}
       <Card className="border-none p-5 shadow-sm ring-1 ring-slate-100">

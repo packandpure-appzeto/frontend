@@ -6,9 +6,9 @@ import { useSettings } from '@core/context/SettingsContext';
 import { 
     Mail, 
     Lock, 
-    User, 
     Phone, 
     ArrowRight, 
+    ArrowLeft,
     Store, 
     MapPin, 
     FileText, 
@@ -25,7 +25,9 @@ import Badge from '@shared/components/ui/Badge';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
+    const [forgotPasswordStep, setForgotPasswordStep] = useState(0); // 0: None, 1: Phone, 2: Reset
     const [isLoading, setIsLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
     const { login } = useAuth();
     const { settings } = useSettings();
     const navigate = useNavigate();
@@ -43,6 +45,10 @@ const Auth = () => {
         category: 'Grocery',
         lat: '',
         lng: '',
+        forgotPhone: '',
+        otp: '',
+        newPassword: '',
+        confirmPassword: '',
     });
 
     const [isDetecting, setIsDetecting] = useState(false);
@@ -86,12 +92,16 @@ const Auth = () => {
         } else if (name === 'email') {
             const cleaned = value.replace(/\s+/g, '').toLowerCase();
             setFormData({ ...formData, [name]: cleaned });
-        } else if (name === 'phone') {
+        } else if (name === 'phone' || name === 'forgotPhone') {
             const digitsOnly = value.replace(/[^0-9]/g, '').slice(0, 10);
             setFormData({ ...formData, [name]: digitsOnly });
-        } else if (name === 'password') {
+        } else if (name === 'password' || name === 'newPassword' || name === 'confirmPassword') {
             const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
             setFormData({ ...formData, [name]: cleaned });
+        } else if (name === 'otp') {
+            const cleaned = value.replace(/[^0-9]/g, '').slice(0, 6);
+            setFormData({ ...formData, [name]: cleaned });
+            if (otpError) setOtpError('');
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -105,9 +115,69 @@ const Auth = () => {
         }
     };
 
+    const handleForgotPasswordSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (forgotPasswordStep === 1) {
+            if (formData.forgotPhone.length !== 10) {
+                toast.error('Enter a valid 10-digit mobile number.');
+                return;
+            }
+            setIsLoading(true);
+            try {
+                await sellerApi.forgotPasswordOtp({ phone: formData.forgotPhone });
+                toast.success('OTP sent successfully. Please check your phone.');
+                setForgotPasswordStep(2);
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to send OTP');
+            } finally {
+                setIsLoading(false);
+            }
+        } else if (forgotPasswordStep === 2) {
+            if (!formData.otp) {
+                toast.error('Please enter the OTP.');
+                return;
+            }
+            if (formData.newPassword !== formData.confirmPassword) {
+                toast.error('New passwords do not match.');
+                return;
+            }
+            if (formData.newPassword.length !== 6) {
+                toast.error('PIN must be exactly 6 characters.');
+                return;
+            }
+            setIsLoading(true);
+            try {
+                const response = await sellerApi.resetPasswordWithOtp({
+                    phone: formData.forgotPhone,
+                    otp: formData.otp,
+                    newPassword: formData.newPassword
+                });
+                const { token, seller } = response.data.result;
+                setOtpError('');
+                toast.success('Password reset successfully! Logging you in...');
+                login({ ...seller, token, role: 'seller' });
+                navigate('/seller');
+            } catch (error) {
+                const msg = error.response?.data?.message || 'Failed to reset password';
+                if (msg.toLowerCase().includes('otp')) {
+                    setOtpError('OTP does not match or has expired. Please check your OTP.');
+                } else {
+                    toast.error(msg);
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
+        if (forgotPasswordStep > 0) {
+            return handleForgotPasswordSubmit(e);
+        }
+
         if (!isLogin) {
             if (!documents.tradeLicense || !documents.gstCertificate || !documents.idProof) {
                 toast.error('All SOP documents are required for registration.');
@@ -199,17 +269,88 @@ const Auth = () => {
                                     <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] mt-1 block">Merchant Portal</span>
                                 </div>
                             </div>
-                            <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight leading-tight">
-                                {isLogin ? 'Welcome Back' : 'Join Our Network'}
-                            </h1>
-                            <p className="text-slate-400 font-medium text-base">
-                                {isLogin ? 'Access your store dashboard and manage orders.' : 'Register your business to reach more customers.'}
-                            </p>
+
+                            {forgotPasswordStep > 0 ? (
+                                <>
+                                    <button onClick={() => setForgotPasswordStep(0)} className="mb-4 text-xs font-bold text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors">
+                                        <ArrowLeft size={14} /> Back to Login
+                                    </button>
+                                    <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight leading-tight">
+                                        {forgotPasswordStep === 1 ? 'Reset Password' : 'Verify & Reset'}
+                                    </h1>
+                                    <p className="text-slate-400 font-medium text-base">
+                                        {forgotPasswordStep === 1 ? 'Enter your registered mobile number to receive an OTP.' : `Enter the OTP sent to ${formData.forgotPhone} and your new PIN.`}
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight leading-tight">
+                                        {isLogin ? 'Welcome Back' : 'Join Our Network'}
+                                    </h1>
+                                    <p className="text-slate-400 font-medium text-base">
+                                        {isLogin ? 'Access your store dashboard and manage orders.' : 'Register your business to reach more customers.'}
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                         <AnimatePresence mode="wait">
-                            {!isLogin && (
+                            {forgotPasswordStep === 1 && (
+                                <motion.div
+                                    key="forgot-step-1"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Registered Phone Number</label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="tel" name="forgotPhone" required value={formData.forgotPhone} onChange={handleChange} placeholder="10 Digit Number" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                            
+                            {forgotPasswordStep === 2 && (
+                                <motion.div
+                                    key="forgot-step-2"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Enter OTP</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="text" name="otp" required value={formData.otp} onChange={handleChange} placeholder="OTP Code" className={`w-full pl-12 pr-5 py-4 bg-slate-50 border-2 rounded-[20px] text-sm font-bold text-slate-700 outline-none transition-all tracking-[0.5em] ${otpError ? 'border-red-300 focus:border-red-400 focus:bg-white' : 'border-transparent focus:border-indigo-100 focus:bg-white'}`} />
+                                        </div>
+                                        {otpError && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{otpError}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">New 6-Digit PIN</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="password" name="newPassword" required value={formData.newPassword} onChange={handleChange} placeholder="••••••" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.5em]" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Confirm 6-Digit PIN</label>
+                                        <div className="relative group">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} placeholder="••••••" className={`w-full pl-12 pr-5 py-4 bg-slate-50 border-2 rounded-[20px] text-sm font-bold text-slate-700 outline-none transition-all tracking-[0.5em] ${formData.confirmPassword && formData.newPassword !== formData.confirmPassword ? 'border-red-300 focus:border-red-400 focus:bg-white' : 'border-transparent focus:border-indigo-100 focus:bg-white'}`} />
+                                        </div>
+                                        {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
+                                            <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">Passwords do not match.</p>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {forgotPasswordStep === 0 && !isLogin && (
                                 <motion.div
                                     key="signup-fields"
                                     initial={{ opacity: 0, height: 0 }}
@@ -295,23 +436,33 @@ const Auth = () => {
                             )}
                         </AnimatePresence>
 
-                        <div className="space-y-2">
-                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
-                                <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="email@business.com" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between ml-1">
-                                <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">6-Digit Security PIN</label>
-                                {isLogin && <button type="button" className="text-[10px] font-bold text-indigo-500 hover:underline">Forgot PIN?</button>}
-                            </div>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
-                                <input type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.5em]" />
-                            </div>
-                        </div>
+                        {forgotPasswordStep === 0 && (
+                            <motion.div
+                                key="login-fields"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="space-y-6"
+                            >
+                                <div className="space-y-2">
+                                    <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</label>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                        <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="email@business.com" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">6-Digit Security PIN</label>
+                                        {isLogin && <button type="button" onClick={() => setForgotPasswordStep(1)} className="text-[10px] font-bold text-indigo-500 hover:underline">Forgot PIN?</button>}
+                                    </div>
+                                    <div className="relative group">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                        <input type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="••••••" className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.5em]" />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
 
                         <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white rounded-[24px] py-5 text-base font-black shadow-2xl shadow-slate-200 hover:bg-slate-800 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-6">
                             {isLoading ? (
@@ -321,21 +472,28 @@ const Auth = () => {
                                 </>
                             ) : (
                                 <>
-                                    <span>{isLogin ? 'LOG IN' : 'SUBMIT APPLICATION'}</span>
+                                    <span>
+                                        {forgotPasswordStep === 1 ? 'SEND OTP' : 
+                                         forgotPasswordStep === 2 ? 'RESET PASSWORD' :
+                                         isLogin ? 'LOG IN' : 'SUBMIT APPLICATION'}
+                                    </span>
                                     <ArrowRight size={20} />
                                 </>
                             )}
                         </button>
                     </form>
-                    <div className="text-center mt-8">
-                        <button onClick={() => setIsLogin(!isLogin)} className="text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors group">
-                            {isLogin ? (
-                                <>New merchant? <span className="text-indigo-600 group-hover:underline">Create an account</span></>
-                            ) : (
-                                <>Already registered? <span className="text-indigo-600 group-hover:underline">Log in here</span></>
-                            )}
-                        </button>
-                    </div>
+                    
+                    {forgotPasswordStep === 0 && (
+                        <div className="text-center mt-8">
+                            <button onClick={() => setIsLogin(!isLogin)} className="text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors group">
+                                {isLogin ? (
+                                    <>New merchant? <span className="text-indigo-600 group-hover:underline">Create an account</span></>
+                                ) : (
+                                    <>Already registered? <span className="text-indigo-600 group-hover:underline">Log in here</span></>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

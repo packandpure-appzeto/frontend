@@ -2,6 +2,8 @@ import axiosInstance from '@core/api/axios';
 
 export const sellerApi = {
     login: (data) => axiosInstance.post('/seller/login', data),
+    forgotPasswordOtp: (data) => axiosInstance.post('/seller/forgot-password', data),
+    resetPasswordWithOtp: (data) => axiosInstance.post('/seller/reset-password', data),
     signup: (data) => axiosInstance.post('/seller/signup', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
@@ -27,6 +29,7 @@ export const sellerApi = {
     getEarnings: () => axiosInstance.get('/seller/earnings'),
     getProfile: () => axiosInstance.get('/seller/profile'),
     updateProfile: (data) => axiosInstance.put('/seller/profile', data),
+    updatePassword: (data) => axiosInstance.put('/seller/profile/password', data),
     reverseGeocode: (lat, lng) =>
         axiosInstance.get('/seller/location/reverse-geocode', { params: { lat, lng } }),
     geocodeAddress: (address) =>

@@ -9,6 +9,7 @@ import {
     User,
     ShieldCheck,
     ArrowRight,
+    ArrowLeft,
     Activity,
     LockKeyhole,
     Globe,
@@ -21,8 +22,9 @@ import { adminApi } from '../services/adminApi';
 import Badge from '@shared/components/ui/Badge';
 
 const AdminAuth = () => {
-    const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [forgotPasswordStep, setForgotPasswordStep] = useState(0); // 0: None, 1: Email, 2: Reset
+    const [otpError, setOtpError] = useState('');
     const { login } = useAuth();
     const { settings } = useSettings();
     const navigate = useNavigate();
@@ -34,21 +36,90 @@ const AdminAuth = () => {
         password: '',
         name: '',
         adminCode: '',
-        phone: ''
+        phone: '',
+        forgotEmail: '',
+        otp: '',
+        newPassword: '',
+        confirmPassword: ''
     });
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'password') {
+        if (name === 'password' || name === 'newPassword' || name === 'confirmPassword') {
             const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
             setFormData({ ...formData, [name]: cleaned });
+        } else if (name === 'otp') {
+            const cleaned = value.replace(/[^0-9]/g, '').slice(0, 6);
+            setFormData({ ...formData, [name]: cleaned });
+            if (otpError) setOtpError('');
         } else {
             setFormData({ ...formData, [name]: value });
         }
     };
 
+    const handleForgotPasswordSubmit = async (e) => {
+        e.preventDefault();
+        
+        if (forgotPasswordStep === 1) {
+            if (!formData.forgotEmail) {
+                toast.error('Enter a valid email address.');
+                return;
+            }
+            setIsLoading(true);
+            try {
+                await adminApi.forgotPasswordOtp({ email: formData.forgotEmail });
+                toast.success('OTP sent successfully. Please check your system/phone.');
+                setForgotPasswordStep(2);
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to send OTP');
+            } finally {
+                setIsLoading(false);
+            }
+        } else if (forgotPasswordStep === 2) {
+            if (!formData.otp) {
+                toast.error('Please enter the OTP.');
+                return;
+            }
+            if (formData.newPassword !== formData.confirmPassword) {
+                toast.error('New PINs do not match.');
+                return;
+            }
+            if (formData.newPassword.length !== 6) {
+                toast.error('PIN must be exactly 6 characters.');
+                return;
+            }
+            setIsLoading(true);
+            try {
+                const response = await adminApi.resetPasswordWithOtp({
+                    email: formData.forgotEmail,
+                    otp: formData.otp,
+                    newPassword: formData.newPassword
+                });
+                const { token, admin } = response.data.result;
+                setOtpError('');
+                toast.success('Access PIN reset successfully! Authorizing...');
+                login({ ...admin, token, role: 'admin' });
+                navigate('/admin');
+            } catch (error) {
+                const msg = error.response?.data?.message || 'Failed to reset PIN';
+                if (msg.toLowerCase().includes('otp')) {
+                    setOtpError('OTP does not match or has expired. Please check your OTP.');
+                } else {
+                    toast.error(msg);
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (forgotPasswordStep > 0) {
+            return handleForgotPasswordSubmit(e);
+        }
+
         const pwd = (formData.password || '').trim();
         if (!/^[a-zA-Z0-9]{6}$/.test(pwd)) {
             toast.error('Password must be exactly 6 characters.');
@@ -57,13 +128,11 @@ const AdminAuth = () => {
         setIsLoading(true);
 
         try {
-            const response = isLogin
-                ? await adminApi.login({ email: formData.email, password: formData.password })
-                : await adminApi.signup({ name: formData.name, email: formData.email, password: formData.password });
+            const response = await adminApi.login({ email: formData.email, password: formData.password });
 
             const { token, admin } = response.data.result;
             login({ ...admin, token, role: 'admin' });
-            toast.success(isLogin ? 'Welcome back, Administrator.' : 'Administrator Account Created.');
+            toast.success('Welcome back, Administrator.');
             navigate('/admin');
         } catch (error) {
             toast.error(error.response?.data?.message || 'Authentication failed');
@@ -94,38 +163,107 @@ const AdminAuth = () => {
                         </div>
 
                         <div className="mb-10">
-                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-4">
-                                {isLogin ? 'Admin Access' : 'Root Setup'}
-                            </h1>
-                            <p className="text-slate-400 font-medium text-lg">
-                                {isLogin ? `Authorize to manage ${appName} ecosystem.` : 'Initialize master administrator credentials.'}
-                            </p>
+                            {forgotPasswordStep > 0 ? (
+                                <>
+                                    <button type="button" onClick={() => setForgotPasswordStep(0)} className="mb-4 text-xs font-bold text-slate-400 hover:text-indigo-600 flex items-center gap-1 transition-colors">
+                                        <ArrowLeft size={14} /> Back to Login
+                                    </button>
+                                    <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter leading-none mb-4">
+                                        {forgotPasswordStep === 1 ? 'Reset Access PIN' : 'Verify & Reset'}
+                                    </h1>
+                                    <p className="text-slate-400 font-medium text-lg">
+                                        {forgotPasswordStep === 1 ? 'Enter your master email to receive a reset code.' : `Enter the code sent to ${formData.forgotEmail} and your new PIN.`}
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-4">
+                                        Admin Access
+                                    </h1>
+                                    <p className="text-slate-400 font-medium text-lg">
+                                        Authorize to manage {appName} ecosystem.
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <AnimatePresence mode="wait">
-                                {!isLogin && (
+                                {forgotPasswordStep === 1 && (
                                     <motion.div
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        className="relative group"
+                                        key="forgot-step-1"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        className="space-y-4"
                                     >
-                                        <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                                        <input type="text" name="name" required value={formData.name} onChange={handleChange} placeholder="Full Administrative Name" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner" />
+                                        <div className="relative group">
+                                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                            <input type="email" name="forgotEmail" required value={formData.forgotEmail} onChange={handleChange} placeholder="Master Email Address" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner" />
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {forgotPasswordStep === 2 && (
+                                    <motion.div
+                                        key="forgot-step-2"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        className="space-y-4"
+                                    >
+                                        <div>
+                                            <div className="relative group">
+                                                <LockKeyhole className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                                <input type="text" name="otp" required value={formData.otp} onChange={handleChange} placeholder="Enter OTP Code" className={`w-full pl-14 pr-6 py-5 bg-slate-50 border-2 rounded-[24px] text-sm font-bold text-slate-700 outline-none transition-all tracking-[0.8em] shadow-inner ${otpError ? 'border-red-300 focus:border-red-400 focus:bg-white' : 'border-transparent focus:border-indigo-100 focus:bg-white'}`} />
+                                            </div>
+                                            {otpError && <p className="text-red-500 text-[11px] font-bold mt-2 ml-4">{otpError}</p>}
+                                        </div>
+
+                                        <div className="relative group">
+                                            <LockKeyhole className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                            <input type="password" name="newPassword" required value={formData.newPassword} onChange={handleChange} placeholder="New 6-Digit PIN" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.8em] shadow-inner" />
+                                        </div>
+
+                                        <div>
+                                            <div className="relative group">
+                                                <LockKeyhole className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                                <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm 6-Digit PIN" className={`w-full pl-14 pr-6 py-5 bg-slate-50 border-2 rounded-[24px] text-sm font-bold text-slate-700 outline-none transition-all tracking-[0.8em] shadow-inner ${formData.confirmPassword && formData.newPassword !== formData.confirmPassword ? 'border-red-300 focus:border-red-400 focus:bg-white' : 'border-transparent focus:border-indigo-100 focus:bg-white'}`} />
+                                            </div>
+                                            {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
+                                                <p className="text-red-500 text-[11px] font-bold mt-2 ml-4">PINs do not match.</p>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {forgotPasswordStep === 0 && (
+                                    <motion.div
+                                        key="login-step"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="space-y-6"
+                                    >
+                                        <div className="relative group">
+                                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                            <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="Master Email Address" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner" />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-end mb-2 mr-2">
+                                                <button type="button" onClick={() => setForgotPasswordStep(1)} className="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 hover:underline transition-colors">
+                                                    Forgot PIN?
+                                                </button>
+                                            </div>
+                                            <div className="relative group">
+                                                <LockKeyhole className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+                                                <input type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="6-Digit Access PIN" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.8em] shadow-inner" />
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-
-                            <div className="relative group">
-                                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                                <input type="email" name="email" required value={formData.email} onChange={handleChange} placeholder="Master Email Address" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all shadow-inner" />
-                            </div>
-
-                            <div className="relative group">
-                                <LockKeyhole className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                                <input type="password" name="password" required value={formData.password} onChange={handleChange} placeholder="6-Digit Access PIN" className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent rounded-[24px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all tracking-[0.8em] shadow-inner" />
-                            </div>
 
                             <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white rounded-[24px] py-6 text-lg font-black shadow-[0_20px_40px_rgba(15,23,42,0.2)] hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3">
                                 {isLoading ? (
@@ -135,18 +273,16 @@ const AdminAuth = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <span>{isLogin ? 'ENTER TERMINAL' : 'INITIALIZE SYSTEM'}</span>
+                                        <span>
+                                            {forgotPasswordStep === 1 ? 'REQUEST RESET CODE' : 
+                                             forgotPasswordStep === 2 ? 'CONFIRM NEW PIN' : 
+                                             'ENTER TERMINAL'}
+                                        </span>
                                         <ArrowRight size={22} />
                                     </>
                                 )}
                             </button>
                         </form>
-
-                        <div className="text-center mt-10">
-                            <button onClick={() => setIsLogin(!isLogin)} className="text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">
-                                {isLogin ? "Request Root Credentials?" : "Return to Login Securely"}
-                            </button>
-                        </div>
                     </div>
                 </div>
 
