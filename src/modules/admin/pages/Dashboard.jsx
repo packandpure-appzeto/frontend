@@ -26,10 +26,12 @@ import {
     Pie,
     Cell
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
+    const navigate = useNavigate();
     const [statsData, setStatsData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -69,7 +71,8 @@ const AdminDashboard = () => {
             color: 'text-blue-600',
             bg: 'bg-blue-50',
             trend: '+12.5%',
-            description: 'Active this month'
+            description: 'Active this month',
+            path: '/admin/customers'
         },
         {
             label: 'Active Sellers',
@@ -78,7 +81,8 @@ const AdminDashboard = () => {
             color: 'text-purple-600',
             bg: 'bg-purple-50',
             trend: '+5.2%',
-            description: 'Verified stores'
+            description: 'Verified stores',
+            path: '/admin/sellers/active'
         },
         {
             label: 'Total Orders',
@@ -87,7 +91,38 @@ const AdminDashboard = () => {
             color: 'text-orange-600',
             bg: 'bg-orange-50',
             trend: '+18.4%',
-            description: 'Last 30 days'
+            description: 'Last 30 days',
+            path: '/admin/orders/all'
+        },
+        {
+            label: 'New Orders',
+            value: overview.newOrderCount?.toLocaleString() || '0',
+            icon: Loader2,
+            color: 'text-rose-600',
+            bg: 'bg-rose-50',
+            trend: 'Pending',
+            description: 'Awaiting action',
+            path: '/admin/orders/pending'
+        },
+        {
+            label: 'All Categories',
+            value: overview.allCategoryCount?.toLocaleString() || '0',
+            icon: Database,
+            color: 'text-teal-600',
+            bg: 'bg-teal-50',
+            trend: 'Active',
+            description: 'Platform categories',
+            path: '/admin/categories/hierarchy'
+        },
+        {
+            label: 'Inactive Sellers',
+            value: overview.inactiveSellerCount?.toLocaleString() || '0',
+            icon: RotateCw,
+            color: 'text-slate-600',
+            bg: 'bg-slate-50',
+            trend: 'Review',
+            description: 'Pending approval',
+            path: '/admin/sellers/pending'
         },
         {
             label: 'Revenue',
@@ -96,7 +131,8 @@ const AdminDashboard = () => {
             color: 'text-emerald-600',
             bg: 'bg-emerald-50',
             trend: '+8.2%',
-            description: 'Net earnings'
+            description: 'Net earnings',
+            path: '/admin/reports'
         },
     ];
 
@@ -123,19 +159,24 @@ const AdminDashboard = () => {
             />
 
             {/* Main Stats Grid */}
-            <div className="ds-grid-stats">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
                 {stats.map((stat) => (
-                    <StatCard
-                        key={stat.label}
-                        label={stat.label}
-                        value={stat.value}
-                        icon={stat.icon}
-                        trend={stat.trend}
-                        description={stat.description}
-                        color={stat.color}
-                        bg={stat.bg}
-                        className={cn("ring-1 ring-gray-100", stat.bg + "/30")}
-                    />
+                    <div 
+                        key={stat.label} 
+                        onClick={() => navigate(stat.path)}
+                        className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-95"
+                    >
+                        <StatCard
+                            label={stat.label}
+                            value={stat.value}
+                            icon={stat.icon}
+                            trend={stat.trend}
+                            description={stat.description}
+                            color={stat.color}
+                            bg={stat.bg}
+                            className={cn("ring-1 ring-gray-100 h-full", stat.bg + "/30")}
+                        />
+                    </div>
                 ))}
             </div>
 

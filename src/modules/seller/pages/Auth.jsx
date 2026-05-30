@@ -16,12 +16,14 @@ import {
     CheckCircle2, 
     ShieldCheck,
     Building2,
-    Sparkles
+    Sparkles,
+    User
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { sellerApi } from '../services/sellerApi';
 import { cn } from '@/lib/utils';
 import Badge from '@shared/components/ui/Badge';
+import SellerLocationModal from '../components/SellerLocationModal';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -51,7 +53,7 @@ const Auth = () => {
         confirmPassword: '',
     });
 
-    const [isDetecting, setIsDetecting] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     const [documents, setDocuments] = useState({
         tradeLicense: null,
@@ -59,29 +61,13 @@ const Auth = () => {
         idProof: null
     });
 
-    const detectLocation = () => {
-        setIsDetecting(true);
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setFormData(prev => ({
-                        ...prev,
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    }));
-                    setIsDetecting(false);
-                    toast.success("Location detected successfully!");
-                },
-                (error) => {
-                    console.error("Location Error:", error);
-                    setIsDetecting(false);
-                    toast.error("Failed to detect location. Please enter manually.");
-                }
-            );
-        } else {
-            setIsDetecting(false);
-            toast.error("Geolocation is not supported by your browser.");
-        }
+    const handleLocationSelect = (loc) => {
+        setFormData(prev => ({
+            ...prev,
+            address: loc.address,
+            lat: loc.lat,
+            lng: loc.lng
+        }));
     };
 
     const handleChange = (e) => {
@@ -400,26 +386,27 @@ const Auth = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Shop Address</label>
-                                        <textarea name="address" required value={formData.address} onChange={handleChange} placeholder="Enter full physical address..." className="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-[20px] text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all min-h-[80px] resize-none" />
+                                        <div className="flex items-center justify-between ml-1">
+                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Shop Location & Address</label>
+                                            <button type="button" onClick={() => setIsLocationModalOpen(true)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                                                <MapPin size={10} /> Search / Auto Detect
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="relative group">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="text" readOnly onClick={() => setIsLocationModalOpen(true)} required value={formData.address} placeholder="Search or detect your location..." className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all cursor-pointer" />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 pt-1">
+                                            <input type="text" name="lat" required readOnly value={formData.lat} placeholder="Latitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-[16px] text-xs font-bold text-slate-500 outline-none" />
+                                            <input type="text" name="lng" required readOnly value={formData.lng} placeholder="Longitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-[16px] text-xs font-bold text-slate-500 outline-none" />
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Shop Description</label>
                                         <textarea name="description" required value={formData.description} onChange={handleChange} placeholder="Describe your store and products..." className="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-[20px] text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all min-h-[80px] resize-none" />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between ml-1">
-                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Shop Location</label>
-                                            <button type="button" onClick={detectLocation} disabled={isDetecting} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1">
-                                                {isDetecting ? "Detecting..." : <><MapPin size={10} /> Detect My Location</>}
-                                            </button>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input type="text" name="lat" required readOnly value={formData.lat} placeholder="Latitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-500 outline-none" />
-                                            <input type="text" name="lng" required readOnly value={formData.lng} placeholder="Longitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-500 outline-none" />
-                                        </div>
                                     </div>
 
                                     <div className="pt-2">
@@ -561,6 +548,11 @@ const Auth = () => {
                     background: #CBD5E1;
                 }
             `}} />
+            <SellerLocationModal 
+                isOpen={isLocationModalOpen} 
+                onClose={() => setIsLocationModalOpen(false)} 
+                onSelectLocation={handleLocationSelect} 
+            />
         </div>
     );
 };

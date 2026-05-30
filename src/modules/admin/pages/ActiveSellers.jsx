@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
+import SellerTabs from '../components/SellerTabs';
 
 const ActiveSellers = () => {
     const navigate = useNavigate();
@@ -71,7 +72,6 @@ const ActiveSellers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
-    const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
     const [viewingSeller, setViewingSeller] = useState(null);
     const [editingSeller, setEditingSeller] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
@@ -123,22 +123,6 @@ const ActiveSellers = () => {
         });
     }, [sellers, searchTerm, filterCategory, advancedFilters]);
 
-    const handleOnboard = async (e) => {
-        e.preventDefault();
-        try {
-            await adminApi.createSeller({
-                ...formState,
-                isVerified: true,
-                isActive: true
-            });
-            setIsOnboardingOpen(false);
-            setFormState({ shopName: '', name: '', email: '', phone: '', password: '', category: 'Grocery', location: '', serviceRadius: 5 });
-            fetchSellers();
-        } catch (error) {
-            alert(error?.response?.data?.message || 'Onboarding failed');
-        }
-    };
-
     const handleEditUpdate = async (e) => {
         e.preventDefault();
         try {
@@ -164,6 +148,7 @@ const ActiveSellers = () => {
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
+            <SellerTabs />
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
@@ -173,13 +158,6 @@ const ActiveSellers = () => {
                     </h1>
                     <p className="ds-description mt-0.5">View and manage all active sellers.</p>
                 </div>
-                <button
-                    onClick={() => setIsOnboardingOpen(true)}
-                    className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:bg-slate-800 transition-all hover:-translate-y-0.5 flex items-center space-x-2"
-                >
-                    <HiOutlinePlus className="h-4 w-4" />
-                    <span>ADD NEW SELLER</span>
-                </button>
             </div>
 
             {/* Performance Stats */}
@@ -478,16 +456,16 @@ const ActiveSellers = () => {
                     </div>
                 )}
             </AnimatePresence>
-            {/* Onboarding / Edit Modal */}
+            {/* Edit Modal */}
             <AnimatePresence>
-                {(isOnboardingOpen || editingSeller) && (
+                {editingSeller && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
-                            onClick={() => { setIsOnboardingOpen(false); setEditingSeller(null); }}
+                            onClick={() => { setEditingSeller(null); }}
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -497,15 +475,15 @@ const ActiveSellers = () => {
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-900">{editingSeller ? 'Edit Shop Profile' : 'Onboard New Shop'}</h3>
+                                    <h3 className="text-xl font-bold text-slate-900">Edit Shop Profile</h3>
                                     <p className="text-xs text-slate-500 font-medium">Configure store settings and identity.</p>
                                 </div>
-                                <button onClick={() => { setIsOnboardingOpen(false); setEditingSeller(null); }} className="p-2 hover:bg-slate-100 rounded-full">
+                                <button onClick={() => { setEditingSeller(null); }} className="p-2 hover:bg-slate-100 rounded-full">
                                     <HiOutlineXMark className="h-5 w-5 text-slate-400" />
                                 </button>
                             </div>
 
-                            <form onSubmit={editingSeller ? handleEditUpdate : handleOnboard} className="space-y-4">
+                            <form onSubmit={handleEditUpdate} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Shop Name</label>
@@ -563,19 +541,6 @@ const ActiveSellers = () => {
                                     </div>
                                 </div>
 
-                                {!editingSeller && (
-                                    <div className="space-y-1">
-                                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={formState.password}
-                                            onChange={(e) => setFormState({ ...formState, password: e.target.value })}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-xs font-bold outline-none ring-1 ring-slate-100 focus:ring-primary/20 transition-all"
-                                        />
-                                    </div>
-                                )}
-
                                 <div className="grid grid-cols-4 gap-4 items-end">
                                     <div className="col-span-3 space-y-1">
                                         <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Coordinates (Lng, Lat)</label>
@@ -598,7 +563,7 @@ const ActiveSellers = () => {
                                 </div>
 
                                 <button type="submit" className="w-full py-3.5 bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-xl hover:bg-slate-800 transition-all transform active:scale-[0.98] mt-4">
-                                    {editingSeller ? 'UPDATE SHOP PROFILE' : 'FINALIZE ONBOARDING'}
+                                    UPDATE SHOP PROFILE
                                 </button>
                             </form>
                         </motion.div>

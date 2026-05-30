@@ -31,6 +31,7 @@ import {
     getLegacyStatusFromOrder,
     adminRouteMatchesOrder,
 } from '@/shared/utils/orderStatus';
+import OrderTabs from '../components/OrderTabs';
 
 const OrdersList = () => {
     const { status = 'all' } = useParams();
@@ -212,6 +213,7 @@ const OrdersList = () => {
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
+            <OrderTabs />
             {/* Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1">
                 <div>

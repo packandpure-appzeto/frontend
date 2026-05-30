@@ -16,7 +16,7 @@ import { useSellerDashboard } from '@/modules/seller/hooks/useSellerDashboard';
 import { useAdminOrderNotifications } from '@/modules/admin/hooks/useAdminOrderNotifications';
 
 const DashboardLayout = ({ children, navItems, title }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(window.innerWidth < 768);
   const { user, role } = useAuth();
   const location = useLocation();
 
@@ -27,8 +27,14 @@ const DashboardLayout = ({ children, navItems, title }) => {
   useAdminOrderNotifications(isAdmin);
 
   useEffect(() => {
-    setIsSidebarOpen(false);
+    if (window.innerWidth < 768) {
+      setIsSidebarCollapsed(true);
+    }
   }, [location.pathname]);
+
+  const handleMenuClick = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
 
   const ordersContextValue = useMemo(
     () =>
@@ -80,17 +86,18 @@ const DashboardLayout = ({ children, navItems, title }) => {
       <Sidebar
         items={navItems}
         title={title}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        isCollapsed={isSidebarCollapsed}
       />
 
       <motion.div
         className={cn(
-          'transition-all duration-300',
-          isAdmin || isSeller ? 'pl-0 md:pl-56' : 'pl-56',
+          'transition-all duration-300 flex-1 flex flex-col min-w-0',
+          isSidebarCollapsed 
+            ? 'pl-20' 
+            : (isAdmin ? 'pl-64 md:pl-72' : 'pl-56 md:pl-64')
         )}
       >
-        <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
+        <Topbar onMenuClick={handleMenuClick} />
         <motion.main
           className={cn(
             'p-4 md:p-6 min-h-screen',

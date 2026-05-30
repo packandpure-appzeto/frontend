@@ -290,9 +290,6 @@ const VendorManagementPage = () => {
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
           { key: "password", label: "Password (min 6 chars)" },
-          { key: "lat", label: "Latitude", type: "number" },
-          { key: "lng", label: "Longitude", type: "number" },
-          { key: "radius", label: "Service Radius (km)", type: "number" },
           { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"] },
         ]}
         values={vendorForm}
@@ -311,9 +308,6 @@ const VendorManagementPage = () => {
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
           { key: "password", label: "New Password (optional)" },
-          { key: "lat", label: "Latitude", type: "number" },
-          { key: "lng", label: "Longitude", type: "number" },
-          { key: "radius", label: "Service Radius (km)", type: "number" },
           { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"] },
         ]}
         values={vendorForm}

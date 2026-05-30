@@ -185,10 +185,6 @@ const CustomerManagement = () => {
                             {isExporting ? <RotateCw className="ds-icon-sm animate-spin" /> : <Download className="ds-icon-sm" />}
                             {isExporting ? 'EXPORTING...' : 'EXPORT'}
                         </button>
-                        <button className="ds-btn ds-btn-md bg-primary text-white shadow-lg shadow-primary/20">
-                            <UserPlus className="ds-icon-sm" />
-                            NEW CUSTOMER
-                        </button>
                     </>
                 }
             />
