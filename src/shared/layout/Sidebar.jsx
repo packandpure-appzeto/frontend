@@ -40,9 +40,16 @@ const SidebarItem = ({
   isHovered,
   onMouseEnter,
   onMouseLeave,
-  onClose
+  onClose,
+  isCollapsed
 }) => {
   const location = useLocation();
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
+
+  const labelClass = isAdmin ? "text-sm" : "text-xs";
+  const iconClass = isAdmin ? "h-5 w-5" : "h-4 w-4";
+  const childLabelClass = isAdmin ? "text-sm py-2 px-3" : "text-xs py-1.5 px-2.5";
 
   const hasChildren = item.children && item.children.length > 0;
   const isChildActive =
@@ -82,32 +89,37 @@ const SidebarItem = ({
           <div className="flex items-center space-x-2.5 z-10">
             <div
               className={cn(
-                "p-1.5 rounded-lg transition-all duration-500 shadow-lg",
+                "p-1.5 rounded-lg transition-all duration-500 shadow-lg flex-shrink-0",
                 isChildActive || isOpen
                   ? "bg-primary text-white shadow-primary/40 ring-2 ring-primary/20"
                   : "bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300",
               )}>
-              {item.icon && <item.icon className="h-4 w-4" />}
+              {item.icon && <item.icon className={iconClass} />}
             </div>
-            <span
+            {!isCollapsed && (
+              <span
+                className={cn(
+                  labelClass,
+                  "tracking-tight transition-all duration-300 truncate",
+                  isChildActive || isOpen ? "font-bold" : "font-semibold",
+                )}>
+                {item.label}
+              </span>
+            )}
+          </div>
+          {!isCollapsed && (
+            <div
               className={cn(
-                "text-xs tracking-tight transition-all duration-300",
-                isChildActive || isOpen ? "font-bold" : "font-semibold",
+                "transition-all duration-300 z-10 flex-shrink-0",
+                isOpen
+                  ? "rotate-180 text-primary"
+                  : "rotate-0 text-gray-600 group-hover:text-gray-400",
               )}>
-              {item.label}
-            </span>
-          </div>
-          <div
-            className={cn(
-              "transition-all duration-300 z-10",
-              isOpen
-                ? "rotate-180 text-primary"
-                : "rotate-0 text-gray-600 group-hover:text-gray-400",
-            )}>
-            <HiChevronDown className="h-4 w-4" />
-          </div>
+              <HiChevronDown className="h-4 w-4" />
+            </div>
+          )}
         </button>
-        {isOpen && (
+        {isOpen && !isCollapsed && (
           <div className="pl-9 pr-3 py-1 space-y-1 animate-in slide-in-from-top-2 fade-in duration-500">
             {item.children.map((child) => (
               <NavLink
@@ -117,7 +129,8 @@ const SidebarItem = ({
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(
-                    "block text-xs py-1.5 px-2.5 rounded-lg transition-all duration-300 relative",
+                    "block rounded-lg transition-all duration-300 relative",
+                    childLabelClass,
                     isActive
                       ? "text-white font-bold bg-white/10 shadow-sm ring-1 ring-white/5"
                       : "text-gray-500 hover:text-gray-300 hover:bg-white/5",
@@ -175,20 +188,23 @@ const SidebarItem = ({
 
           <div
             className={cn(
-              "p-1.5 rounded-lg transition-all duration-500 shadow-md z-10",
+              "p-1.5 rounded-lg transition-all duration-500 shadow-md z-10 flex-shrink-0",
               isActive
                 ? "bg-white/20 text-white"
                 : "bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300",
             )}>
-            {item.icon && <item.icon className="h-4 w-4" />}
+            {item.icon && <item.icon className={iconClass} />}
           </div>
-          <span
-            className={cn(
-              "text-xs tracking-tight transition-all duration-300 z-10",
-              isActive ? "font-bold" : "font-semibold",
-            )}>
-            {item.label}
-          </span>
+          {!isCollapsed && (
+            <span
+              className={cn(
+                labelClass,
+                "tracking-tight transition-all duration-300 z-10 truncate",
+                isActive ? "font-bold" : "font-semibold",
+              )}>
+              {item.label}
+            </span>
+          )}
           {isActive && (
             <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/30 rounded-l-full animate-in slide-in-from-right-1" />
           )}
@@ -198,25 +214,35 @@ const SidebarItem = ({
   );
 };
 
-const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hoveredIdx, setHoveredIdx }) => {
+const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hoveredIdx, setHoveredIdx, isCollapsed }) => {
   const { settings } = useSettings();
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
   const appName = settings?.appName || 'App';
 
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-shrink-0 flex h-16 items-center justify-between px-5 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent z-10">
         <div className="flex items-center space-x-2.5">
-          <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 transform -rotate-6 hover:rotate-0 transition-all duration-500 ease-out">
+          <div className="h-9 w-9 flex-shrink-0 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 transform -rotate-6 hover:rotate-0 transition-all duration-500 ease-out">
             <span className="text-lg font-black italic">{appName.charAt(0)}</span>
           </div>
-          <div>
-            <h1 className="text-base font-black tracking-tight text-white leading-none">
-              {appName}
-            </h1>
-            <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mt-1 block">
-              {title}
-            </span>
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0">
+              <h1 className={cn(
+                "font-black tracking-tight text-white leading-none truncate",
+                isAdmin ? "text-lg" : "text-base"
+              )}>
+                {appName}
+              </h1>
+              <span className={cn(
+                "font-black text-primary uppercase mt-1 block truncate",
+                isAdmin ? "text-[10px] tracking-[0.25em]" : "text-[9px] tracking-[0.2em]"
+              )}>
+                {title}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Mobile Close Button */}
@@ -234,45 +260,69 @@ const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hovered
         className="mt-4 px-3 space-y-1.5 flex-1 overflow-y-auto overscroll-contain custom-scrollbar-dark min-h-0 pb-6 relative z-20"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <p className="px-3 text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] mb-3">
-          Core Management
-        </p>
         <AnimatePresence>
-          {items.map((item, idx) => (
-            <SidebarItem
-              key={idx}
-              item={item}
-              isOpen={openMenu === item.label}
-              onToggle={() => handleToggle(item.label)}
-              onClose={onClose}
-              isHovered={hoveredIdx === idx}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseEnterWithClose={() => {
-                setHoveredIdx(idx);
-              }}
-              onMouseLeave={() => { }} // Handle in nav container
-            />
-          ))}
+          {items.map((item, idx) => {
+            if (item.sectionHeader) {
+              return (
+                <p key={`header-${idx}`} className={cn(
+                  "px-3 uppercase mb-3 pb-1 border-b border-white/5 truncate transition-all duration-300",
+                  isAdmin ? "font-medium text-white/40 text-[11px] tracking-[0.25em]" : "font-black text-gray-500 text-[9px] tracking-[0.2em]",
+                  idx > 0 ? "mt-6" : "",
+                  isCollapsed ? "opacity-0 h-0 overflow-hidden mb-0 pb-0 border-none mt-0" : ""
+                )}>
+                  {!isCollapsed && item.sectionHeader}
+                </p>
+              );
+            }
+
+            return (
+              <SidebarItem
+                key={idx}
+                item={item}
+                isOpen={openMenu === item.label}
+                onToggle={() => handleToggle(item.label)}
+                onClose={onClose}
+                isHovered={hoveredIdx === idx}
+                onMouseEnter={() => setHoveredIdx(idx)}
+                onMouseEnterWithClose={() => {
+                  setHoveredIdx(idx);
+                }}
+                onMouseLeave={() => { }} // Handle in nav container
+                isCollapsed={isCollapsed}
+              />
+            );
+          })}
         </AnimatePresence>
       </nav>
 
       <div className="p-4 border-t border-white/5 bg-gradient-to-t from-white/[0.02] to-transparent flex-shrink-0">
-        <div className="bg-white/5 rounded-lg p-3 shadow-sm border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all group cursor-pointer">
-          <div className="flex items-center space-x-2.5">
-            <div className="relative group">
+        <div className={cn(
+          "bg-white/5 rounded-lg shadow-sm border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all group cursor-pointer",
+          isCollapsed ? "p-2 flex justify-center" : "p-3"
+        )}>
+          <div className={cn("flex items-center", isCollapsed ? "justify-center" : "space-x-2.5")}>
+            <div className="relative group flex-shrink-0">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-indigo-500 to-violet-600 flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-110 transition-all duration-500">
                 A
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#0a0c10] shadow-sm animate-pulse"></div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">
-                {title?.toLowerCase().includes('seller') ? 'Seller Console' : 'Admin Console'}
-              </p>
-              <p className="text-[9px] text-gray-500 truncate font-black uppercase tracking-widest">
-                {title?.toLowerCase().includes('seller') ? 'Seller' : 'Super Admin'}
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className={cn(
+                  "font-bold text-white truncate group-hover:text-primary transition-colors",
+                  isAdmin ? "text-sm" : "text-xs"
+                )}>
+                  {title?.toLowerCase().includes('seller') ? 'Seller Console' : 'Admin Console'}
+                </p>
+                <p className={cn(
+                  "text-gray-500 truncate font-black uppercase tracking-widest",
+                  isAdmin ? "text-[10px]" : "text-[9px]"
+                )}>
+                  {title?.toLowerCase().includes('seller') ? 'Seller' : 'Super Admin'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -280,8 +330,10 @@ const SidebarContent = ({ items, title, onClose, openMenu, handleToggle, hovered
   );
 };
 
-const Sidebar = ({ items, title, isOpen, onClose }) => {
+const Sidebar = ({ items, title, isCollapsed = false }) => {
   const { role } = useAuth();
+  const isAdmin = role === 'admin';
+  const sidebarWidth = isAdmin ? 'w-64 md:w-72' : 'w-56';
   const [openMenu, setOpenMenu] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
@@ -292,52 +344,23 @@ const Sidebar = ({ items, title, isOpen, onClose }) => {
   const commonProps = {
     items,
     title,
-    onClose,
     openMenu,
     handleToggle,
     hoveredIdx,
-    setHoveredIdx
+    setHoveredIdx,
+    isCollapsed
   };
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop & Mobile Sidebar */}
       <aside className={cn(
-        "fixed left-0 inset-y-0 w-56 bg-[#0a0c10] text-gray-400 border-r border-white/5 shadow-[20px_0_60px_rgba(0,0,0,0.4)] md:flex flex-col z-50 transition-all duration-300",
-        (role === "admin" || role === "seller") ? "hidden md:flex" : "flex",
+        "fixed left-0 inset-y-0 bg-[#0a0c10] text-gray-400 border-r border-white/5 shadow-[20px_0_60px_rgba(0,0,0,0.4)] flex-col z-50 transition-all duration-300",
+        isCollapsed ? 'w-20' : sidebarWidth,
+        "flex"
       )}>
         <SidebarContent {...commonProps} />
       </aside>
-
-      {/* Mobile Sidebar (Drawer) */}
-      <AnimatePresence mode="wait">
-        {isOpen && (
-          <div className="fixed inset-0 z-[100] md:hidden">
-            {/* Backdrop Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
-            />
-
-            {/* Outer Container (Fixed Shell - NO TRANSFORM) */}
-            <div className="absolute left-0 inset-y-0 w-56 flex flex-col pointer-events-none">
-              {/* Inner Animation Wrapper (TRANSFORM APPLIED HERE) */}
-              <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
-                className="flex-1 bg-[#0a0c10] shadow-2xl flex flex-col pointer-events-auto min-h-0"
-              >
-                <SidebarContent {...commonProps} />
-              </motion.div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 };

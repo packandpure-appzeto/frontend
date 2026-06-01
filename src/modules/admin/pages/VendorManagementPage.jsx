@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Store } from "lucide-react";
+import { Store, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import SupplyModuleTable from "../components/supply/SupplyModuleTable";
 import {
   SupplyFormModal,
@@ -219,6 +220,19 @@ const VendorManagementPage = () => {
     }
   };
 
+  const toggleVendorStatus = async (row) => {
+    try {
+      const newStatus = !row.raw.isActive;
+      await adminApi.updateSeller(row.id, { isActive: newStatus, isVerified: newStatus });
+      await fetchSellers();
+      setInfoMessage(`Seller is now ${newStatus ? 'Active' : 'Inactive'}.`);
+      setInfoOpen(true);
+    } catch (error) {
+      setInfoMessage(error?.response?.data?.message || "Failed to update seller status.");
+      setInfoOpen(true);
+    }
+  };
+
   const stats = useMemo(() => {
     const active = rows.filter((item) => item.status.toLowerCase() === "active").length;
     const withGeo = rows.filter((item) => item.location !== "N/A").length;
@@ -257,7 +271,36 @@ const VendorManagementPage = () => {
           { key: "phoneNumber", label: "Phone Number" },
           { key: "location", label: "Location" },
           { key: "radius", label: "Radius (km)" },
-          { key: "status", label: "Status" },
+          { 
+            key: "status", 
+            label: "Status",
+            render: (row) => (
+               <div className="flex items-center gap-2">
+                 <button 
+                     onClick={() => toggleVendorStatus(row)}
+                     className={cn(
+                         "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300",
+                         row.raw.isActive ? "bg-emerald-500" : "bg-slate-300"
+                     )}
+                 >
+                     <span 
+                         className={cn(
+                             "inline-flex items-center justify-center h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 shadow-sm",
+                             row.raw.isActive ? "translate-x-4" : "translate-x-1"
+                         )} 
+                     >
+                       {row.raw.isActive && <Check className="text-emerald-500 h-2.5 w-2.5" />}
+                     </span>
+                 </button>
+                 <span className={cn(
+                     "text-[10px] font-bold tracking-wider uppercase",
+                     row.raw.isActive ? "text-emerald-600" : "text-slate-500"
+                 )}>
+                     {row.raw.isActive ? 'Active' : 'Inactive'}
+                 </span>
+               </div>
+            )
+          },
         ]}
         rows={rows}
         statusColumn="status"
@@ -290,9 +333,6 @@ const VendorManagementPage = () => {
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
           { key: "password", label: "Password (min 6 chars)" },
-          { key: "lat", label: "Latitude", type: "number" },
-          { key: "lng", label: "Longitude", type: "number" },
-          { key: "radius", label: "Service Radius (km)", type: "number" },
           { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"] },
         ]}
         values={vendorForm}
@@ -311,9 +351,6 @@ const VendorManagementPage = () => {
           { key: "email", label: "Email" },
           { key: "phone", label: "Phone" },
           { key: "password", label: "New Password (optional)" },
-          { key: "lat", label: "Latitude", type: "number" },
-          { key: "lng", label: "Longitude", type: "number" },
-          { key: "radius", label: "Service Radius (km)", type: "number" },
           { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"] },
         ]}
         values={vendorForm}

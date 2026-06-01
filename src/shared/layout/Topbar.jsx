@@ -186,7 +186,7 @@ const Topbar = ({ onMenuClick }) => {
             <div className="flex items-center flex-1 mr-4 overflow-visible">
                 <button
                     onClick={onMenuClick}
-                    className="p-2.5 mr-2 bg-gray-100/80 hover:bg-white rounded-xl text-gray-600 hover:text-primary transition-all duration-300 md:hidden border border-transparent hover:border-primary/20 shadow-sm"
+                    className="p-2.5 mr-2 bg-gray-100/80 hover:bg-white rounded-xl text-gray-600 hover:text-primary transition-all duration-300 border border-transparent hover:border-primary/20 shadow-sm"
                 >
                     <HiOutlineMenu className="h-5 w-5" />
                 </button>

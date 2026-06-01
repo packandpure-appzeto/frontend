@@ -147,7 +147,7 @@ const Dashboard = () => {
       title: "Manage Stock",
       description: "Update your inventory levels",
       icon: Package,
-      path: "/seller/stock",
+      path: "/seller/inventory",
       variant: "outline",
     },
   ];

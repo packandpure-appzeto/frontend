@@ -108,6 +108,7 @@ const HubSettings = React.lazy(() => import("../pages/HubSettings"));
 const Reports = React.lazy(() => import("../pages/Reports"));
 
 const navItems = [
+  { sectionHeader: "Core Management" },
   {
     label: "Dashboard",
     path: "/admin",
@@ -115,6 +116,20 @@ const navItems = [
     color: "indigo",
     end: true,
   },
+  {
+    label: "Orders",
+    icon: ClipboardList,
+    color: "fuchsia",
+    path: "/admin/orders/all"
+  },
+  {
+    label: "Reports",
+    path: "/admin/reports",
+    icon: Sparkles,
+    color: "indigo",
+  },
+
+  { sectionHeader: "Menu & Categories" },
   {
     label: "Categories",
     icon: Tag,
@@ -124,32 +139,6 @@ const navItems = [
       { label: "Parent Categories", path: "/admin/categories/level2" },
       { label: "Sub-Categories", path: "/admin/categories/sub" },
     ],
-  },
-  { label: "Products", path: "/admin/products", icon: Box, color: "amber" },
-  {
-    label: "Hub Inventory",
-    path: "/admin/hub-inventory",
-    icon: Boxes,
-    color: "teal",
-  },
-  { label: "Vendors", path: "/admin/vendors", icon: Store, color: "lime" },
-  {
-    label: "Purchase Requests",
-    path: "/admin/purchase-requests",
-    icon: FileClock,
-    color: "orange",
-  },
-  {
-    label: "Pickup Partners",
-    path: "/admin/pickup-partners",
-    icon: Truck,
-    color: "emerald",
-  },
-  {
-    label: "Delivery Partners",
-    path: "/admin/delivery-partners",
-    icon: Bike,
-    color: "indigo",
   },
   {
     label: "Marketing Tools",
@@ -164,24 +153,43 @@ const navItems = [
       { label: "Shop by Store", path: "/admin/shop-by-store" },
     ],
   },
+
+  { sectionHeader: "Product Management" },
+  { label: "Products", path: "/admin/products", icon: Box, color: "amber" },
   {
-    label: "Customer Support",
-    icon: Receipt,
-    color: "emerald",
-    children: [
-      { label: "Help Tickets", path: "/admin/support-tickets" },
-      { label: "Review Content", path: "/admin/moderation" },
-    ],
+    label: "Hub Inventory",
+    path: "/admin/hub-inventory",
+    icon: Boxes,
+    color: "teal",
   },
+
+  { sectionHeader: "Vendors & Sellers" },
+  { label: "Vendors", path: "/admin/vendors", icon: Store, color: "lime" },
   {
     label: "Sellers",
     icon: Building2,
     color: "blue",
-    children: [
-      { label: "Active Sellers", path: "/admin/sellers/active" },
-      { label: "Waiting for Review", path: "/admin/sellers/pending" },
-      { label: "Seller Locations", path: "/admin/seller-locations" },
-    ],
+    path: "/admin/sellers/active"
+  },
+  {
+    label: "Purchase Requests",
+    path: "/admin/purchase-requests",
+    icon: FileClock,
+    color: "orange",
+  },
+
+  { sectionHeader: "Delivery & Logistics" },
+  {
+    label: "Pickup Partners",
+    path: "/admin/pickup-partners",
+    icon: Truck,
+    color: "emerald",
+  },
+  {
+    label: "Delivery Partners",
+    path: "/admin/delivery-partners",
+    icon: Bike,
+    color: "indigo",
   },
   {
     label: "Delivery Drivers",
@@ -194,6 +202,21 @@ const navItems = [
       { label: "Send Money", path: "/admin/delivery-funds" },
     ],
   },
+
+  { sectionHeader: "Customers & Support" },
+  { label: "Customers", path: "/admin/customers", icon: Users, color: "sky" },
+  {
+    label: "Customer Support",
+    icon: Receipt,
+    color: "emerald",
+    children: [
+      { label: "Help Tickets", path: "/admin/support-tickets" },
+      { label: "Review Content", path: "/admin/moderation" },
+    ],
+  },
+  { label: "FAQs", path: "/admin/faqs", icon: HelpCircle, color: "pink" },
+
+  { sectionHeader: "Finance" },
   { label: "Wallet", path: "/admin/wallet", icon: Wallet, color: "violet" },
   {
     label: "Money Requests",
@@ -213,39 +236,13 @@ const navItems = [
     icon: CircleDollarSign,
     color: "green",
   },
-  { label: "Customers", path: "/admin/customers", icon: Users, color: "sky" },
-  { label: "FAQs", path: "/admin/faqs", icon: HelpCircle, color: "pink" },
-  {
-    label: "Orders",
-    icon: ClipboardList,
-    color: "fuchsia",
-    children: [
-      { label: "All Orders", path: "/admin/orders/all" },
-      { label: "New Orders", path: "/admin/orders/pending" },
-      { label: "Being Prepared", path: "/admin/orders/processed" },
-      { label: "On the Way", path: "/admin/orders/out-for-delivery" },
-      { label: "Delivered", path: "/admin/orders/delivered" },
-      { label: "Cancelled", path: "/admin/orders/cancelled" },
-      { label: "Returned", path: "/admin/orders/returned" },
-    ],
-  },
+
+  { sectionHeader: "Settings" },
   {
     label: "Logistics & Returns",
     path: "/admin/billing",
     icon: RotateCcw,
     color: "red",
-  },
-  {
-    label: "Reports",
-    path: "/admin/reports",
-    icon: Sparkles,
-    color: "indigo",
-  },
-  {
-    label: "Settings",
-    path: "/admin/settings",
-    icon: Settings,
-    color: "slate",
   },
   {
     label: "Hub Settings",
@@ -254,7 +251,18 @@ const navItems = [
     color: "indigo",
   },
   { label: "My Profile", path: "/admin/profile", icon: User, color: "indigo" },
-  { label: "System Settings", path: "/admin/env", icon: Terminal, color: "dark" },
+  {
+    label: "Settings",
+    path: "/admin/settings",
+    icon: Settings,
+    color: "slate",
+  },
+  {
+    label: "System Settings",
+    path: "/admin/env",
+    icon: Terminal,
+    color: "dark",
+  },
 ];
 
 const BillingCharges = React.lazy(() => import("../pages/BillingCharges"));

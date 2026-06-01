@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
 import { toast } from 'sonner';
+import SellerTabs from '../components/SellerTabs';
 
 const PendingSellers = () => {
     const navigate = useNavigate();
@@ -102,6 +103,7 @@ const PendingSellers = () => {
 
     return (
         <div className="ds-section-spacing animate-in fade-in slide-in-from-bottom-2 duration-700 pb-16">
+            <SellerTabs />
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>

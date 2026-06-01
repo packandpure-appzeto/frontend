@@ -16,12 +16,15 @@ import {
     CheckCircle2, 
     ShieldCheck,
     Building2,
-    Sparkles
+    Sparkles,
+    User,
+    X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { sellerApi } from '../services/sellerApi';
 import { cn } from '@/lib/utils';
 import Badge from '@shared/components/ui/Badge';
+import SellerLocationModal from '../components/SellerLocationModal';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -51,7 +54,7 @@ const Auth = () => {
         confirmPassword: '',
     });
 
-    const [isDetecting, setIsDetecting] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
     const [documents, setDocuments] = useState({
         tradeLicense: null,
@@ -59,29 +62,13 @@ const Auth = () => {
         idProof: null
     });
 
-    const detectLocation = () => {
-        setIsDetecting(true);
-        if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setFormData(prev => ({
-                        ...prev,
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    }));
-                    setIsDetecting(false);
-                    toast.success("Location detected successfully!");
-                },
-                (error) => {
-                    console.error("Location Error:", error);
-                    setIsDetecting(false);
-                    toast.error("Failed to detect location. Please enter manually.");
-                }
-            );
-        } else {
-            setIsDetecting(false);
-            toast.error("Geolocation is not supported by your browser.");
-        }
+    const handleLocationSelect = (loc) => {
+        setFormData(prev => ({
+            ...prev,
+            address: loc.address,
+            lat: loc.lat,
+            lng: loc.lng
+        }));
     };
 
     const handleChange = (e) => {
@@ -224,24 +211,61 @@ const Auth = () => {
         }
     };
 
-    const FileInput = ({ name, label }) => (
-        <label className="relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-3xl hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer group bg-slate-50/50">
-            <input type="file" name={name} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
-            {documents[name] ? (
-                <div className="flex flex-col items-center text-emerald-600 animate-in zoom-in-95 duration-300">
-                    <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
-                        <CheckCircle2 size={20} />
+    const handleRemoveFile = (name, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDocuments(prev => ({ ...prev, [name]: null }));
+    };
+
+    const FileInput = ({ name, label }) => {
+        const file = documents[name];
+        const isImage = file && file.type.startsWith('image/');
+        const previewUrl = isImage ? URL.createObjectURL(file) : null;
+
+        return (
+            <label className={cn(
+                "relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-3xl transition-all group overflow-hidden",
+                file ? "border-indigo-200 bg-white" : "border-slate-200 hover:bg-slate-50 hover:border-indigo-300 bg-slate-50/50 cursor-pointer"
+            )}>
+                {!file && <input type="file" name={name} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />}
+                
+                {file ? (
+                    <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center group/preview">
+                        {isImage ? (
+                            <>
+                                <img src={previewUrl} alt={label} className="w-full h-full object-cover opacity-60 transition-opacity" />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                        <CheckCircle2 size={12} className="text-emerald-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Attached</span>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center text-emerald-600 animate-in zoom-in-95 duration-300">
+                                <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest">PDF Attached</span>
+                            </div>
+                        )}
+                        <button 
+                            type="button"
+                            onClick={(e) => handleRemoveFile(name, e)}
+                            className="absolute top-2 right-2 h-6 w-6 bg-white/90 backdrop-blur-sm hover:bg-rose-50 hover:text-rose-600 text-slate-500 rounded-full flex items-center justify-center transition-all shadow-sm opacity-0 group-hover/preview:opacity-100 z-10"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest">Attached</span>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center text-slate-400 group-hover:text-indigo-600 transition-colors">
-                    <Upload size={18} className="mb-1 group-hover:-translate-y-1 transition-transform" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">{label}</span>
-                </div>
-            )}
-        </label>
-    );
+                ) : (
+                    <div className="flex flex-col items-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                        <Upload size={18} className="mb-1 group-hover:-translate-y-1 transition-transform" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">{label}</span>
+                    </div>
+                )}
+            </label>
+        );
+    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-4 lg:p-6 font-['Outfit',_sans-serif] relative">
@@ -400,26 +424,27 @@ const Auth = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Shop Address</label>
-                                        <textarea name="address" required value={formData.address} onChange={handleChange} placeholder="Enter full physical address..." className="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-[20px] text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all min-h-[80px] resize-none" />
+                                        <div className="flex items-center justify-between ml-1">
+                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Shop Location & Address</label>
+                                            <button type="button" onClick={() => setIsLocationModalOpen(true)} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                                                <MapPin size={10} /> Search / Auto Detect
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="relative group">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={18} />
+                                            <input type="text" readOnly onClick={() => setIsLocationModalOpen(true)} required value={formData.address} placeholder="Search or detect your location..." className="w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-transparent rounded-[20px] text-sm font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all cursor-pointer" />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 pt-1">
+                                            <input type="text" name="lat" required readOnly value={formData.lat} placeholder="Latitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-[16px] text-xs font-bold text-slate-500 outline-none" />
+                                            <input type="text" name="lng" required readOnly value={formData.lng} placeholder="Longitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-[16px] text-xs font-bold text-slate-500 outline-none" />
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Shop Description</label>
                                         <textarea name="description" required value={formData.description} onChange={handleChange} placeholder="Describe your store and products..." className="w-full px-5 py-3 bg-slate-50 border-2 border-transparent rounded-[20px] text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-indigo-100 transition-all min-h-[80px] resize-none" />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between ml-1">
-                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Shop Location</label>
-                                            <button type="button" onClick={detectLocation} disabled={isDetecting} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline flex items-center gap-1">
-                                                {isDetecting ? "Detecting..." : <><MapPin size={10} /> Detect My Location</>}
-                                            </button>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input type="text" name="lat" required readOnly value={formData.lat} placeholder="Latitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-500 outline-none" />
-                                            <input type="text" name="lng" required readOnly value={formData.lng} placeholder="Longitude" className="w-full px-5 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-500 outline-none" />
-                                        </div>
                                     </div>
 
                                     <div className="pt-2">
@@ -561,6 +586,11 @@ const Auth = () => {
                     background: #CBD5E1;
                 }
             `}} />
+            <SellerLocationModal 
+                isOpen={isLocationModalOpen} 
+                onClose={() => setIsLocationModalOpen(false)} 
+                onSelectLocation={handleLocationSelect} 
+            />
         </div>
     );
 };

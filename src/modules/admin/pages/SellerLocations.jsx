@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
 import { toast } from 'sonner';
+import SellerTabs from '../components/SellerTabs';
 
 const SellerLocations = () => {
     const [sellers, setSellers] = useState([]);
@@ -90,6 +91,7 @@ const SellerLocations = () => {
 
     return (
         <div className="h-[calc(100vh-120px)] flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
+            <SellerTabs />
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0 px-1">
                 <div>

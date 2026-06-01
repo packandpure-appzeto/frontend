@@ -112,7 +112,7 @@ const SupplyModuleTable = ({
                       const value = row[column.key];
                       return (
                         <td key={column.key} className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">
-                          {statusColumn === column.key ? <StatusPill value={value} /> : value}
+                          {column.render ? column.render(row) : (statusColumn === column.key ? <StatusPill value={value} /> : value)}
                         </td>
                       );
                     })}
