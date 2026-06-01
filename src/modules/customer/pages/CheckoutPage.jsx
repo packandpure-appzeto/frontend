@@ -40,6 +40,8 @@ import {
 } from "@/core/services/orderSocket";
 import CheckoutCollapsible from "../components/checkout/CheckoutCollapsible";
 import { BRAND_COLOR } from "../constants/brandTheme";
+import { cartKey } from "@/shared/utils/variantHelpers";
+import { resolveOrderItemVariantLabel } from "@/shared/utils/orderItemDisplay";
 import {
   Dialog,
   DialogContent,
@@ -424,6 +426,10 @@ const CheckoutPage = () => {
           quantity: item.quantity,
           price: item.price,
           image: item.image,
+          variantId: item.variantId || item.selectedVariantId || undefined,
+          variantSlot:
+            [item.variantLabel || item.weight, item.unit].filter(Boolean).join(" · ") ||
+            undefined,
         })),
       };
 
@@ -849,9 +855,22 @@ const CheckoutPage = () => {
                 Your items
               </h3>
               <div className="space-y-4">
-              {cart.map((item) => (
+              {cart.map((item) => {
+                const productId = item.productId || item.id || item._id;
+                const variantId = item.variantId || item.selectedVariantId || null;
+                const lineKey = cartKey(productId, variantId);
+                const variantLabel =
+                  item.variantLabel ||
+                  item.weight ||
+                  resolveOrderItemVariantLabel({
+                    variantSlot: null,
+                    variantId,
+                    product: { variants: item.variants, unit: item.unit },
+                  });
+
+                return (
                 <div
-                  key={item.id}
+                  key={lineKey}
                   className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                   <div className="h-20 w-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0">
                     <img
@@ -864,9 +883,14 @@ const CheckoutPage = () => {
                     <h4 className="font-bold text-slate-800 mb-1">
                       {item.name}
                     </h4>
+                    {variantLabel ? (
+                      <p className="mb-1 text-[11px] font-semibold text-[#E23744]">
+                        {variantLabel}
+                      </p>
+                    ) : null}
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(productId, variantId || undefined)}
                       className="mt-1 flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
                     >
                       <Trash2 size={12} /> Remove
@@ -877,8 +901,8 @@ const CheckoutPage = () => {
                       <button
                         onClick={() =>
                           item.quantity > 1
-                            ? updateQuantity(item.id, -1)
-                            : removeFromCart(item.id)
+                            ? updateQuantity(productId, -1, variantId || undefined)
+                            : removeFromCart(productId, variantId || undefined)
                         }
                         className="text-white p-1 hover:bg-white/20 rounded transition-colors">
                         <Minus size={14} strokeWidth={3} />
@@ -887,7 +911,7 @@ const CheckoutPage = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, 1)}
+                        onClick={() => updateQuantity(productId, 1, variantId || undefined)}
                         className="text-white p-1 hover:bg-white/20 rounded transition-colors">
                         <Plus size={14} strokeWidth={3} />
                       </button>
@@ -897,7 +921,7 @@ const CheckoutPage = () => {
                     </p>
                   </div>
                 </div>
-              ))}
+              );})}
               </div>
             </section>
           </div>

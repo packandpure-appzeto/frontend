@@ -25,6 +25,7 @@ export const CustomerPages = {
   OrderDetailPage: lazy(() => import('@modules/customer/pages/OrderDetailPage')),
   ProductDetailPage: lazy(() => import('@modules/customer/pages/ProductDetailPage')),
   CheckoutPage: lazy(() => import('@modules/customer/pages/CheckoutPage')),
+  CartPage: lazy(() => import('@modules/customer/pages/CartPage')),
   SearchPage: lazy(() => import('@modules/customer/pages/SearchPage')),
   WalletPage: lazy(() => import('@modules/customer/pages/WalletPage')),
 };

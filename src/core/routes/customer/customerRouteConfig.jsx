@@ -83,6 +83,7 @@ export const customerRouteChildren = [
           </ProtectedRoute>
         ),
       },
+      { path: 'cart', element: <P.CartPage /> },
       { path: 'checkout', element: <P.CheckoutPage /> },
       {
         path: 'profile',

@@ -1,16 +1,19 @@
-import React from 'react';
-import { Heart, Minus, Plus, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useToast } from '@shared/components/ui/Toast';
 import { useProductDetail } from '../../context/ProductDetailContext';
+import {
+  PRODUCT_IMAGE_PLACEHOLDER,
+  resolveProductImageUrl,
+} from '@shared/utils/productDisplay';
 
-const PLACEHOLDER_IMAGE =
-  'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=200&h=200&fit=crop';
+const ACCENT = '#E23744';
 
 /**
- * Mobile landing product row — shows brand, category, variant, price, stock.
+ * Mobile landing product row — Blinkit-style; variant + price; no hub stock labels.
  */
 const HomeProductCard = ({ product }) => {
   const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
@@ -22,8 +25,8 @@ const HomeProductCard = ({ product }) => {
   const cartItem = cart.find(
     (item) =>
       String(item.productId || item.id || item._id) === String(productId) &&
-      String(item.variantId || item.selectedVariantId || "") ===
-        String(product.selectedVariantId || ""),
+      String(item.variantId || item.selectedVariantId || '') ===
+        String(product.selectedVariantId || ''),
   );
   const quantity = cartItem?.quantity || 0;
   const wishlisted = isInWishlist(productId);
@@ -33,44 +36,20 @@ const HomeProductCard = ({ product }) => {
     product.hasMultipleVariants &&
     (product.variantCount > 1 || (product.variants?.length || 0) > 1);
 
-  const priceText =
-    product.hasMultipleVariants && product.displayPrice != null
-      ? `From ₹${Number(product.displayPrice).toLocaleString('en-IN')}`
-      : `₹${Number(product.price || product.displayPrice || 0).toLocaleString('en-IN')}`;
+  const unitLine =
+    product.variantLabel ||
+    product.weight ||
+    (product.unit ? `1 ${product.unit}` : null);
 
-  const categoryLine = [product.subcategoryName, product.categoryName]
-    .filter(Boolean)
-    .join(' · ');
+  const showMrp = Number(product.originalPrice) > Number(product.price);
 
-  const metaLine = [product.variantLabel || product.weight, product.unit]
-    .filter(Boolean)
-    .join(' · ');
+  const [imageSrc, setImageSrc] = useState(() => resolveProductImageUrl(product));
 
-  const stockLine =
-    !inStock
-      ? 'Out of stock'
-      : product.stockQty != null
-        ? `${product.stockQty} available`
-        : 'In stock';
+  useEffect(() => {
+    setImageSrc(resolveProductImageUrl(product));
+  }, [product]);
 
   const handleOpen = () => openProduct?.(product);
-
-  const firstVariantProduct = React.useMemo(() => {
-    const first = product?.variants?.[0];
-    if (!first) return product;
-    const sale = Number(first.salePrice ?? first.price) || 0;
-    const mrp = Number(first.price) || sale;
-    const stock = Number(first.stock);
-    return {
-      ...product,
-      selectedVariantId: String(first._id || first.id || ""),
-      price: sale || product.price,
-      originalPrice: mrp || product.originalPrice,
-      weight: first.name || product.weight,
-      variantLabel: first.name || product.variantLabel,
-      stockQty: Number.isFinite(stock) ? stock : product.stockQty,
-    };
-  }, [product]);
 
   const handleAdd = (e) => {
     e.stopPropagation();
@@ -95,94 +74,90 @@ const HomeProductCard = ({ product }) => {
   return (
     <article
       className={cn(
-        'overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm',
+        'relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm',
         !inStock && 'opacity-95',
       )}
     >
       {!inStock && (
-        <div className="border-b border-brand-100 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700">
-          Out of stock — tap to get notified
+        <div className="border-b border-rose-100 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600">
+          Out of stock
         </div>
       )}
 
-      <div className="flex gap-3 p-3" onClick={handleOpen} role="button" tabIndex={0}>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            {product.brand ? (
-              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                {product.brand}
-              </span>
-            ) : null}
-            {product.fulfillmentLabel ? (
-              <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">
-                {product.fulfillmentLabel}
-              </span>
-            ) : null}
-          </div>
-
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
+      <div className="flex min-h-[108px] gap-2 p-3 pr-2">
+        <button
+          type="button"
+          onClick={handleOpen}
+          className="flex min-w-0 flex-1 flex-col pr-1 text-left"
+        >
+          <h3 className="line-clamp-2 pr-6 text-[13px] font-semibold leading-snug text-slate-900">
             {product.name}
           </h3>
 
-          {categoryLine ? (
-            <p className="mt-0.5 line-clamp-1 text-[11px] font-medium text-slate-500">
-              {categoryLine}
+          {unitLine ? (
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-medium text-[#E23744]">
+              {unitLine}
             </p>
           ) : null}
 
-          {metaLine ? (
-            <p className="mt-1 line-clamp-1 text-xs font-semibold text-brand-600">
-              {metaLine}
-            </p>
-          ) : null}
-
-          <div className="mt-2 flex flex-wrap items-baseline gap-2">
-            <span
-              className={cn(
-                'text-lg font-bold',
-                inStock ? 'text-slate-900' : 'text-slate-400',
-              )}
-            >
-              {priceText}
-            </span>
-            {product.originalPrice > product.price && inStock ? (
-              <span className="text-xs text-slate-400 line-through">
-                ₹{Number(product.originalPrice).toLocaleString('en-IN')}
-              </span>
-            ) : null}
+          <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-baseline gap-1.5">
+                <span
+                  className={cn(
+                    'text-[15px] font-bold',
+                    inStock ? 'text-slate-900' : 'text-slate-400',
+                  )}
+                >
+                  {product.hasMultipleVariants && product.displayPrice != null
+                    ? `From ₹${Number(product.displayPrice).toLocaleString('en-IN')}`
+                    : `₹${Number(product.price || product.displayPrice || 0).toLocaleString('en-IN')}`}
+                </span>
+                {showMrp && inStock ? (
+                  <span className="text-[11px] font-medium text-slate-400 line-through">
+                    ₹{Number(product.originalPrice).toLocaleString('en-IN')}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </div>
+        </button>
 
-          <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-slate-500">
-            <Package size={12} className="shrink-0" />
-            {stockLine}
-          </p>
-        </div>
-
-        <div className="relative flex w-[92px] shrink-0 flex-col items-center">
+        <div className="flex w-[92px] shrink-0 flex-col items-end justify-between">
           <button
             type="button"
             onClick={handleWishlist}
-            className="absolute right-0 top-0 z-10 rounded-full p-1 text-slate-300 hover:text-brand-600"
+            className="z-10 rounded-full p-1 hover:bg-slate-50"
             aria-label="Wishlist"
           >
             <Heart
               size={18}
-              className={cn(wishlisted && 'fill-brand-600 text-brand-600')}
+              className={cn(
+                wishlisted ? 'fill-[#E23744] text-[#E23744]' : 'text-slate-400',
+              )}
             />
           </button>
 
-          <div className="mt-5 flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+          <button
+            type="button"
+            onClick={handleOpen}
+            className="relative mb-1 h-[72px] w-[88px] overflow-hidden rounded-xl border border-slate-100 bg-slate-50"
+          >
             <img
-              src={product.image || PLACEHOLDER_IMAGE}
+              src={imageSrc}
               alt={product.name}
-              className="h-full w-full object-contain p-1"
+              className="h-full w-full object-contain p-1.5"
               loading="lazy"
+              onError={() => setImageSrc(PRODUCT_IMAGE_PLACEHOLDER)}
             />
-          </div>
+          </button>
 
-          <div className="mt-2 w-full">
+          <div className="flex w-full justify-end">
             {quantity > 0 && !mustPickVariant ? (
-              <div className="flex min-w-[88px] items-center justify-between rounded-xl border-2 border-brand-600 px-0.5">
+              <div
+                className="flex min-w-[88px] items-center justify-between rounded-lg border-2 px-0.5"
+                style={{ borderColor: ACCENT }}
+              >
                 <button
                   type="button"
                   onClick={(e) => {
@@ -192,11 +167,15 @@ const HomeProductCard = ({ product }) => {
                     else
                       updateQuantity(productId, -1, product.selectedVariantId);
                   }}
-                  className="p-1.5 text-brand-600"
+                  className="p-1.5"
+                  style={{ color: ACCENT }}
                 >
                   <Minus size={14} strokeWidth={3} />
                 </button>
-                <span className="min-w-[20px] text-center text-sm font-bold text-brand-600">
+                <span
+                  className="min-w-[20px] text-center text-sm font-bold"
+                  style={{ color: ACCENT }}
+                >
                   {quantity}
                 </span>
                 <button
@@ -205,7 +184,8 @@ const HomeProductCard = ({ product }) => {
                     e.stopPropagation();
                     updateQuantity(productId, 1, product.selectedVariantId);
                   }}
-                  className="p-1.5 text-brand-600"
+                  className="p-1.5"
+                  style={{ color: ACCENT }}
                 >
                   <Plus size={14} strokeWidth={3} />
                 </button>
@@ -216,9 +196,9 @@ const HomeProductCard = ({ product }) => {
                 disabled={!inStock}
                 onClick={handleAdd}
                 className={cn(
-                  'w-full rounded-xl border-2 py-2 text-xs font-bold uppercase tracking-wide',
+                  'w-full rounded-lg border-2 py-2 text-xs font-bold uppercase tracking-wide',
                   inStock
-                    ? 'border-brand-600 bg-white text-brand-600 hover:bg-brand-50'
+                    ? 'border-[#E23744] bg-white text-[#E23744] hover:bg-rose-50'
                     : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300',
                 )}
               >

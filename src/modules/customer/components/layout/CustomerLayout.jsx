@@ -15,9 +15,9 @@ const CustomerLayout = ({ children, showHeader: showHeaderProp, fullHeight = fal
     // Route-based visibility logic
     const path = location.pathname.replace(/\/$/, '') || '/';
 
-    const hideHeaderRoutes = ['/', '/categories', '/offers', '/orders', '/transactions', '/profile', '/profile/edit', '/wishlist', '/addresses', '/wallet', '/support', '/privacy', '/about', '/terms', '/checkout', '/search', '/chat'];
-    const hideBottomNavRoutes = ['/checkout', '/search', '/chat'];
-    const hideCartRoutes = ['/checkout', '/search', '/chat'];
+    const hideHeaderRoutes = ['/', '/categories', '/offers', '/orders', '/transactions', '/profile', '/profile/edit', '/wishlist', '/addresses', '/wallet', '/support', '/privacy', '/about', '/terms', '/checkout', '/cart', '/search', '/chat'];
+    const hideBottomNavRoutes = ['/checkout', '/cart', '/search', '/chat'];
+    const hideCartRoutes = ['/checkout', '/cart', '/search', '/chat'];
 
     // If props are passed, use them. Otherwise, use route-based logic.
     const showHeader = showHeaderProp !== undefined ? showHeaderProp : (!hideHeaderRoutes.includes(path) && !path.startsWith('/category') && !path.startsWith('/orders'));
@@ -52,7 +52,7 @@ const CustomerLayout = ({ children, showHeader: showHeaderProp, fullHeight = fal
             {showCart && <MiniCart />}
             <ProductDetailSheet />
 
-            <div className="w-full">
+            <div className="hidden w-full md:block">
                 <Footer />
             </div>
 

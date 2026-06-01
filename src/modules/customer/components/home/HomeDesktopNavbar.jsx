@@ -79,6 +79,13 @@ const HomeDesktopNavbar = ({
       >
         <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-6 py-3 lg:px-8">
           <div className="flex shrink-0 flex-col gap-1.5">
+            <Link to="/" className="block w-fit">
+              <img
+                src={logoUrl}
+                alt={appName}
+                className="h-9 w-auto max-w-[160px] object-contain object-left"
+              />
+            </Link>
             <button
               type="button"
               onClick={onLocationClick}
@@ -95,13 +102,6 @@ const HomeDesktopNavbar = ({
                 <ChevronDown size={14} className="shrink-0 text-slate-400" />
               </span>
             </button>
-            <Link to="/" className="block w-fit">
-              <img
-                src={logoUrl}
-                alt={appName}
-                className="h-9 w-auto max-w-[160px] object-contain object-left"
-              />
-            </Link>
           </div>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">

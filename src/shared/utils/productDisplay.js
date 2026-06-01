@@ -1,6 +1,42 @@
 /**
  * Customer catalog display — card price from first variant; keeps full variants[] for picker.
  */
+
+export const PRODUCT_IMAGE_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop';
+
+/** Resolve a usable image URL (absolute Cloudinary, relative upload path, or placeholder). */
+export function resolveProductImageUrl(product) {
+  if (!product || typeof product !== 'object') return PRODUCT_IMAGE_PLACEHOLDER;
+
+  const candidates = [
+    product.image,
+    product.mainImage,
+    ...(Array.isArray(product.galleryImages) ? product.galleryImages : []),
+    ...(Array.isArray(product.images) ? product.images : []),
+  ];
+
+  for (const raw of candidates) {
+    const url = String(raw || '').trim();
+    if (!url) continue;
+    if (
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('data:') ||
+      url.startsWith('blob:')
+    ) {
+      return url;
+    }
+    const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:7000/api').replace(
+      /\/api\/?$/,
+      '',
+    );
+    return `${apiBase}${url.startsWith('/') ? url : `/${url}`}`;
+  }
+
+  return PRODUCT_IMAGE_PLACEHOLDER;
+}
+
 function resolveCategoryName(p) {
   if (!p) return '';
   if (typeof p.categoryId === 'object' && p.categoryId?.name) return p.categoryId.name;
@@ -84,7 +120,7 @@ export function normalizeCustomerProduct(p) {
       ...p,
       id: p._id || p.id,
       _id: p._id || p.id,
-      image: p.mainImage || p.image || '',
+      image: resolveProductImageUrl(p),
       price,
       originalPrice: originalPrice > price ? originalPrice : firstMrp,
       displayPrice: p.displayPrice ?? minSell,
@@ -114,7 +150,7 @@ export function normalizeCustomerProduct(p) {
     ...p,
     id: p._id || p.id,
     _id: p._id || p.id,
-    image: p.mainImage || p.image || '',
+    image: resolveProductImageUrl(p),
     price,
     originalPrice,
     displayPrice: p.displayPrice ?? price,

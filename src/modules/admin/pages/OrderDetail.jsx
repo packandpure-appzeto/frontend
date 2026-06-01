@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
+import { resolveOrderItemVariantLabel } from '@/shared/utils/orderItemDisplay';
 
 const OrderDetail = () => {
     const { orderId } = useParams();
@@ -202,6 +203,7 @@ const OrderDetail = () => {
                                 <thead>
                                     <tr className="bg-slate-50/50">
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Node</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Variant</th>
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Unit Price</th>
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Qty</th>
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GST</th>
@@ -210,7 +212,9 @@ const OrderDetail = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                    {order.items.map((item) => (
+                                    {order.items.map((item) => {
+                                        const variantLabel = resolveOrderItemVariantLabel(item);
+                                        return (
                                         <tr key={item._id} className="group hover:bg-slate-50/30 transition-all">
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
@@ -227,6 +231,15 @@ const OrderDetail = () => {
                                                     </div>
                                                 </div>
                                             </td>
+                                            <td className="px-6 py-5">
+                                                {variantLabel ? (
+                                                    <span className="inline-flex rounded-lg bg-fuchsia-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-fuchsia-700">
+                                                        {variantLabel}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-300">—</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-5 text-center text-sm font-bold text-slate-600">₹{item.price}</td>
                                             <td className="px-6 py-5 text-center">
                                                 <span className="bg-slate-100 px-3 py-1 rounded-lg text-xs font-black text-slate-700">x{item.quantity}</span>
@@ -240,7 +253,7 @@ const OrderDetail = () => {
                                             <td className="px-6 py-5 text-right text-sm font-black text-slate-900">₹{(item.price * item.quantity) + (item.gstAmount || 0)}</td>
 
                                         </tr>
-                                    ))}
+                                    );})}
                                 </tbody>
                             </table>
                         </div>

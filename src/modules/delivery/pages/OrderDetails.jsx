@@ -26,6 +26,7 @@ import {
   getCachedDeliveryPartnerLocation,
   getCurrentPositionWithCache,
 } from "../utils/deliveryLastLocation";
+import { resolveOrderItemVariantLabel } from "@/shared/utils/orderItemDisplay";
 
 const getPublicStatusStage = (internalStep) => {
   if (internalStep >= 4) return 3;
@@ -683,17 +684,24 @@ const OrderDetails = () => {
               className="overflow-hidden"
             >
               <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-3">
-                {order.items?.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-sm">
-                    <div className="flex items-center">
-                      <span className="font-bold text-gray-500 mr-3 text-xs w-6 bg-white border border-gray-200 text-center rounded py-0.5">
+                {order.items?.map((item, i) => {
+                  const variantLabel = resolveOrderItemVariantLabel(item);
+                  return (
+                  <div key={i} className="flex justify-between items-center text-sm gap-3">
+                    <div className="flex items-center min-w-0">
+                      <span className="font-bold text-gray-500 mr-3 text-xs w-6 bg-white border border-gray-200 text-center rounded py-0.5 shrink-0">
                         x{item.quantity}
                       </span>
-                      <span className="text-gray-800 font-medium">{item.name}</span>
+                      <div className="min-w-0">
+                        <span className="text-gray-800 font-medium block truncate">{item.name}</span>
+                        {variantLabel ? (
+                          <span className="text-[11px] font-semibold text-[#E23744]">{variantLabel}</span>
+                        ) : null}
+                      </div>
                     </div>
-                    <span className="font-bold text-gray-600">Rs.{item.price * item.quantity}</span>
+                    <span className="font-bold text-gray-600 shrink-0">Rs.{item.price * item.quantity}</span>
                   </div>
-                ))}
+                );})}
                 <div className="pt-3 mt-2 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-gray-500 text-sm">Total Bill</span>
                   <span className="text-lg font-bold text-gray-900">Rs.{order.pricing?.total}</span>

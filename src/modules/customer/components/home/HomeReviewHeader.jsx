@@ -54,25 +54,7 @@ const HomeReviewHeader = ({ deliveryLabel, outlet, onLocationClick, className = 
     return (
         <header className={`sticky top-0 z-40 bg-white border-b border-slate-100 md:hidden ${className}`}>
             <div className="px-4 pt-3 pb-3 max-w-lg mx-auto md:max-w-3xl">
-                <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                        <span aria-hidden>📅</span>
-                        {deliveryLabel}
-                    </p>
-                    <button
-                        type="button"
-                        onClick={onLocationClick}
-                        className="mt-1 flex w-full items-center gap-1 text-left group"
-                    >
-                        <MapPin size={16} className="shrink-0" style={{ color: primary }} />
-                        <span className="text-sm font-bold text-slate-900 truncate">
-                            {outlet.name}: <span className="font-extrabold">{outlet.city}</span>
-                        </span>
-                        <ChevronDown size={16} className="text-slate-500 shrink-0 group-hover:text-slate-800" />
-                    </button>
-                </div>
-
-                <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
                     <button
                         type="button"
                         onClick={() => navigate('/')}
@@ -93,6 +75,24 @@ const HomeReviewHeader = ({ deliveryLabel, outlet, onLocationClick, className = 
                     >
                         <User size={16} className="text-slate-600 shrink-0" />
                         <span className="text-xs font-bold text-slate-800 truncate max-w-[60px]">{firstName}</span>
+                    </button>
+                </div>
+
+                <div className="mt-2 min-w-0">
+                    <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                        <span aria-hidden>📅</span>
+                        {deliveryLabel}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={onLocationClick}
+                        className="mt-1 flex w-full items-center gap-1 text-left group"
+                    >
+                        <MapPin size={16} className="shrink-0" style={{ color: primary }} />
+                        <span className="text-sm font-bold text-slate-900 truncate">
+                            {outlet.name}: <span className="font-extrabold">{outlet.city}</span>
+                        </span>
+                        <ChevronDown size={16} className="text-slate-500 shrink-0 group-hover:text-slate-800" />
                     </button>
                 </div>
 

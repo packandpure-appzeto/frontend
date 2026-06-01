@@ -32,6 +32,8 @@ import ShimmerButton from '@/components/ui/shimmer-button';
 import { sellerApi } from '../services/sellerApi';
 import { useToast } from '@shared/components/ui/Toast';
 import { getLegacyStatusFromOrder } from '@/shared/utils/orderStatus';
+import { resolveOrderItemVariantLabel } from '@/shared/utils/orderItemDisplay';
+import { resolveOrderItemVariantLabel } from '@/shared/utils/orderItemDisplay';
 import { Loader2 } from 'lucide-react';
 import Pagination from '@shared/components/ui/Pagination';
 import { DatePicker } from "@/components/ui/date-picker";
@@ -98,7 +100,9 @@ const Orders = () => {
                     name: item.name,
                     price: item.price,
                     qty: item.quantity,
-                    image: item.image
+                    image: item.image,
+                    variantSlot: resolveOrderItemVariantLabel(item),
+                    variantId: item.variantId,
                 })),
                 total: order.pricing?.total || 0,
                 status: getLegacyStatusFromOrder(order),
@@ -857,6 +861,9 @@ const Orders = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-xs font-bold text-slate-900">{item.name}</p>
+                                                            {item.variantSlot ? (
+                                                                <p className="text-[10px] font-bold text-indigo-600 mt-0.5">{item.variantSlot}</p>
+                                                            ) : null}
                                                             <p className="text-xs font-semibold text-slate-600 mt-0.5">₹{item.price.toFixed(2)} × {item.qty}</p>
                                                         </div>
                                                     </div>

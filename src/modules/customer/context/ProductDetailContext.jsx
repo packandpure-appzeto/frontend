@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
-import axiosInstance from '@core/api/axios';
 import { normalizeCustomerProduct } from '@shared/utils/productDisplay';
+import { customerApi } from '../services/customerApi';
+import { useLocation } from './LocationContext';
 
 const ProductDetailContext = createContext();
 
 export const useProductDetail = () => {
     const context = useContext(ProductDetailContext);
     if (!context) {
-        // console.warn('useProductDetail used outside Provider');
         return {};
     }
     return context;
@@ -16,19 +16,29 @@ export const useProductDetail = () => {
 export const ProductDetailProvider = ({ children }) => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const requestSeq = useRef(0);
+    const { currentLocation } = useLocation();
 
     const openProduct = (product) => {
         const seq = ++requestSeq.current;
         setSelectedProduct(normalizeCustomerProduct(product));
         setIsOpen(true);
 
-        // Fetch the freshest details for the sheet (description, variants, etc.).
         const id = product?._id || product?.id;
         if (!id) return;
 
-        axiosInstance
-            .get(`/products/${id}`)
+        const params = {};
+        const lat = currentLocation?.latitude;
+        const lng = currentLocation?.longitude;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            params.lat = lat;
+            params.lng = lng;
+        }
+
+        setIsRefreshing(true);
+        customerApi
+            .getProductById(id, params)
             .then((res) => {
                 if (requestSeq.current !== seq) return;
                 if (res?.data?.success && res.data?.result) {
@@ -41,18 +51,25 @@ export const ProductDetailProvider = ({ children }) => {
                 }
             })
             .catch(() => {
-                // ignore: sheet can still render with list payload
+                // sheet still renders with list payload
+            })
+            .finally(() => {
+                if (requestSeq.current === seq) setIsRefreshing(false);
             });
     };
 
     const closeProduct = () => {
         setIsOpen(false);
-        // Delay clearing product to allow close animation to finish
-        setTimeout(() => setSelectedProduct(null), 300);
+        setTimeout(() => {
+            setSelectedProduct(null);
+            setIsRefreshing(false);
+        }, 300);
     };
 
     return (
-        <ProductDetailContext.Provider value={{ selectedProduct, isOpen, openProduct, closeProduct }}>
+        <ProductDetailContext.Provider
+            value={{ selectedProduct, isOpen, isRefreshing, openProduct, closeProduct }}
+        >
             {children}
         </ProductDetailContext.Provider>
     );

@@ -37,7 +37,15 @@ const HomeFeaturedSection = ({ products, title = 'Popular picks' }) => {
             {/* Desktop: product grid with cart/wishlist integration */}
             <div className="hidden grid-cols-2 gap-4 md:grid lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
                 {products.map((p) => (
-                    <ProductCard key={p.id} product={p} compact neutralBg />
+                    <ProductCard
+                        key={p.id}
+                        product={p}
+                        compact
+                        neutralBg
+                        showFulfillment={false}
+                        showStockInfo={false}
+                        imageBlend={false}
+                    />
                 ))}
             </div>
         </section>

@@ -9,9 +9,22 @@ import { useCartAnimation } from "../../context/CartAnimationContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useProductDetail } from "../../context/ProductDetailContext";
+import {
+  PRODUCT_IMAGE_PLACEHOLDER,
+  resolveProductImageUrl,
+} from "@shared/utils/productDisplay";
 
 const ProductCard = React.memo(
-  ({ product, badge, className, compact = false, neutralBg = false }) => {
+  ({
+    product,
+    badge,
+    className,
+    compact = false,
+    neutralBg = false,
+    showFulfillment = true,
+    showStockInfo = true,
+    imageBlend = true,
+  }) => {
     const { toggleWishlist: toggleWishlistGlobal, isInWishlist } =
       useWishlist();
     const { cart, addToCart, updateQuantity, removeFromCart } = useCart();
@@ -22,6 +35,13 @@ const ProductCard = React.memo(
     const [showHeartPopup, setShowHeartPopup] = React.useState(false);
 
     const imageRef = React.useRef(null);
+    const [imageSrc, setImageSrc] = React.useState(() =>
+      resolveProductImageUrl(product),
+    );
+
+    React.useEffect(() => {
+      setImageSrc(resolveProductImageUrl(product));
+    }, [product]);
 
     const cartItem = React.useMemo(
       () =>
@@ -73,9 +93,9 @@ const ProductCard = React.memo(
         e.preventDefault();
         e.stopPropagation();
         if (product.inStock === false) return;
+        const variantCount = product.variants?.length || 0;
         const mustPickVariant =
-          product.hasMultipleVariants &&
-          (product.variantCount > 1 || (product.variants?.length || 0) > 1);
+          product.hasMultipleVariants && variantCount > 1;
         if (mustPickVariant) {
           openProduct?.(product);
           return;
@@ -86,7 +106,17 @@ const ProductCard = React.memo(
             product.image,
           );
         }
-        addToCart(product);
+        const singleVariant = variantCount === 1 ? product.variants[0] : null;
+        const variantId = singleVariant?._id || singleVariant?.id || product.selectedVariantId;
+        addToCart({
+          ...product,
+          ...(variantId
+            ? {
+                selectedVariantId: String(variantId),
+                variantId: String(variantId),
+              }
+            : {}),
+        });
       },
       [animateAddToCart, product, addToCart, openProduct],
     );
@@ -209,9 +239,14 @@ const ProductCard = React.memo(
             )}>
             <img
               ref={imageRef}
-              src={product.image}
+              src={imageSrc}
               alt={product.name}
-              className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm"
+              className={cn(
+                "h-full w-full object-contain drop-shadow-sm",
+                imageBlend && "mix-blend-multiply",
+              )}
+              loading="lazy"
+              onError={() => setImageSrc(PRODUCT_IMAGE_PLACEHOLDER)}
             />
           </div>
         </div>
@@ -228,7 +263,7 @@ const ProductCard = React.memo(
                 {product.brand}
               </span>
             ) : null}
-            {product.fulfillmentLabel ? (
+            {showFulfillment && product.fulfillmentLabel ? (
               <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">
                 {product.fulfillmentLabel}
               </span>
@@ -268,7 +303,7 @@ const ProductCard = React.memo(
             </p>
           )}
 
-          {product.stockQty != null && product.inStock !== false && (
+          {showStockInfo && product.stockQty != null && product.inStock !== false && (
             <p className={cn("text-slate-500", compact ? "text-[9px]" : "text-[10px]")}>
               {product.stockQty} available
             </p>
@@ -283,7 +318,9 @@ const ProductCard = React.memo(
                   compact ? "text-[13px]" : "text-sm",
                 )}>
                 {product.hasMultipleVariants && product.displayPrice != null
-                  ? `From ₹${Number(product.displayPrice).toLocaleString('en-IN')}`
+                  ? product.displayPriceMax > product.displayPrice
+                    ? `₹${Number(product.displayPrice).toLocaleString('en-IN')} – ₹${Number(product.displayPriceMax).toLocaleString('en-IN')}`
+                    : `From ₹${Number(product.displayPrice).toLocaleString('en-IN')}`
                   : `₹${Number(product.price || 0).toLocaleString('en-IN')}`}
               </span>
               {product.originalPrice > product.price && product.inStock !== false && (
