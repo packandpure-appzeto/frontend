@@ -17,7 +17,8 @@ import {
     ShieldCheck,
     Building2,
     Sparkles,
-    User
+    User,
+    X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { sellerApi } from '../services/sellerApi';
@@ -210,24 +211,61 @@ const Auth = () => {
         }
     };
 
-    const FileInput = ({ name, label }) => (
-        <label className="relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-3xl hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer group bg-slate-50/50">
-            <input type="file" name={name} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
-            {documents[name] ? (
-                <div className="flex flex-col items-center text-emerald-600 animate-in zoom-in-95 duration-300">
-                    <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
-                        <CheckCircle2 size={20} />
+    const handleRemoveFile = (name, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDocuments(prev => ({ ...prev, [name]: null }));
+    };
+
+    const FileInput = ({ name, label }) => {
+        const file = documents[name];
+        const isImage = file && file.type.startsWith('image/');
+        const previewUrl = isImage ? URL.createObjectURL(file) : null;
+
+        return (
+            <label className={cn(
+                "relative flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-3xl transition-all group overflow-hidden",
+                file ? "border-indigo-200 bg-white" : "border-slate-200 hover:bg-slate-50 hover:border-indigo-300 bg-slate-50/50 cursor-pointer"
+            )}>
+                {!file && <input type="file" name={name} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />}
+                
+                {file ? (
+                    <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center group/preview">
+                        {isImage ? (
+                            <>
+                                <img src={previewUrl} alt={label} className="w-full h-full object-cover opacity-60 transition-opacity" />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                        <CheckCircle2 size={12} className="text-emerald-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Attached</span>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center text-emerald-600 animate-in zoom-in-95 duration-300">
+                                <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+                                    <FileText size={20} />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest">PDF Attached</span>
+                            </div>
+                        )}
+                        <button 
+                            type="button"
+                            onClick={(e) => handleRemoveFile(name, e)}
+                            className="absolute top-2 right-2 h-6 w-6 bg-white/90 backdrop-blur-sm hover:bg-rose-50 hover:text-rose-600 text-slate-500 rounded-full flex items-center justify-center transition-all shadow-sm opacity-0 group-hover/preview:opacity-100 z-10"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest">Attached</span>
-                </div>
-            ) : (
-                <div className="flex flex-col items-center text-slate-400 group-hover:text-indigo-600 transition-colors">
-                    <Upload size={18} className="mb-1 group-hover:-translate-y-1 transition-transform" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">{label}</span>
-                </div>
-            )}
-        </label>
-    );
+                ) : (
+                    <div className="flex flex-col items-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                        <Upload size={18} className="mb-1 group-hover:-translate-y-1 transition-transform" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center px-2">{label}</span>
+                    </div>
+                )}
+            </label>
+        );
+    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-4 lg:p-6 font-['Outfit',_sans-serif] relative">

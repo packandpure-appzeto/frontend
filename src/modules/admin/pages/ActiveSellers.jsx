@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import Card from '@shared/components/ui/Card';
 import Badge from '@shared/components/ui/Badge';
 import {
@@ -144,6 +145,17 @@ const ActiveSellers = () => {
     const openSellerDetails = (seller) => {
         setViewingSeller(seller);
         setIsSellerModalOpen(true);
+    };
+
+    const toggleSellerStatus = async (sellerId, currentStatus) => {
+        try {
+            const newStatus = !currentStatus;
+            await adminApi.updateSeller(sellerId, { isActive: newStatus, isVerified: newStatus });
+            fetchSellers();
+        } catch (error) {
+            console.error("Failed to update status", error);
+            alert("Failed to update seller status.");
+        }
     };
 
     return (
@@ -333,9 +345,33 @@ const ActiveSellers = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <Badge variant={s.isActive ? "success" : "danger"} className="text-[10px]">
-                                            {s.isActive ? 'ACTIVE' : 'INACTIVE'}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleSellerStatus(s._id, s.isActive);
+                                                }}
+                                                className={cn(
+                                                    "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 shadow-inner",
+                                                    s.isActive ? "bg-emerald-500" : "bg-slate-300"
+                                                )}
+                                            >
+                                                <span 
+                                                    className={cn(
+                                                        "inline-flex items-center justify-center h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300 shadow-sm",
+                                                        s.isActive ? "translate-x-4" : "translate-x-1"
+                                                    )} 
+                                                >
+                                                  {s.isActive && <Check className="text-emerald-500 h-2.5 w-2.5" />}
+                                                </span>
+                                            </button>
+                                            <span className={cn(
+                                                "text-[10px] font-bold tracking-wider uppercase",
+                                                s.isActive ? "text-emerald-600" : "text-slate-500"
+                                            )}>
+                                                {s.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end space-x-2">
