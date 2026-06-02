@@ -20,7 +20,7 @@ import MiniCart from '../components/shared/MiniCart';
 import { useLocation as useAppLocation } from '../context/LocationContext';
 import { useCart } from '../context/CartContext';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo } from '../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
 import CategoryProductRow from '../components/category/CategoryProductRow';
 import { PAGE_CONTAINER } from '../components/home/homeLayout';
 
@@ -444,7 +444,7 @@ const CategoryProductsPage = () => {
             </button>
 
             <Link to="/" className="hidden shrink-0 items-center md:flex">
-              <img src={logoUrl} alt={appName} className="h-9 w-auto object-contain" />
+              <img src={logoUrl} alt={appName} className={NAVBAR_LOGO_CLASS} />
             </Link>
 
             <div className="min-w-0 flex-1">

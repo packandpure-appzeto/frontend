@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '@core/context/SettingsContext';
 import { brandColor, brandLogo } from '../../constants/brandTheme';
+import { cn } from '@/lib/utils';
 import CustomerLoginForm from './CustomerLoginForm';
 
 /**
@@ -12,7 +13,6 @@ const CustomerLoginPanel = ({
     subtitle = 'Log in or Sign up',
     onSuccess,
     onClose,
-    showClose = true,
     className = '',
 }) => {
     const { settings } = useSettings();
@@ -22,18 +22,34 @@ const CustomerLoginPanel = ({
 
     return (
         <div className={className}>
-            <div className="mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-                <img src={logoUrl} alt={appName} className="h-full w-full object-contain p-1.5" />
-            </div>
+            <img
+                src={logoUrl}
+                alt={appName}
+                className="mx-auto mb-6 h-20 w-auto max-w-[280px] object-contain sm:h-24 sm:max-w-[320px]"
+            />
 
             <h2
                 id="customer-login-title"
                 className="text-center text-[1.35rem] font-black leading-tight tracking-tight text-slate-900"
             >
-                {title || "India's last minute app"}
+                India&apos;s smart supplier app
             </h2>
+
+            {title ? (
+                <p className="mt-1 text-center text-sm font-semibold text-slate-600">
+                    {title}
+                </p>
+            ) : null}
+
             {subtitle ? (
-                <p className="mt-1 text-center text-base font-semibold text-slate-800">{subtitle}</p>
+                <p
+                    className={cn(
+                        'text-center text-base font-semibold text-slate-800',
+                        title ? 'mt-3' : 'mt-3',
+                    )}
+                >
+                    {subtitle}
+                </p>
             ) : null}
 
             <div className="mt-8 text-left">

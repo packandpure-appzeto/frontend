@@ -77,6 +77,9 @@ export default {
           950: '#4a0a12',
         },
       },
+      spacing: {
+        13: "3.25rem", // 52px — navbar logo height
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

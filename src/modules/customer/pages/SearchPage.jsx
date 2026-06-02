@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo } from '../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
 import { customerApi } from '../services/customerApi';
 import { useProductDetail } from '../context/ProductDetailContext';
 import { useLocation as useAppLocation } from '../context/LocationContext';
@@ -447,7 +447,7 @@ const SearchPage = () => {
             </button>
 
             <Link to="/" className="hidden shrink-0 items-center gap-2 md:flex">
-              <img src={logoUrl} alt={settings?.appName || 'Home'} className="h-9 w-auto object-contain" />
+              <img src={logoUrl} alt={settings?.appName || 'Home'} className={NAVBAR_LOGO_CLASS} />
             </Link>
 
             {searchInput}

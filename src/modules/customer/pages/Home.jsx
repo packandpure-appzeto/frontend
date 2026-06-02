@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ChevronUp } from 'lucide-react';
+import { BRAND_COLOR } from '../constants/brandTheme';
 import { useLocation } from '../context/LocationContext';
 import { useHomePage } from '../hooks/useHomePage';
 import HomeReviewHeader from '../components/home/HomeReviewHeader';
@@ -18,6 +20,7 @@ import { HOME_SECTION } from '../components/home/homeLayout';
 const Home = () => {
     const { currentLocation } = useLocation();
     const [locationOpen, setLocationOpen] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
 
     useEffect(() => {
         const hasPrompted = localStorage.getItem('hasPromptedLocation');
@@ -26,6 +29,15 @@ const Home = () => {
             localStorage.setItem('hasPromptedLocation', 'true');
         }
     }, [currentLocation]);
+
+    useEffect(() => {
+        const onScroll = () => {
+            setShowScrollTop(window.scrollY > 500);
+        };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     const {
         deliveryLabel,
@@ -40,6 +52,15 @@ const Home = () => {
     } = useHomePage(currentLocation);
 
     const openLocation = () => setLocationOpen(true);
+    const scrollToTop = () => {
+        // If Lenis is installed, prefer it for smooth scrolling.
+        const lenis = typeof window !== 'undefined' ? window.lenis : null;
+        if (lenis && typeof lenis.scrollTo === 'function') {
+            lenis.scrollTo(0, { duration: 1.1 });
+            return;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     return (
         <div className="min-h-full bg-gradient-to-b from-brand-50 via-white to-white pb-4 md:pb-0">
@@ -84,6 +105,18 @@ const Home = () => {
             <HomePlatformSections onLocationClick={openLocation} />
 
             <LocationDrawer isOpen={locationOpen} onClose={() => setLocationOpen(false)} />
+
+            {showScrollTop && (
+                <button
+                    type="button"
+                    onClick={scrollToTop}
+                    className="fixed bottom-[92px] right-4 z-120 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-xl active:scale-95 transition-transform md:bottom-8"
+                    style={{ backgroundColor: BRAND_COLOR }}
+                    aria-label="Scroll to top"
+                >
+                    <ChevronUp size={22} strokeWidth={3} />
+                </button>
+            )}
         </div>
     );
 };

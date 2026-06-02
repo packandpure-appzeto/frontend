@@ -17,7 +17,6 @@ import {
   Tag,
   Trash2,
   Plus,
-  Minus,
   Search,
   X,
   Clipboard,
@@ -39,9 +38,9 @@ import {
   onOrderStatusUpdate,
 } from "@/core/services/orderSocket";
 import CheckoutCollapsible from "../components/checkout/CheckoutCollapsible";
+import CheckoutCartItemRow from "../components/checkout/CheckoutCartItemRow";
 import { BRAND_COLOR } from "../constants/brandTheme";
 import { cartKey } from "@/shared/utils/variantHelpers";
-import { resolveOrderItemVariantLabel } from "@/shared/utils/orderItemDisplay";
 import {
   Dialog,
   DialogContent,
@@ -483,8 +482,6 @@ const CheckoutPage = () => {
   const handlePlaceOrder = useCallback(() => {
     if (!isAuthenticated) {
       openCustomerLogin({
-        title: 'Log in to complete payment',
-        subtitle: 'Quick OTP login — then your order is placed',
         onSuccess: () => {
           executePlaceOrder();
         },
@@ -855,73 +852,19 @@ const CheckoutPage = () => {
                 Your items
               </h3>
               <div className="space-y-4">
-              {cart.map((item) => {
-                const productId = item.productId || item.id || item._id;
-                const variantId = item.variantId || item.selectedVariantId || null;
-                const lineKey = cartKey(productId, variantId);
-                const variantLabel =
-                  item.variantLabel ||
-                  item.weight ||
-                  resolveOrderItemVariantLabel({
-                    variantSlot: null,
-                    variantId,
-                    product: { variants: item.variants, unit: item.unit },
-                  });
-
-                return (
-                <div
-                  key={lineKey}
-                  className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                  <div className="h-20 w-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
+                {cart.map((item) => {
+                  const productId = item.productId || item.id || item._id;
+                  const variantId = item.variantId || item.selectedVariantId || null;
+                  const lineKey = cartKey(productId, variantId);
+                  return (
+                    <CheckoutCartItemRow
+                      key={lineKey}
+                      item={item}
+                      onUpdateQuantity={updateQuantity}
+                      onRemove={removeFromCart}
                     />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-800 mb-1">
-                      {item.name}
-                    </h4>
-                    {variantLabel ? (
-                      <p className="mb-1 text-[11px] font-semibold text-[#E23744]">
-                        {variantLabel}
-                      </p>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => removeFromCart(productId, variantId || undefined)}
-                      className="mt-1 flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
-                    >
-                      <Trash2 size={12} /> Remove
-                    </button>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-brand-600 px-2 py-1">
-                      <button
-                        onClick={() =>
-                          item.quantity > 1
-                            ? updateQuantity(productId, -1, variantId || undefined)
-                            : removeFromCart(productId, variantId || undefined)
-                        }
-                        className="text-white p-1 hover:bg-white/20 rounded transition-colors">
-                        <Minus size={14} strokeWidth={3} />
-                      </button>
-                      <span className="text-white font-bold min-w-[20px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(productId, 1, variantId || undefined)}
-                        className="text-white p-1 hover:bg-white/20 rounded transition-colors">
-                        <Plus size={14} strokeWidth={3} />
-                      </button>
-                    </div>
-                    <p className="text-base font-black text-slate-800">
-                      ₹{item.price * item.quantity}
-                    </p>
-                  </div>
-                </div>
-              );})}
+                  );
+                })}
               </div>
             </section>
           </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useReducer } from "react";
 import { customerApi } from "../services/customerApi";
 import { useAuth } from "../../../core/context/AuthContext";
 
@@ -8,6 +8,45 @@ export const useCart = () => useContext(CartContext);
 
 function cartKey(productId, variantId) {
   return `${String(productId || "").trim()}::${variantId ? String(variantId).trim() : ""}`;
+}
+
+function cartReducer(state, action) {
+  switch (action.type) {
+    case "set":
+      return Array.isArray(action.cart) ? action.cart : [];
+    case "remove_key":
+      return state.filter((item) => (item?.key || "") !== action.key);
+    case "upsert": {
+      const key = action.item?.key;
+      if (!key) return state;
+      const idx = state.findIndex((x) => (x?.key || "") === key);
+      if (idx >= 0) {
+        const next = state.slice();
+        next[idx] = { ...next[idx], ...action.item };
+        return next;
+      }
+      return [...state, action.item];
+    }
+    case "set_qty": {
+      const key = action.key;
+      const qty = Number(action.quantity) || 0;
+      if (!key) return state;
+      if (qty <= 0) return state.filter((item) => (item?.key || "") !== key);
+      return state.map((item) => ((item?.key || "") === key ? { ...item, quantity: qty } : item));
+    }
+    default:
+      return state;
+  }
+}
+
+function loadCartFromStorage() {
+  try {
+    const savedCart = localStorage.getItem("cart");
+    return savedCart ? JSON.parse(savedCart) : [];
+  } catch (error) {
+    console.error("Failed to load cart from localStorage", error);
+    return [];
+  }
 }
 
 function resolveVariant(product, variantId) {
@@ -37,15 +76,7 @@ function applyVariantToProduct(product, variantId) {
 
 export const CartProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  const [cart, setCart] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem("cart");
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (error) {
-      console.error("Failed to load cart from localStorage", error);
-      return [];
-    }
-  });
+  const [cart, dispatch] = useReducer(cartReducer, undefined, loadCartFromStorage);
 
   const [loading, setLoading] = useState(false);
   const pendingRequestsRef = React.useRef(0);
@@ -76,7 +107,7 @@ export const CartProvider = ({ children }) => {
   const syncCart = (backendItems) => {
     // Only update state from backend if no more pending optimistic updates
     if (pendingRequestsRef.current === 0) {
-      setCart(normalizeBackendCart(backendItems));
+      dispatch({ type: "set", cart: normalizeBackendCart(backendItems) });
     }
   };
 
@@ -85,7 +116,7 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       try {
         const response = await customerApi.getCart();
-        setCart(normalizeBackendCart(response.data.result.items));
+        dispatch({ type: "set", cart: normalizeBackendCart(response.data.result.items) });
       } catch (error) {
         console.error("Failed to fetch cart from backend", error);
       } finally {
@@ -100,12 +131,7 @@ export const CartProvider = ({ children }) => {
       fetchCart();
     } else {
       // Clear cart state and load from local storage for guests
-      try {
-        const savedCart = localStorage.getItem("cart");
-        setCart(savedCart ? JSON.parse(savedCart) : []);
-      } catch (error) {
-        setCart([]);
-      }
+      dispatch({ type: "set", cart: loadCartFromStorage() });
     }
   }, [isAuthenticated]);
 
@@ -122,25 +148,20 @@ export const CartProvider = ({ children }) => {
     const key = cartKey(id, variantId);
 
     // Optimistic UI update for instant feedback
-    setCart((prev) => {
-      const existingItem = prev.find(
-        (item) => cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) === key,
-      );
-      if (existingItem) {
-        return prev.map((item) =>
-          cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) === key
-            ? {
-                ...item,
-                ...applyVariantToProduct({ ...item, ...product }, variantId),
-                quantity: item.quantity + 1,
-              }
-            : item,
-        );
-      }
-
-      return [
-        ...prev,
-        {
+    const existingItem = cart.find((item) => (item?.key || "") === key);
+    if (existingItem) {
+      dispatch({
+        type: "upsert",
+        item: {
+          ...existingItem,
+          ...applyVariantToProduct({ ...existingItem, ...product }, variantId),
+          quantity: Number(existingItem.quantity || 0) + 1,
+        },
+      });
+    } else {
+      dispatch({
+        type: "upsert",
+        item: {
           ...applyVariantToProduct(product, variantId),
           id,
           productId: id,
@@ -149,8 +170,8 @@ export const CartProvider = ({ children }) => {
           quantity: 1,
           image: product.image || product.mainImage,
         },
-      ];
-    });
+      });
+    }
 
     if (isAuthenticated) {
       pendingRequestsRef.current += 1;
@@ -176,7 +197,7 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId, variantId) => {
     const key = cartKey(productId, variantId);
     // Optimistic update
-    setCart((prev) => prev.filter((item) => cartKey(item.productId || item.id || item._id, item.variantId || item.selectedVariantId) !== key));
+    dispatch({ type: "remove_key", key });
 
     if (isAuthenticated) {
       pendingRequestsRef.current += 1;
@@ -196,13 +217,7 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = async (productId, delta, variantId) => {
     const key = cartKey(productId, variantId);
-    const currentItem = cart.find((item) => {
-      const itemKey = cartKey(
-        item.productId || item.id || item._id,
-        item.variantId || item.selectedVariantId,
-      );
-      return itemKey === key;
-    });
+    const currentItem = cart.find((item) => (item?.key || "") === key);
     if (!currentItem) return;
 
     const newQty = Math.max(0, currentItem.quantity + delta);
@@ -216,18 +231,7 @@ export const CartProvider = ({ children }) => {
     }
 
     // Optimistic update
-    setCart((prev) =>
-      prev.map((item) => {
-        const itemKey = cartKey(
-          item.productId || item.id || item._id,
-          item.variantId || item.selectedVariantId,
-        );
-        if (itemKey === key) {
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      }),
-    );
+    dispatch({ type: "set_qty", key, quantity: newQty });
 
     if (isAuthenticated) {
       pendingRequestsRef.current += 1;
@@ -257,12 +261,12 @@ export const CartProvider = ({ children }) => {
     if (isAuthenticated) {
       try {
         await customerApi.clearCart();
-        setCart([]);
+        dispatch({ type: "set", cart: [] });
       } catch (error) {
         console.error("Error clearing cart on backend", error);
       }
     } else {
-      setCart([]);
+      dispatch({ type: "set", cart: [] });
     }
   };
 

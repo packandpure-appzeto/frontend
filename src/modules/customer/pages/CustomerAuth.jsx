@@ -29,7 +29,6 @@ const CustomerAuth = () => {
                 </button>
 
                 <CustomerLoginPanel
-                    title="India's last minute app"
                     subtitle="Log in or Sign up"
                     onClose={handleClose}
                     onSuccess={() => navigate(from, { replace: true })}

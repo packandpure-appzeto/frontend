@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { customerApi } from '../services/customerApi';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo } from '../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
 import { useLocation as useAppLocation } from '../context/LocationContext';
 import { useToast } from '@shared/components/ui/Toast';
 import { PAGE_CONTAINER } from '../components/home/homeLayout';
@@ -237,7 +237,7 @@ const OffersPage = () => {
             </button>
 
             <Link to="/" className="hidden shrink-0 md:flex">
-              <img src={logoUrl} alt={appName} className="h-9 w-auto object-contain" />
+              <img src={logoUrl} alt={appName} className={NAVBAR_LOGO_CLASS} />
             </Link>
 
             <div className="min-w-0 flex-1">

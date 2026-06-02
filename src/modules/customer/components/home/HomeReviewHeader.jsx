@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Search, ShoppingCart, Mic, User } from 'lucide-react';
-import { brandColor, brandLogo } from '../../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../../constants/brandTheme';
 import { useSettings } from '@core/context/SettingsContext';
 import { useAuth } from '@core/context/AuthContext';
 const HomeReviewHeader = ({ deliveryLabel, outlet, onLocationClick, className = '' }) => {
@@ -64,7 +64,7 @@ const HomeReviewHeader = ({ deliveryLabel, outlet, onLocationClick, className = 
                         <img
                             src={logoUrl}
                             alt={settings?.appName || 'Logo'}
-                            className="h-11 w-auto max-w-[180px] object-contain object-left"
+                            className={NAVBAR_LOGO_CLASS}
                         />
                     </button>
                     <button

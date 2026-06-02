@@ -1,29 +1,15 @@
 import React, { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Trash2, Clipboard } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clipboard } from "lucide-react";
 import Lottie from "lottie-react";
 import { useCart } from "../context/CartContext";
 import { cartKey } from "@/shared/utils/variantHelpers";
-import { resolveOrderItemVariantLabel } from "@/shared/utils/orderItemDisplay";
 import { BRAND_COLOR } from "../constants/brandTheme";
+import CheckoutCartItemRow from "../components/checkout/CheckoutCartItemRow";
 import emptyBoxAnimation from "../../../assets/lottie/Empty box.json";
 
 function formatInr(value) {
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
-}
-
-function getCartVariantLabel(item) {
-  const variantId = item.variantId || item.selectedVariantId || null;
-  return (
-    item.variantLabel ||
-    item.weight ||
-    resolveOrderItemVariantLabel({
-      variantSlot: null,
-      variantId,
-      product: { variants: item.variants, unit: item.unit },
-    }) ||
-    null
-  );
 }
 
 export default function CartPage() {
@@ -86,68 +72,13 @@ export default function CartPage() {
                 const productId = item.productId || item.id || item._id;
                 const variantId = item.variantId || item.selectedVariantId || null;
                 const lineKey = cartKey(productId, variantId);
-                const variantLabel = getCartVariantLabel(item);
-
                 return (
-                  <div
+                  <CheckoutCartItemRow
                     key={lineKey}
-                    className="flex items-start gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-50">
-                      <img
-                        src={item.image || item.mainImage}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="mb-1 font-bold text-slate-800">{item.name}</h4>
-                      {variantLabel ? (
-                        <p className="mb-1 text-[11px] font-semibold text-[#E23744]">
-                          {variantLabel}
-                        </p>
-                      ) : null}
-                      <p className="text-xs text-slate-500">{formatInr(item.price)} each</p>
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(productId, variantId || undefined)}
-                        className="mt-1 flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
-                      >
-                        <Trash2 size={12} /> Remove
-                      </button>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div
-                        className="flex items-center gap-2 rounded-lg px-2 py-1"
-                        style={{ backgroundColor: BRAND_COLOR }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            item.quantity > 1
-                              ? updateQuantity(productId, -1, variantId || undefined)
-                              : removeFromCart(productId, variantId || undefined)
-                          }
-                          className="rounded p-1 text-white transition-colors hover:bg-white/20"
-                        >
-                          <Minus size={14} strokeWidth={3} />
-                        </button>
-                        <span className="min-w-[20px] text-center font-bold text-white">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(productId, 1, variantId || undefined)}
-                          className="rounded p-1 text-white transition-colors hover:bg-white/20"
-                        >
-                          <Plus size={14} strokeWidth={3} />
-                        </button>
-                      </div>
-                      <p className="text-base font-black text-slate-800">
-                        {formatInr(item.price * item.quantity)}
-                      </p>
-                    </div>
-                  </div>
+                    item={item}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeFromCart}
+                  />
                 );
               })}
             </div>

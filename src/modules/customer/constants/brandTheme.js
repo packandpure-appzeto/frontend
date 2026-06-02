@@ -19,6 +19,10 @@ export function brandLogo(_settings) {
   return BRAND_LOGO;
 }
 
+/** Shared class for header / navbar logos (h-13 = 52px in tailwind.config). */
+export const NAVBAR_LOGO_CLASS =
+  "h-13 w-auto max-w-[180px] object-contain object-left";
+
 /** For dark/brand backgrounds (footer, hero strips). */
 export function brandLogoOnColor(_settings) {
   return BRAND_LOGO_WHITE;

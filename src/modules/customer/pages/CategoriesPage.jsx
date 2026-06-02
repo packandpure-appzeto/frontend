@@ -6,7 +6,7 @@ import { buildHomeCategorySections } from '../utils/categoryTree';
 import HomeCategorySections from '../components/home/HomeCategorySections';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo } from '../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
 
 /**
  * `/categories` — full “browse all” view (parent categories with name + image).
@@ -86,7 +86,7 @@ const CategoriesPage = () => {
             <img
               src={logoUrl}
               alt={appName}
-              className="h-9 w-auto object-contain"
+              className={NAVBAR_LOGO_CLASS}
             />
           </Link>
 

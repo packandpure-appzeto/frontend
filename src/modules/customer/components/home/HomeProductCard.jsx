@@ -32,9 +32,13 @@ const HomeProductCard = ({ product }) => {
   const wishlisted = isInWishlist(productId);
 
   const inStock = product.inStock !== false;
+  const variantCount = product.variants?.length || 0;
   const mustPickVariant =
     product.hasMultipleVariants &&
-    (product.variantCount > 1 || (product.variants?.length || 0) > 1);
+    (product.variantCount > 1 || variantCount > 1);
+  const optionsSubLabel = mustPickVariant
+    ? `${product.variantCount ?? variantCount} option${(product.variantCount ?? variantCount) === 1 ? '' : 's'}`
+    : '';
 
   const unitLine =
     product.variantLabel ||
@@ -202,7 +206,16 @@ const HomeProductCard = ({ product }) => {
                     : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300',
                 )}
               >
-                {mustPickVariant && inStock ? 'Options' : 'Add'}
+                {mustPickVariant && inStock ? (
+                  <span className="flex flex-col items-center leading-tight">
+                    <span>ADD</span>
+                    <span className="mt-0.5 text-[9px] font-semibold normal-case tracking-normal text-[#E23744]/80">
+                      {optionsSubLabel}
+                    </span>
+                  </span>
+                ) : (
+                  'Add'
+                )}
               </button>
             )}
           </div>

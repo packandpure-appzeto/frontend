@@ -56,6 +56,11 @@ const ProductCard = React.memo(
     );
     const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = isInWishlist(product.id || product._id);
+    const variantCount = product.variants?.length || 0;
+    const mustPickVariant = product.hasMultipleVariants && variantCount > 1;
+    const optionsSubLabel = mustPickVariant
+      ? `${product.variantCount ?? variantCount} option${(product.variantCount ?? variantCount) === 1 ? "" : "s"}`
+      : "";
 
     const handleProductClick = React.useCallback(
       (e) => {
@@ -93,9 +98,6 @@ const ProductCard = React.memo(
         e.preventDefault();
         e.stopPropagation();
         if (product.inStock === false) return;
-        const variantCount = product.variants?.length || 0;
-        const mustPickVariant =
-          product.hasMultipleVariants && variantCount > 1;
         if (mustPickVariant) {
           openProduct?.(product);
           return;
@@ -370,9 +372,16 @@ const ProductCard = React.memo(
                       ? "px-5 py-1.5 text-[12px]"
                       : "px-7 py-2 text-[13px] md:text-sm md:px-8 md:py-2.5",
                   )}>
-                  {product.hasMultipleVariants && product.inStock !== false
-                    ? 'OPTIONS'
-                    : 'ADD'}
+                  {mustPickVariant && product.inStock !== false ? (
+                    <span className="flex flex-col items-center leading-tight">
+                      <span>ADD</span>
+                      <span className={cn("mt-0.5 font-semibold normal-case tracking-normal", compact ? "text-[9px]" : "text-[10px] md:text-[11px]")}>
+                        {optionsSubLabel}
+                      </span>
+                    </span>
+                  ) : (
+                    "ADD"
+                  )}
                 </motion.button>
               )}
             </div>

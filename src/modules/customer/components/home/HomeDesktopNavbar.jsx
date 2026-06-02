@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@core/context/AuthContext';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo } from '../../constants/brandTheme';
+import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../../constants/brandTheme';
 import { useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -83,7 +83,7 @@ const HomeDesktopNavbar = ({
               <img
                 src={logoUrl}
                 alt={appName}
-                className="h-9 w-auto max-w-[160px] object-contain object-left"
+                className={NAVBAR_LOGO_CLASS}
               />
             </Link>
             <button

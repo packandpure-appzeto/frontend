@@ -6,7 +6,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useLocation as useAppLocation } from "../../context/LocationContext";
 import { useSettings } from '@core/context/SettingsContext';
-import { brandLogo } from '../../constants/brandTheme';
+import { brandLogo, NAVBAR_LOGO_CLASS } from '../../constants/brandTheme';
 import LocationDrawer from '../shared/LocationDrawer';
 
 const Header = () => {
@@ -127,7 +127,7 @@ const Header = () => {
                             <img
                                 src={logoUrl}
                                 alt={appName}
-                                className="h-9 w-auto max-w-[140px] object-contain md:h-10"
+                                className={NAVBAR_LOGO_CLASS}
                             />
                         </Link>
                     </div>

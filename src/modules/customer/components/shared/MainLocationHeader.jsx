@@ -13,7 +13,7 @@ import {
   buildSearchBarBackgroundColor,
   shiftHex,
 } from "../../utils/headerTheme";
-import { brandLogo } from "../../constants/brandTheme";
+import { brandLogo, NAVBAR_LOGO_CLASS } from "../../constants/brandTheme";
 import shoppingCartAnimation from "../../../../assets/lottie/shopping-cart.json";
 
 // MUI Icons
@@ -365,7 +365,7 @@ const MainLocationHeader = ({
                   <img
                     src={logoUrl}
                     alt={`${appName} Logo`}
-                    className="h-10 w-auto max-w-[160px] object-contain"
+                    className={NAVBAR_LOGO_CLASS}
                   />
                 </div>
               </div>
@@ -468,7 +468,7 @@ const MainLocationHeader = ({
                   <img
                     src={logoUrl}
                     alt={`${appName} Logo`}
-                    className="h-12 w-auto max-w-[180px] object-contain drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]"
+                    className={`${NAVBAR_LOGO_CLASS} drop-shadow-[0_1px_6px_rgba(255,255,255,0.35)]`}
                   />
                 </button>
               </div>
