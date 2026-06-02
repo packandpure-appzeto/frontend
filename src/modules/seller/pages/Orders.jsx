@@ -33,7 +33,6 @@ import { sellerApi } from '../services/sellerApi';
 import { useToast } from '@shared/components/ui/Toast';
 import { getLegacyStatusFromOrder } from '@/shared/utils/orderStatus';
 import { resolveOrderItemVariantLabel } from '@/shared/utils/orderItemDisplay';
-import { resolveOrderItemVariantLabel } from '@/shared/utils/orderItemDisplay';
 import { Loader2 } from 'lucide-react';
 import Pagination from '@shared/components/ui/Pagination';
 import { DatePicker } from "@/components/ui/date-picker";
