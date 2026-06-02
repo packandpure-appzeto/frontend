@@ -65,3 +65,4 @@ export function applySelectedVariant(product, variant) {
     inStock: stock > 0,
   };
 }
+// for product detail page

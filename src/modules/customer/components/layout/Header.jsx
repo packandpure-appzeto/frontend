@@ -28,7 +28,6 @@ const Header = () => {
         isDeleting: false,
         isPaused: false
     });
-
     const staticText = "Search ";
     const typingPhrases = ['"bread"', '"milk"', '"chocolate"', '"eggs"', '"chips"'];
 
@@ -42,6 +41,7 @@ const Header = () => {
             }, 2000); // Pause after full phrase
             return () => clearTimeout(timeout);
         }
+
 
         const timeout = setTimeout(() => {
             if (!isDeleting) {
