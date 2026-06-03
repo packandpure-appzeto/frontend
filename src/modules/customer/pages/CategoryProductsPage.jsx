@@ -11,7 +11,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ProductDetailSheet from '../components/shared/ProductDetailSheet';
+
 import ProductCard from '../components/shared/ProductCard';
 import { useProductDetail } from '../context/ProductDetailContext';
 import { customerApi } from '../services/customerApi';
@@ -65,22 +65,26 @@ function SubcategoryButton({ sub, active, onClick, variant = 'mobile' }) {
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full flex-col items-center gap-1.5 border-l-[3px] px-1 py-3 transition-colors',
-        active ? 'border-brand-600 bg-brand-50' : 'border-transparent hover:bg-slate-50',
+        'flex w-full flex-col items-center gap-2 border-l-[3px] px-1 py-3.5 transition-all duration-300 active:scale-95',
+        active 
+          ? 'border-[#E23744] bg-linear-to-r from-rose-50 to-transparent' 
+          : 'border-transparent hover:bg-slate-50',
       )}
     >
       <span
         className={cn(
-          'flex h-11 w-11 items-center justify-center rounded-full p-1.5 transition-all',
-          active ? 'scale-105 bg-brand-100' : 'bg-slate-50 opacity-80',
+          'flex h-12 w-12 items-center justify-center rounded-full p-2.5 transition-all duration-300',
+          active 
+            ? 'scale-110 bg-white shadow-[0_4px_16px_rgba(0,0,0,0.08)] ring-1 ring-rose-100' 
+            : 'bg-slate-50 shadow-sm opacity-80 hover:opacity-100 hover:shadow-md hover:-translate-y-0.5',
         )}
       >
-        <img src={sub.icon} alt="" className="h-full w-full object-contain" loading="lazy" />
+        <img src={sub.icon} alt="" className="h-full w-full object-contain drop-shadow-sm" loading="lazy" />
       </span>
       <span
         className={cn(
-          'line-clamp-2 px-0.5 text-center text-[9px] font-bold leading-tight',
-          active ? 'text-brand-600' : 'text-slate-600',
+          'line-clamp-2 px-0.5 text-center text-[9px] font-bold leading-tight transition-colors',
+          active ? 'text-[#E23744]' : 'text-slate-500',
         )}
       >
         {sub.name}
@@ -539,7 +543,7 @@ const CategoryProductsPage = () => {
       </div>
 
       <MiniCart />
-      <ProductDetailSheet />
+
 
       <style
         dangerouslySetInnerHTML={{

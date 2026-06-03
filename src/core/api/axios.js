@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:7000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5002/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -94,7 +94,7 @@ axiosInstance.interceptors.response.use(
             }
 
             let targetKey = null;
-            
+
             if (pagePath.startsWith('/seller')) targetKey = 'auth_seller';
             else if (pagePath.startsWith('/admin')) targetKey = 'auth_admin';
             else if (pagePath.startsWith('/delivery')) targetKey = 'auth_delivery';
@@ -117,10 +117,10 @@ axiosInstance.interceptors.response.use(
                 );
             }
 
-            window.location.href = pagePath.startsWith('/admin') ? '/admin/auth' : 
-                                 pagePath.startsWith('/seller') ? '/seller/auth' : 
-                                 pagePath.startsWith('/delivery') ? '/delivery/auth' : 
-                                 pagePath.startsWith('/pickup') ? '/pickup/auth' : '/login';
+            window.location.href = pagePath.startsWith('/admin') ? '/admin/auth' :
+                pagePath.startsWith('/seller') ? '/seller/auth' :
+                    pagePath.startsWith('/delivery') ? '/delivery/auth' :
+                        pagePath.startsWith('/pickup') ? '/pickup/auth' : '/login';
         }
 
         return Promise.reject(error);

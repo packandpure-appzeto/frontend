@@ -44,30 +44,53 @@ function formatInr(n) {
 }
 
 function ProductImageGallery({ images, name, activeIndex, onSelect }) {
+  // Auto-slide functionality
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const interval = setInterval(() => {
+      onSelect((prev) => (prev + 1) % images.length);
+    }, 5000); // Slides every 5 seconds
+    return () => clearInterval(interval);
+  }, [images, onSelect]);
+
   return (
-    <div>
-      <div className="flex aspect-square items-center justify-center p-6 md:p-10">
-        <img
-          src={images[activeIndex]}
-          alt={name || 'Product'}
-          className="h-full w-full object-contain mix-blend-multiply"
-        />
+    <div className="flex h-full flex-col justify-center">
+      <div className="flex items-center justify-center p-4 sm:p-6 lg:p-10">
+        {/* Added border, shadow, and frame */}
+        <div className="relative flex aspect-square w-full max-w-[320px] sm:max-w-[380px] items-center justify-center overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_12px_40px_rgba(0,0,0,0.08)] ring-1 ring-slate-900/5 transition-all">
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={activeIndex}
+              src={images[activeIndex]}
+              alt={name || 'Product'}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply"
+            />
+          </AnimatePresence>
+        </div>
       </div>
+      
+      {/* Responsive thumbnails */}
       {images.length > 1 && (
-        <div className="flex justify-center gap-2 pb-4 md:pb-5">
+        <div className="flex justify-center gap-2 sm:gap-3 overflow-x-auto px-4 pb-4 sm:pb-6 scrollbar-hide">
           {images.slice(0, 6).map((img, i) => (
             <button
               key={img + i}
               type="button"
               onClick={() => onSelect(i)}
               className={cn(
-                'h-11 w-11 overflow-hidden rounded-lg border bg-white md:h-12 md:w-12',
+                'shrink-0 overflow-hidden rounded-xl border bg-white transition-all duration-300',
+                // Responsive sizes: small on mobile, larger on tablet/web
+                'h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14',
                 i === activeIndex
-                  ? 'border-brand-600 ring-2 ring-brand-100'
-                  : 'border-slate-200 opacity-80 hover:opacity-100',
+                  ? 'border-[#E23744] ring-4 ring-rose-50 shadow-md scale-110 z-10'
+                  : 'border-slate-200 opacity-60 hover:opacity-100 hover:scale-105',
               )}
             >
-              <img src={img} alt="" className="h-full w-full object-contain p-1" />
+              <img src={img} alt="" className="h-full w-full object-contain p-1 sm:p-1.5" />
             </button>
           ))}
         </div>

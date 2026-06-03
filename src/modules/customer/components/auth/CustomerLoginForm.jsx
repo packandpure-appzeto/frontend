@@ -6,6 +6,7 @@ import { useAuth } from '@core/context/AuthContext';
 import { useSettings } from '@core/context/SettingsContext';
 import { customerApi } from '../../services/customerApi';
 import { brandColor, brandColorDark } from '../../constants/brandTheme';
+import SetNameModal from './SetNameModal';
 
 const OTP_LENGTH = 4;
 
@@ -14,7 +15,7 @@ const OTP_LENGTH = 4;
  */
 const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, patchUser } = useAuth();
     const { settings } = useSettings();
     const primary = brandColor(settings);
     const primaryDark = brandColorDark(settings);
@@ -30,6 +31,9 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         supportEmail: defaultSupportEmail,
         supportPhone: settings?.supportPhone || '',
     });
+    // State for the set-name modal shown to new / unnamed users after login
+    const [showSetName, setShowSetName] = useState(false);
+    const [pendingLoginData, setPendingLoginData] = useState(null);
 
     const otpRefs = useRef([]);
 
@@ -88,12 +92,24 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         setIsLoading(true);
         try {
             const response = await customerApi.verifyOtp({ phone, otp });
-            const { token, customer } = response.data.result;
+            const { token, customer, isNewUser } = response.data.result;
             login({ ...customer, token, role: 'customer' });
+
+            // Show name prompt if it's a new user or the profile has no name yet
+            if (isNewUser || !customer?.name) {
+                setPendingLoginData({ customer, token });
+                setShowSetName(true);
+                return; // hold navigation until modal is handled
+            }
+
             toast.success('Welcome back!');
-            onSuccess?.(customer, token);
-            if (!onSuccess) navigate('/');
-            else onClose?.();
+            if (onSuccess) {
+                onSuccess(customer, token);
+            } else if (onClose) {
+                onClose();
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             const payload = err.response?.data?.result;
             if (payload?.suspended || err.response?.status === 403) {
@@ -107,6 +123,39 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
             toast.error(err.response?.data?.message || 'Invalid OTP');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleNameSaved = (savedName) => {
+        setShowSetName(false);
+        const { customer, token } = pendingLoginData || {};
+        const updatedCustomer = { ...customer, name: savedName };
+        setPendingLoginData(null);
+        patchUser({ name: savedName });
+        sessionStorage.removeItem('name_prompt_skipped'); // name is set — clear the flag
+        toast.success(`Welcome, ${savedName}!`);
+        if (onSuccess) {
+            onSuccess(updatedCustomer, token);
+        } else if (onClose) {
+            onClose();
+        } else {
+            navigate('/');
+        }
+    };
+
+    /** Called when user taps "Skip for now" on the name modal. */
+    const handleNameSkip = () => {
+        setShowSetName(false);
+        const { customer, token } = pendingLoginData || {};
+        setPendingLoginData(null);
+        sessionStorage.setItem('name_prompt_skipped', '1'); // tell CustomerLayoutWrapper to not re-open
+        toast.success('Welcome back!');
+        if (onSuccess) {
+            onSuccess(customer, token);
+        } else if (onClose) {
+            onClose();
+        } else {
+            navigate('/');
         }
     };
 
@@ -141,6 +190,7 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
     const focusBorder = { borderColor: primary, boxShadow: `0 0 0 3px ${primary}22` };
 
     return (
+        <>
         <div className={isEmbedded ? 'w-full' : 'flex min-h-screen flex-col justify-center bg-slate-50 px-4 py-10'}>
             <div
                 className={
@@ -325,6 +375,14 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
                 )}
             </div>
         </div>
+
+        {/* Name prompt modal — shown to new / unnamed users right after login */}
+        <SetNameModal
+            open={showSetName}
+            onSuccess={handleNameSaved}
+            onSkip={handleNameSkip}
+        />
+        </>  
     );
 };
 

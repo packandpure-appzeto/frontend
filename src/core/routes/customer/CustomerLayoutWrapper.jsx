@@ -1,6 +1,7 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useSettings } from '@core/context/SettingsContext';
+import { useAuth } from '@core/context/AuthContext';
 import { WishlistProvider } from '@modules/customer/context/WishlistContext';
 import { CartProvider } from '@modules/customer/context/CartContext';
 import { CartAnimationProvider } from '@modules/customer/context/CartAnimationContext';
@@ -13,6 +14,7 @@ import {
 } from '@modules/customer/constants/brandTheme';
 import ScrollToTop from '@modules/customer/components/shared/ScrollToTop';
 import CustomerLayout from '@modules/customer/components/layout/CustomerLayout';
+import SetNameModal from '@modules/customer/components/auth/SetNameModal';
 import Loader from '@shared/components/ui/Loader';
 
 /**
@@ -20,11 +22,39 @@ import Loader from '@shared/components/ui/Loader';
  */
 const CustomerLayoutWrapper = () => {
   const { settings } = useSettings();
+  const { user, isLoading: authLoading, patchUser } = useAuth();
+  const [showSetName, setShowSetName] = useState(false);
+  // Persist skip state across navigation — customerLoginForm sets this flag too
+  const skippedRef = useRef(sessionStorage.getItem('name_prompt_skipped') === '1');
 
   useEffect(() => {
     applyCustomerThemeVariables();
     return () => restoreThemeFromSettings(settings);
   }, [settings]);
+
+  /**
+   * Once the auth profile is loaded, if the user is authenticated but
+   * has no name, show the name-prompt modal.
+   * We guard with authLoading so we don't flash it during the initial fetch.
+   */
+  useEffect(() => {
+    if (!authLoading && user && !user.name && !skippedRef.current) {
+      setShowSetName(true);
+    }
+  }, [authLoading, user]);
+
+  const handleNameSaved = (savedName) => {
+    // Update the local user state so header/profile reflect the new name immediately
+    patchUser({ name: savedName });
+    sessionStorage.removeItem('name_prompt_skipped'); // name is set — clear the flag
+    setShowSetName(false);
+  };
+
+  const handleNameSkip = () => {
+    skippedRef.current = true;
+    sessionStorage.setItem('name_prompt_skipped', '1'); // persist across remounts
+    setShowSetName(false);
+  };
 
   return (
     <CustomerLoginProvider>
@@ -39,6 +69,12 @@ const CustomerLayoutWrapper = () => {
                     <Outlet />
                   </Suspense>
                 </CustomerLayout>
+                {/* Name prompt for returning users who have no name yet */}
+                <SetNameModal
+                  open={showSetName}
+                  onSuccess={handleNameSaved}
+                  onSkip={handleNameSkip}
+                />
               </ProductDetailProvider>
             </CartAnimationProvider>
           </CartProvider>

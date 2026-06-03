@@ -369,9 +369,9 @@ const AddressesPage = () => {
 
                         <div className="grid gap-2">
                             <Label>Pin Location</Label>
-                            <Button 
-                                type="button" 
-                                variant="outline" 
+                            <Button
+                                type="button"
+                                variant="outline"
                                 className={`w-full flex items-center gap-2 h-12 border-dashed ${addForm.location ? 'bg-rose-50 border-rose-500 text-rose-700' : 'border-slate-300'}`}
                                 onClick={() => {
                                     setMapMode('add');
@@ -452,9 +452,9 @@ const AddressesPage = () => {
 
                         <div className="grid gap-2">
                             <Label>Pin Location</Label>
-                            <Button 
-                                type="button" 
-                                variant="outline" 
+                            <Button
+                                type="button"
+                                variant="outline"
                                 className={`w-full flex items-center gap-2 h-12 border-dashed ${editForm.location ? 'bg-rose-50 border-rose-500 text-rose-700' : 'border-slate-300'}`}
                                 onClick={() => {
                                     setMapMode('edit');
@@ -540,7 +540,7 @@ const AddressesPage = () => {
                 </DialogContent>
             </Dialog>
 
-            <MapPicker 
+            <MapPicker
                 isOpen={isMapOpen}
                 onClose={() => setIsMapOpen(false)}
                 onConfirm={handleMapConfirm}

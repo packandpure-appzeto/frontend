@@ -116,8 +116,8 @@ const MapPicker = ({
         if (!silent) {
           toast.error(
             err.response?.data?.message ||
-              err.message ||
-              "Could not fetch address for this point",
+            err.message ||
+            "Could not fetch address for this point",
           );
         }
       } finally {
@@ -253,8 +253,8 @@ const MapPicker = ({
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          error.message ||
-          "Could not find this address",
+        error.message ||
+        "Could not find this address",
       );
     } finally {
       setIsGeocoding(false);

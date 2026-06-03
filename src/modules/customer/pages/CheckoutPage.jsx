@@ -251,7 +251,7 @@ const CheckoutPage = () => {
     savedRecipient?.phone || currentAddress.phone || user?.phone || "";
   const displayAddress = savedRecipient
     ? `${savedRecipient.completeAddress}${savedRecipient.landmark ? `, ${savedRecipient.landmark}` : ""}${savedRecipient.pincode ? ` - ${savedRecipient.pincode}` : ""}`
-    : currentAddress.address 
+    : currentAddress.address
       ? `${currentAddress.address}${currentAddress.landmark ? `, ${currentAddress.landmark}` : ""}${currentAddress.city ? `, ${currentAddress.city}` : ""}`
       : "Please select or add a delivery address";
 
@@ -286,11 +286,10 @@ const CheckoutPage = () => {
 
   const handleSaveEditedAddress = () => {
     if (
-      !editAddressForm.name.trim() ||
-      !editAddressForm.address.trim() ||
-      !editAddressForm.city.trim()
+      !editAddressForm.address?.trim() ||
+      !editAddressForm.city?.trim()
     ) {
-      showToast("Please fill name, address and city", "error");
+      showToast("Please fill address and city", "error");
       return;
     }
     setCurrentAddress(editAddressForm);
@@ -480,6 +479,12 @@ const CheckoutPage = () => {
   ]);
 
   const handlePlaceOrder = useCallback(() => {
+    const hasAddress = savedRecipient?.completeAddress || currentAddress.address;
+    if (!hasAddress) {
+      showToast("Please add address then slide to pay", "error");
+      return;
+    }
+
     if (!isAuthenticated) {
       openCustomerLogin({
         onSuccess: () => {
@@ -489,7 +494,7 @@ const CheckoutPage = () => {
       return;
     }
     executePlaceOrder();
-  }, [isAuthenticated, openCustomerLogin, executePlaceOrder]);
+  }, [isAuthenticated, openCustomerLogin, executePlaceOrder, savedRecipient, currentAddress, showToast]);
 
   // After place order: listen for seller timeout / rejection (customer room + order room) and poll as fallback
   useEffect(() => {
@@ -1110,8 +1115,8 @@ const CheckoutPage = () => {
                   setIsAddressModalOpen(false);
                 }}
                 className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${currentAddress.id === addr.id
-                    ? "border-[#E23744] bg-rose-50 shadow-sm"
-                    : "border-slate-100 bg-white hover:border-slate-200"
+                  ? "border-[#E23744] bg-rose-50 shadow-sm"
+                  : "border-slate-100 bg-white hover:border-slate-200"
                   }`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div
@@ -1252,8 +1257,8 @@ const CheckoutPage = () => {
               <div
                 key={coupon.code}
                 className={`p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${selectedCoupon?.code === coupon.code
-                    ? "border-[#E23744] bg-rose-50 shadow-sm"
-                    : "border-slate-100 bg-white hover:border-slate-200"
+                  ? "border-[#E23744] bg-rose-50 shadow-sm"
+                  : "border-slate-100 bg-white hover:border-slate-200"
                   }`}>
                 {selectedCoupon?.code === coupon.code && (
                   <div className="absolute top-0 right-0 p-1.5 bg-[#E23744] text-white rounded-bl-xl">
@@ -1276,8 +1281,8 @@ const CheckoutPage = () => {
                       onClick={() => handleApplyCoupon(coupon)}
                       disabled={selectedCoupon?.code === coupon.code}
                       className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${selectedCoupon?.code === coupon.code
-                          ? "bg-white text-[#E23744] border-2 border-[#E23744] cursor-default"
-                          : "bg-[#E23744] text-white hover:bg-[#C41E35]"
+                        ? "bg-white text-[#E23744] border-2 border-[#E23744] cursor-default"
+                        : "bg-[#E23744] text-white hover:bg-[#C41E35]"
                         }`}>
                       {selectedCoupon?.code === coupon.code
                         ? "Applied"

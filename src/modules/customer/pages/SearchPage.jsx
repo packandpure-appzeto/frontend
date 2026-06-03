@@ -25,7 +25,7 @@ import { useCart } from '../context/CartContext';
 import { normalizeCustomerProduct } from '@shared/utils/productDisplay';
 import CategoryProductRow from '../components/category/CategoryProductRow';
 import ProductCard from '../components/shared/ProductCard';
-import ProductDetailSheet from '../components/shared/ProductDetailSheet';
+
 import MiniCart from '../components/shared/MiniCart';
 import { useDebouncedValue, DEBOUNCE_MS } from '@shared/hooks/useDebounce';
 import { PAGE_CONTAINER } from '../components/home/homeLayout';
@@ -504,7 +504,7 @@ const SearchPage = () => {
       </main>
 
       <MiniCart />
-      <ProductDetailSheet />
+
 
       <style
         dangerouslySetInnerHTML={{

@@ -69,7 +69,8 @@ const CategoryProductRow = ({ product }) => {
   return (
     <article
       className={cn(
-        'relative bg-white border-b border-gray-100',
+        'relative bg-white border-b border-gray-100 transition-all duration-300',
+        'hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:z-10 active:bg-slate-50',
         !inStock && 'opacity-95',
       )}
     >
@@ -154,7 +155,7 @@ const CategoryProductRow = ({ product }) => {
           <button
             type="button"
             onClick={handleOpenDetail}
-            className="relative w-[88px] h-[72px] rounded-lg overflow-hidden bg-gray-50 border border-gray-100 mb-1"
+            className="relative w-[88px] h-[72px] rounded-xl overflow-hidden bg-white border border-slate-100 mb-1 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
           >
             <img
               src={product.image}
