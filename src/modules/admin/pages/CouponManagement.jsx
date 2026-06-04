@@ -36,16 +36,21 @@ const CouponManagement = () => {
     const [formData, setFormData] = useState({
         code: '',
         title: '',
-        couponType: 'generic',
+        promotionType: 'coupon',
         discountType: 'percentage',
         discountValue: '',
         minOrderValue: '',
+        maxOrderValue: '',
+        firstOrderOnly: false,
+        newUserOnly: false,
         maxDiscount: '',
         usageLimit: '',
         perUserLimit: '1',
         validFrom: '',
         validTill: '',
         description: '',
+        autoApply: false,
+        stackable: false,
     });
 
     useEffect(() => {
@@ -98,32 +103,42 @@ const CouponManagement = () => {
             setFormData({
                 code: coupon.code || '',
                 title: coupon.title || '',
-                couponType: coupon.couponType || 'generic',
+                promotionType: coupon.promotionType || 'coupon',
                 discountType: coupon.discountType || 'percentage',
                 discountValue: coupon.discountValue ?? '',
-                minOrderValue: coupon.minOrderValue ?? '',
+                minOrderValue: coupon.conditions?.minOrderValue ?? '',
+                maxOrderValue: coupon.conditions?.maxOrderValue ?? '',
+                firstOrderOnly: coupon.conditions?.firstOrderOnly ?? false,
+                newUserOnly: coupon.conditions?.newUserOnly ?? false,
                 maxDiscount: coupon.maxDiscount ?? '',
                 usageLimit: coupon.usageLimit ?? '',
                 perUserLimit: coupon.perUserLimit ?? '1',
                 validFrom: coupon.validFrom ? coupon.validFrom.substring(0, 10) : '',
                 validTill: coupon.validTill ? coupon.validTill.substring(0, 10) : '',
                 description: coupon.description || '',
+                autoApply: coupon.autoApply ?? false,
+                stackable: coupon.stackable ?? false,
             });
         } else {
             setEditingCoupon(null);
             setFormData({
                 code: '',
                 title: '',
-                couponType: 'generic',
+                promotionType: 'coupon',
                 discountType: 'percentage',
                 discountValue: '',
                 minOrderValue: '',
+                maxOrderValue: '',
+                firstOrderOnly: false,
+                newUserOnly: false,
                 maxDiscount: '',
                 usageLimit: '',
                 perUserLimit: '1',
                 validFrom: '',
                 validTill: '',
                 description: '',
+                autoApply: false,
+                stackable: false,
             });
         }
         setIsModalOpen(true);
@@ -133,15 +148,30 @@ const CouponManagement = () => {
         e.preventDefault();
         try {
             const payload = {
-                ...formData,
+                code: formData.code,
+                title: formData.title,
+                description: formData.description,
+                promotionType: formData.promotionType,
+                discountType: formData.discountType,
                 discountValue: Number(formData.discountValue),
-                minOrderValue: formData.minOrderValue ? Number(formData.minOrderValue) : 0,
                 maxDiscount: formData.maxDiscount ? Number(formData.maxDiscount) : undefined,
                 usageLimit: formData.usageLimit ? Number(formData.usageLimit) : undefined,
                 perUserLimit: formData.perUserLimit ? Number(formData.perUserLimit) : 1,
                 validFrom: formData.validFrom,
                 validTill: formData.validTill,
+                autoApply: formData.autoApply,
+                stackable: formData.stackable,
+                conditions: {
+                    minOrderValue: formData.minOrderValue !== '' ? Number(formData.minOrderValue) : undefined,
+                    maxOrderValue: formData.maxOrderValue !== '' ? Number(formData.maxOrderValue) : undefined,
+                    firstOrderOnly: formData.firstOrderOnly,
+                    newUserOnly: formData.newUserOnly,
+                }
             };
+
+            // Clean up undefined properties from conditions so mongoose doesn't save empty values
+            if (payload.conditions.minOrderValue === undefined) delete payload.conditions.minOrderValue;
+            if (payload.conditions.maxOrderValue === undefined) delete payload.conditions.maxOrderValue;
 
             if (editingCoupon?._id) {
                 await adminApi.updateCoupon(editingCoupon._id, payload);
@@ -290,10 +320,11 @@ const CouponManagement = () => {
                                             <p className="text-xs font-black text-slate-900">
                                                 {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : c.discountType === 'free_delivery' ? 'Free Delivery' : `₹${c.discountValue} OFF`}
                                             </p>
-                                            {c.minOrderValue > 0 && (
-                                                <p className="text-[10px] font-bold text-slate-400">Min. Order: ₹{c.minOrderValue}</p>
+                                            {c.conditions?.minOrderValue > 0 && (
+                                                <p className="text-[10px] font-bold text-slate-400">Min. Order: ₹{c.conditions.minOrderValue}</p>
                                             )}
-                                            <p className="text-[10px] font-bold text-slate-400 capitalize">Type: {c.couponType?.replace(/_/g, ' ') || 'generic'}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 capitalize">Type: {c.promotionType}</p>
+                                            {c.conditions?.firstOrderOnly && <p className="text-[10px] font-bold text-emerald-500">First Order Only</p>}
                                         </div>
                                     </td>
                                     <td className="px-4 py-6">
@@ -427,23 +458,29 @@ const CouponManagement = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Coupon Strategy</label>
-                        <select
-                            value={formData.couponType}
-                            onChange={(e) => setFormData({ ...formData, couponType: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
-                        >
-                            <option value="generic">Generic Discount</option>
-                            <option value="bulk_order">Bulk Order Discount</option>
-                            <option value="min_order_value">Minimum Order Value Coupon</option>
-                            <option value="free_delivery">Free Delivery Coupon</option>
-                            <option value="category_based">Category-Based Coupon</option>
-                            <option value="monthly_volume">Monthly Volume Coupon</option>
-                        </select>
-                        <p className="text-[10px] text-slate-400">
-                            Choose the logic: bulk order, MOV, free delivery, specific categories, or monthly volume buyers.
-                        </p>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Promotion Type</label>
+                            <select
+                                value={formData.promotionType}
+                                onChange={(e) => setFormData({ ...formData, promotionType: e.target.value })}
+                                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
+                            >
+                                <option value="coupon">Coupon Code (Manual)</option>
+                                <option value="automatic">Automatic Discount</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2 flex items-end pb-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={formData.autoApply}
+                                    onChange={(e) => setFormData({ ...formData, autoApply: e.target.checked })}
+                                    className="w-4 h-4 rounded-sm text-primary border-slate-300"
+                                />
+                                <span className="text-xs font-black text-slate-600">Auto-Apply at Checkout</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-6">
@@ -501,6 +538,36 @@ const CouponManagement = () => {
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
                             />
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Max Order Requirement (optional)</label>
+                            <input
+                                type="number"
+                                value={formData.maxOrderValue}
+                                onChange={(e) => setFormData({ ...formData, maxOrderValue: e.target.value })}
+                                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-4 rounded-2xl">
+                            <input 
+                                type="checkbox" 
+                                checked={formData.firstOrderOnly}
+                                onChange={(e) => setFormData({ ...formData, firstOrderOnly: e.target.checked })}
+                                className="w-4 h-4 rounded-sm text-primary border-slate-300"
+                            />
+                            <span className="text-xs font-black text-slate-600">Valid for First Order Only</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-4 rounded-2xl">
+                            <input 
+                                type="checkbox" 
+                                checked={formData.newUserOnly}
+                                onChange={(e) => setFormData({ ...formData, newUserOnly: e.target.checked })}
+                                className="w-4 h-4 rounded-sm text-primary border-slate-300"
+                            />
+                            <span className="text-xs font-black text-slate-600">Valid for New Users Only</span>
+                        </label>
                     </div>
 
                     <div className="grid grid-cols-2 gap-6">
@@ -509,6 +576,7 @@ const CouponManagement = () => {
                             <input
                                 required
                                 type="date"
+                                min={new Date().toISOString().split('T')[0]}
                                 value={formData.validFrom}
                                 onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"
@@ -519,6 +587,7 @@ const CouponManagement = () => {
                             <input
                                 required
                                 type="date"
+                                min={formData.validFrom || new Date().toISOString().split('T')[0]}
                                 value={formData.validTill}
                                 onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
                                 className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-xs font-black outline-none"

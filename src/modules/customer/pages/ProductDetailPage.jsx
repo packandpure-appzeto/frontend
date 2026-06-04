@@ -255,7 +255,20 @@ const ProductDetailPage = () => {
                                 >
                                     <Minus size={24} strokeWidth={3} />
                                 </button>
-                                <span className="w-16 text-center font-black text-xl">{quantity}</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={quantity}
+                                    onChange={(e) => {
+                                        const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                                        if (val === '') {
+                                            updateQuantity(product._id || product.id, 0 - quantity);
+                                        } else if (!isNaN(val)) {
+                                            updateQuantity(product._id || product.id, val - quantity);
+                                        }
+                                    }}
+                                    className="w-16 bg-transparent text-center font-black text-xl border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none text-white placeholder-white/50"
+                                />
                                 <button
                                     onClick={() => updateQuantity(product._id || product.id, 1)}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"

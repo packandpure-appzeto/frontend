@@ -301,6 +301,7 @@ function QuantityControls({
   onAdd,
   onInc,
   onDec,
+  onSet,
   compact,
 }) {
   const atMax = maxQty != null && quantity >= maxQty;
@@ -320,12 +321,26 @@ function QuantityControls({
         <button
           type="button"
           onClick={onDec}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 active:bg-white/30"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 active:bg-white/30 shrink-0"
           aria-label="Decrease"
         >
           <Minus size={20} strokeWidth={3} />
         </button>
-        <span className="min-w-10 text-center text-lg font-black">{quantity}</span>
+        <input
+          type="number"
+          min="0"
+          value={quantity}
+          onChange={(e) => {
+            if (!onSet) return;
+            const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+            if (val === '') {
+              onSet(0);
+            } else if (!isNaN(val)) {
+              onSet(val);
+            }
+          }}
+          className="w-12 bg-transparent text-center text-lg font-black border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none text-white"
+        />
         <button
           type="button"
           onClick={onInc}
@@ -375,6 +390,7 @@ function ProductDetailFooter({
   onAdd,
   onInc,
   onDec,
+  onSet,
   onClose,
   compact,
 }) {
@@ -431,6 +447,7 @@ function ProductDetailFooter({
             onAdd={onAdd}
             onInc={onInc}
             onDec={onDec}
+            onSet={onSet}
             compact={compact}
           />
         </div>
@@ -612,6 +629,12 @@ const ProductDetailSheet = () => {
     else updateQuantity(productId, -1, vId);
   };
 
+  const setQty = (val) => {
+    if (!productId) return;
+    const vId = selectedVariantId || undefined;
+    updateQuantity(productId, val - quantity, vId);
+  };
+
   if (!selectedProduct) return null;
 
   const headerBadges = (
@@ -773,6 +796,7 @@ const ProductDetailSheet = () => {
                     onAdd={handleAdd}
                     onInc={inc}
                     onDec={dec}
+                    onSet={setQty}
                     onClose={closeProduct}
                   />
                 </div>
@@ -856,6 +880,7 @@ const ProductDetailSheet = () => {
                 onAdd={handleAdd}
                 onInc={inc}
                 onDec={dec}
+                onSet={setQty}
                 onClose={closeProduct}
                 compact
               />

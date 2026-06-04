@@ -184,12 +184,21 @@ const CategoryProductRow = ({ product }) => {
                 >
                   <Minus size={14} strokeWidth={3} />
                 </button>
-                <span
-                  className="text-[13px] font-bold min-w-[20px] text-center"
+                <input
+                  type="number"
+                  min="0"
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                    if (val === '') {
+                      updateQuantity(productId, 0 - quantity, product.selectedVariantId || undefined);
+                    } else if (!isNaN(val)) {
+                      updateQuantity(productId, val - quantity, product.selectedVariantId || undefined);
+                    }
+                  }}
+                  className="w-8 bg-transparent text-center text-[13px] font-bold border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ color: BLINKIT_RED }}
-                >
-                  {quantity}
-                </span>
+                />
                 <button
                   type="button"
                   onClick={(e) => {

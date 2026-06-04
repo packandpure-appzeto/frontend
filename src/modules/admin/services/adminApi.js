@@ -158,8 +158,8 @@ export const adminApi = {
     reorderOfferSections: (items) => axiosInstance.put('/admin-offer-sections/reorder', { items }),
 
     // Coupons & Promos
-    getCoupons: (params) => axiosInstance.get('/admin/coupons', { params }),
-    createCoupon: (data) => axiosInstance.post('/admin/coupons', data),
-    updateCoupon: (id, data) => axiosInstance.put(`/admin/coupons/${id}`, data),
-    deleteCoupon: (id) => axiosInstance.delete(`/admin/coupons/${id}`),
+    getCoupons: (params) => axiosInstance.get('/admin/promotions', { params }),
+    createCoupon: (data) => axiosInstance.post('/admin/promotions', data),
+    updateCoupon: (id, data) => axiosInstance.put(`/admin/promotions/${id}`, data),
+    deleteCoupon: (id) => axiosInstance.delete(`/admin/promotions/${id}`),
 };

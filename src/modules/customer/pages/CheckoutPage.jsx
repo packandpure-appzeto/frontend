@@ -83,6 +83,8 @@ const CheckoutPage = () => {
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [coupons, setCoupons] = useState([]);
+  const [autoPromos, setAutoPromos] = useState([]); // Stores automatic promos for background evaluation
   const postOrderNavigateRef = useRef(null);
   const [currentAddress, setCurrentAddress] = useState({
     type: "Home",
@@ -184,7 +186,6 @@ const CheckoutPage = () => {
   });
   const [savedRecipient, setSavedRecipient] = useState(null);
 
-  const [coupons, setCoupons] = useState([]);
   const [manualCode, setManualCode] = useState("");
 
   const allPaymentMethods = useMemo(
@@ -322,7 +323,7 @@ const CheckoutPage = () => {
         items: cart,
         customerId: user?._id,
       };
-      const res = await customerApi.validateCoupon(payload);
+      const res = await customerApi.validatePromotion(payload);
       if (res.data.success) {
         const data = res.data.result;
         setSelectedCoupon({
@@ -361,10 +362,16 @@ const CheckoutPage = () => {
 
     const fetchCoupons = async () => {
       try {
-        const res = await customerApi.getActiveCoupons();
+        const res = await customerApi.getActivePromotions();
         if (res.data.success) {
           const list = res.data.result || res.data.results || [];
-          setCoupons(list);
+          
+          // Separate automatic and manual promos
+          const manualPromos = list.filter(p => p.promotionType !== 'automatic');
+          setCoupons(manualPromos);
+          
+          const autoList = list.filter(p => p.promotionType === 'automatic' && p.autoApply);
+          setAutoPromos(autoList);
         }
       } catch {
         // silently ignore
@@ -372,6 +379,81 @@ const CheckoutPage = () => {
     };
     fetchCoupons();
   }, []);
+
+  // Amazon-Style Dynamic Coupon Evaluation
+  useEffect(() => {
+    let isMounted = true;
+    const evaluateCoupons = async () => {
+      if (cartTotal <= 0) {
+        setSelectedCoupon(null);
+        return;
+      }
+
+      // If a manual coupon is applied, just re-validate it
+      if (selectedCoupon && selectedCoupon.promotionType !== 'automatic') {
+        try {
+          const res = await customerApi.validatePromotion({
+            code: selectedCoupon.code,
+            cartTotal,
+            items: cart,
+            customerId: user?._id,
+          });
+          if (isMounted) {
+            if (res.data.success) {
+              setSelectedCoupon(prev => ({ ...prev, ...res.data.result }));
+            } else {
+              // Manual coupon became invalid (e.g. cart total dropped below min threshold)
+              setSelectedCoupon(null);
+              showToast(res.data.message || `Coupon ${selectedCoupon.code} is no longer valid`, "error");
+            }
+          }
+        } catch (e) {
+          if (isMounted) setSelectedCoupon(null);
+        }
+        return; // Don't run automatic logic if a manual coupon is active
+      }
+
+      // Evaluate best automatic coupon
+      if (autoPromos.length > 0) {
+        let bestPromo = null;
+        let maxDiscount = -1;
+        for (const promo of autoPromos) {
+          try {
+            const validationRes = await customerApi.validatePromotion({
+              code: promo.code,
+              cartTotal,
+              items: cart,
+              customerId: user?._id,
+            });
+            if (validationRes.data.success) {
+              const discount = validationRes.data.result.discountAmount || 0;
+              if (discount > maxDiscount) {
+                maxDiscount = discount;
+                bestPromo = { ...promo, ...validationRes.data.result };
+              }
+            }
+          } catch (e) {
+            // Ignore validation errors for silent auto-apply
+          }
+        }
+        
+        if (isMounted) {
+          if (bestPromo) {
+            setSelectedCoupon(bestPromo);
+          } else if (selectedCoupon && selectedCoupon.promotionType === 'automatic') {
+            // The previously applied automatic coupon is no longer valid
+            setSelectedCoupon(null);
+          }
+        }
+      }
+    };
+
+    evaluateCoupons();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [cartTotal, cart, user, autoPromos, showToast]);
 
   const executePlaceOrder = useCallback(async () => {
     setIsPlacingOrder(true);
@@ -413,9 +495,10 @@ const CheckoutPage = () => {
           platformFee,
           gst,
           tip: 0,
-          discount: discountAmount,
+          discount: selectedCoupon ? (selectedCoupon.discountAmount || selectedCoupon.discount || 0) : 0,
           total: totalAmount,
         },
+        promotionId: selectedCoupon ? (selectedCoupon._id || selectedCoupon.promotionId) : null,
         timeSlot: selectedTimeSlot,
         items: cart.map((item) => ({
           // Prefer backend Mongo _id for procurement/vendor mapping.
@@ -956,21 +1039,25 @@ const CheckoutPage = () => {
                   selectedCoupon
                     ? `${selectedCoupon.code} applied`
                     : coupons.length
-                      ? `${coupons.length} available`
-                      : "No coupons"
+                      ? `${coupons.length} manual available`
+                      : "No manual coupons"
                 }
                 icon={Tag}
                 open={couponsExpanded}
                 onToggle={() => setCouponsExpanded((v) => !v)}
               >
                 {selectedCoupon ? (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCoupon(null)}
-                    className="w-full rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    Remove {selectedCoupon.code}
-                  </button>
+                  <>
+                    {selectedCoupon.promotionType !== 'automatic' && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCoupon(null)}
+                        className="w-full rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 mb-3"
+                      >
+                        Remove {selectedCoupon.code}
+                      </button>
+                    )}
+                  </>
                 ) : null}
                 <button
                   type="button"

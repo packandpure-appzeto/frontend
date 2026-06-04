@@ -129,7 +129,19 @@ const OffersPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const offersPromise = customerApi.getOffers().catch(() => ({ data: {} }));
+      const fetchCoupons = async () => {
+        try {
+          const res = await customerApi.getActivePromotions();
+          if (res.data.success) {
+            const list = res.data.result || res.data.results || [];
+            setCoupons(list);
+          }
+        } catch (error) {
+          // silently fail for customer view
+        }
+      };
+
+      const offersPromise = fetchCoupons();
       const sectionsPromise = hasValidLocation
         ? customerApi.getOfferSections({
             lat: currentLocation.latitude,
@@ -137,17 +149,10 @@ const OffersPage = () => {
           })
         : Promise.resolve({ data: {} });
 
-      const [offersRes, sectionsRes] = await Promise.all([
+      const [_, sectionsRes] = await Promise.all([
         offersPromise,
         sectionsPromise,
       ]);
-
-      const offersList =
-        offersRes.data?.results ||
-        offersRes.data?.result ||
-        offersRes.data ||
-        [];
-      setCoupons(Array.isArray(offersList) ? offersList : []);
 
       const sectionsRaw =
         sectionsRes.data?.results ||
@@ -172,8 +177,10 @@ const OffersPage = () => {
   const activeCoupons = useMemo(
     () =>
       [...coupons]
-        .filter((o) => o.status === 'active')
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+        .filter((c) => c.promotionType === 'coupon') // Only show manual coupons, not automatic ones
+        .sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        ),
     [coupons],
   );
 

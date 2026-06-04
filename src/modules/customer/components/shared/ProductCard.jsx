@@ -345,13 +345,26 @@ const ProductCard = React.memo(
                     className="p-1 px-1.5 text-brand-600 active:scale-90 transition-transform">
                     <Minus size={compact ? 12 : 14} strokeWidth={3.5} />
                   </button>
-                  <span
+                  <input
+                    type="number"
+                    min="0"
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                      if (val === '') {
+                        // Let it be empty temporarily if we had local state, 
+                        // but since it's controlled by quantity, we'll just ignore or treat as 0
+                        // For better UX without local state, we can just treat NaN as 0
+                        updateQuantity(product.id || product._id, 0 - quantity, product.selectedVariantId || undefined);
+                      } else if (!isNaN(val)) {
+                        updateQuantity(product.id || product._id, val - quantity, product.selectedVariantId || undefined);
+                      }
+                    }}
                     className={cn(
-                      "font-bold text-brand-600",
+                      "w-6 text-center font-bold text-brand-600 bg-transparent border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none",
                       compact ? "text-[12px]" : "text-[13px] md:text-sm",
-                    )}>
-                    {quantity}
-                  </span>
+                    )}
+                  />
                   <button
                     onClick={handleIncrement}
                     className="p-1 px-1.5 text-brand-600 active:scale-90 transition-transform">
@@ -367,7 +380,7 @@ const ProductCard = React.memo(
                     "rounded-lg border-2 font-bold uppercase tracking-wide leading-none shadow-sm transition-all",
                     product.inStock === false
                       ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
-                      : "border-brand-600 bg-white text-brand-600 hover:bg-brand-50",
+                      : "border-[#E23744] bg-[#E23744] text-white hover:bg-[#C41E35] hover:border-[#C41E35] shadow-md shadow-rose-100",
                     compact
                       ? "px-5 py-1.5 text-[12px]"
                       : "px-7 py-2 text-[13px] md:text-sm md:px-8 md:py-2.5",

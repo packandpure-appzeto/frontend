@@ -105,12 +105,21 @@ export default function CheckoutCartItemRow({
           >
             <Minus size={18} strokeWidth={3} />
           </button>
-          <span
-            className="min-w-[28px] text-center text-base font-black"
+          <input
+            type="number"
+            min="0"
+            value={qty}
+            onChange={(e) => {
+              const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+              if (val === '') {
+                onUpdateQuantity(productId, 0 - qty, variantId || undefined);
+              } else if (!isNaN(val)) {
+                onUpdateQuantity(productId, val - qty, variantId || undefined);
+              }
+            }}
+            className="w-12 bg-transparent text-center text-base font-black border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none"
             style={{ color: BRAND_COLOR }}
-          >
-            {qty}
-          </span>
+          />
           <button
             type="button"
             onClick={() => onUpdateQuantity(productId, 1, variantId || undefined)}
