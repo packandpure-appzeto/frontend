@@ -41,21 +41,30 @@ function SubcategoryButton({ sub, active, onClick, variant = 'mobile' }) {
         type="button"
         onClick={onClick}
         className={cn(
-          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
+          'flex w-full items-center gap-4 border-l-[3px] px-4 py-3 text-left transition-all duration-300 active:scale-[0.98]',
           active
-            ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-200'
-            : 'text-slate-700 hover:bg-slate-50',
+            ? 'border-[#E23744] bg-linear-to-r from-rose-50 to-transparent'
+            : 'border-transparent hover:bg-slate-50',
         )}
       >
         <span
           className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border p-1.5',
-            active ? 'border-brand-200 bg-white' : 'border-slate-100 bg-slate-50',
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full p-2.5 transition-all duration-300',
+            active 
+              ? 'scale-110 bg-white shadow-[0_4px_16px_rgba(0,0,0,0.08)] ring-1 ring-rose-100' 
+              : 'bg-slate-50 shadow-sm opacity-80 hover:opacity-100 hover:shadow-md hover:-translate-y-0.5',
           )}
         >
-          <img src={sub.icon} alt="" className="h-full w-full object-contain" loading="lazy" />
+          <img src={sub.icon} alt="" className="h-full w-full object-contain drop-shadow-sm" loading="lazy" />
         </span>
-        <span className="min-w-0 text-sm font-semibold leading-tight">{sub.name}</span>
+        <span 
+          className={cn(
+            'min-w-0 text-sm font-bold leading-tight transition-colors',
+            active ? 'text-[#E23744]' : 'text-slate-600',
+          )}
+        >
+          {sub.name}
+        </span>
       </button>
     );
   }
@@ -519,7 +528,7 @@ const CategoryProductsPage = () => {
 
       {/* Desktop: sidebar + grid */}
       <div className={cn(PAGE_CONTAINER, 'hidden flex-1 gap-6 py-6 pb-12 md:flex')}>
-        <aside className="sticky top-24 hidden h-fit w-56 shrink-0 space-y-1 md:block lg:w-60">
+        <aside className="sticky top-24 hidden h-fit w-56 shrink-0 md:block lg:w-60">
           <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-500">
             Subcategories
           </p>

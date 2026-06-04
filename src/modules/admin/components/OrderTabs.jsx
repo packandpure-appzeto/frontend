@@ -14,7 +14,7 @@ import {
 const OrderTabs = () => {
     const tabs = [
         { label: 'All Orders', path: '/admin/orders/all', icon: List },
-        { label: 'New Orders', path: '/admin/orders/pending', icon: Clock },
+
         { label: 'Being Prepared', path: '/admin/orders/processed', icon: Package },
         { label: 'On the Way', path: '/admin/orders/out-for-delivery', icon: Truck },
         { label: 'Delivered', path: '/admin/orders/delivered', icon: CheckCircle2 },

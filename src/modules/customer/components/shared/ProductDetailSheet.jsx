@@ -57,7 +57,7 @@ function ProductImageGallery({ images, name, activeIndex, onSelect }) {
     <div className="flex h-full flex-col justify-center">
       <div className="flex items-center justify-center p-4 sm:p-6 lg:p-10">
         {/* Added border, shadow, and frame */}
-        <div className="relative flex aspect-square w-full max-w-[320px] sm:max-w-[380px] items-center justify-center overflow-hidden rounded-3xl border border-slate-100 bg-white p-4 shadow-[0_12px_40px_rgba(0,0,0,0.08)] ring-1 ring-slate-900/5 transition-all">
+        <div className="relative flex aspect-square w-full max-w-[320px] sm:max-w-[380px] items-center justify-center overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)] ring-1 ring-slate-900/5 transition-all">
           <AnimatePresence mode="wait">
             <motion.img
               key={activeIndex}
@@ -67,7 +67,7 @@ function ProductImageGallery({ images, name, activeIndex, onSelect }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute inset-0 h-full w-full object-contain p-4 mix-blend-multiply"
+              className="absolute inset-0 h-full w-full object-cover mix-blend-multiply"
             />
           </AnimatePresence>
         </div>
@@ -310,7 +310,7 @@ function QuantityControls({
       <div
         className={cn(
           'flex items-center justify-between rounded-2xl text-white shadow-lg',
-          compact ? 'h-14 w-full px-2' : 'min-w-[200px] px-2 py-1.5',
+          compact ? 'h-12 w-[140px] px-2' : 'min-w-[200px] px-2 py-1.5',
         )}
         style={{
           backgroundColor: CTA_RED,
@@ -350,7 +350,7 @@ function QuantityControls({
       className={cn(
         'rounded-2xl font-black uppercase tracking-wide text-white shadow-lg transition-transform active:scale-[0.98]',
         inStock ? 'hover:opacity-95' : 'cursor-not-allowed bg-slate-300 shadow-none',
-        compact ? 'h-14 w-full text-base' : 'px-10 py-4 text-sm',
+        compact ? 'h-12 w-[140px] text-sm' : 'px-10 py-4 text-sm',
       )}
       style={
         inStock
@@ -392,7 +392,7 @@ function ProductDetailFooter({
           : 'p-6 shadow-[0_-8px_30px_rgba(15,23,42,0.08)]',
       )}
     >
-      <div className={cn('gap-3', compact ? 'flex flex-col' : 'flex items-end justify-between')}>
+      <div className="flex items-center justify-between gap-3">
         {!compact ? (
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500">Price for selected pack</p>
@@ -423,7 +423,7 @@ function ProductDetailFooter({
           </div>
         )}
 
-        <div className={cn(compact ? 'w-full' : 'shrink-0')}>
+        <div className="shrink-0">
           <QuantityControls
             quantity={quantity}
             inStock={inStock}

@@ -94,16 +94,7 @@ const AdminDashboard = () => {
             description: 'Last 30 days',
             path: '/admin/orders/all'
         },
-        {
-            label: 'New Orders',
-            value: overview.newOrderCount?.toLocaleString() || '0',
-            icon: Loader2,
-            color: 'text-rose-600',
-            bg: 'bg-rose-50',
-            trend: 'Pending',
-            description: 'Awaiting action',
-            path: '/admin/orders/pending'
-        },
+
         {
             label: 'All Categories',
             value: overview.allCategoryCount?.toLocaleString() || '0',
