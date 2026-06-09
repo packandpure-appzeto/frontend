@@ -43,9 +43,6 @@ const ProductManagement = React.lazy(
   () => import("../pages/ProductManagement"),
 );
 const HubInventoryPage = React.lazy(() => import("../pages/HubInventoryPage"));
-const VendorManagementPage = React.lazy(
-  () => import("../pages/VendorManagementPage"),
-);
 const PurchaseRequestsPage = React.lazy(
   () => import("../pages/PurchaseRequestsPage"),
 );
@@ -54,6 +51,9 @@ const PickupPartnersPage = React.lazy(
 );
 const DeliveryPartnersPage = React.lazy(
   () => import("../pages/DeliveryPartnersPage"),
+);
+const DeliveryPartnerProfile = React.lazy(
+  () => import("../pages/DeliveryPartnerProfile"),
 );
 const ActiveSellers = React.lazy(() => import("../pages/ActiveSellers"));
 const PendingSellers = React.lazy(() => import("../pages/PendingSellers"));
@@ -164,9 +164,8 @@ const navItems = [
   },
 
   { sectionHeader: "Vendors & Sellers" },
-  { label: "Vendors", path: "/admin/vendors", icon: Store, color: "lime" },
   {
-    label: "Sellers",
+    label: "Vendors & Sellers",
     icon: Building2,
     color: "blue",
     path: "/admin/sellers/active"
@@ -284,7 +283,6 @@ const AdminRoutes = () => {
         <Route path="/categories/hierarchy" element={<CategoryHierarchy />} />
         <Route path="/products" element={<ProductManagement />} />
         <Route path="/hub-inventory" element={<HubInventoryPage />} />
-        <Route path="/vendors" element={<VendorManagementPage />} />
         <Route path="/purchase-requests" element={<PurchaseRequestsPage />} />
         <Route path="/pickup-partners" element={<PickupPartnersPage />} />
         <Route path="/delivery-partners" element={<DeliveryPartnersPage />} />
@@ -302,6 +300,7 @@ const AdminRoutes = () => {
         <Route path="/sellers/pending" element={<PendingSellers />} />
         <Route path="/seller-locations" element={<SellerLocations />} />
         <Route path="/delivery-boys/active" element={<ActiveDeliveryBoys />} />
+        <Route path="/delivery-boys/:id" element={<DeliveryPartnerProfile />} />
         <Route
           path="/delivery-boys/pending"
           element={<PendingDeliveryBoys />}

@@ -20,12 +20,14 @@ import {
     HiOutlineCheckCircle,
     HiOutlineXMark,
     HiOutlineChevronRight,
-    HiOutlineEllipsisHorizontal
+    HiOutlineEllipsisHorizontal,
+    HiOutlineArchiveBox
 } from 'react-icons/hi2';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
 import SellerTabs from '../components/SellerTabs';
+import { SupplyFormModal, SupplyInfoModal } from '../components/supply/SupplyActionModals';
 
 const ActiveSellers = () => {
     const navigate = useNavigate();
@@ -35,7 +37,7 @@ const ActiveSellers = () => {
     const fetchSellers = async () => {
         try {
             setIsLoading(true);
-            const res = await adminApi.getSellers({ verified: 'true' });
+            const res = await adminApi.getSellers();
             console.log("Verified Sellers API Response:", res.data);
 
             // Maximum robustness in data extraction
@@ -68,13 +70,30 @@ const ActiveSellers = () => {
 
     React.useEffect(() => {
         fetchSellers();
+        fetchProducts();
     }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const res = await adminApi.getProducts({ page: 1, limit: 300, status: "active" });
+            const payload = res?.data?.result || {};
+            setProducts(Array.isArray(payload.items) ? payload.items : []);
+        } catch {
+            setProducts([]);
+        }
+    };
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
     const [viewingSeller, setViewingSeller] = useState(null);
     const [editingSeller, setEditingSeller] = useState(null);
+    const [addingSeller, setAddingSeller] = useState(false);
+    const [requestOpen, setRequestOpen] = useState(false);
+    const [requestForm, setRequestForm] = useState({ productId: "", quantity: "100" });
+    const [infoOpen, setInfoOpen] = useState(false);
+    const [infoMessage, setInfoMessage] = useState("");
+    const [products, setProducts] = useState([]);
     const [showFilters, setShowFilters] = useState(false);
     const [advancedFilters, setAdvancedFilters] = useState({
         minRevenue: 0,
@@ -124,14 +143,57 @@ const ActiveSellers = () => {
         });
     }, [sellers, searchTerm, filterCategory, advancedFilters]);
 
-    const handleEditUpdate = async (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         try {
-            await adminApi.updateSeller(editingSeller._id, formState);
-            setEditingSeller(null);
+            const payload = { ...formState };
+            if (formState.location) {
+                const coords = formState.location.split(',').map(s => s.trim());
+                if (coords.length === 2) {
+                    payload.lng = Number(coords[0]);
+                    payload.lat = Number(coords[1]);
+                }
+            }
+            if (addingSeller) {
+                payload.radius = Math.max(1, Number(formState.serviceRadius || 5));
+                payload.isActive = true;
+                payload.isVerified = true;
+                await adminApi.createSeller(payload);
+                setAddingSeller(false);
+            } else {
+                await adminApi.updateSeller(editingSeller._id, payload);
+                setEditingSeller(null);
+            }
             fetchSellers();
+            setInfoMessage(addingSeller ? "Seller created successfully" : "Seller updated successfully");
+            setInfoOpen(true);
         } catch (error) {
-            alert(error?.response?.data?.message || 'Update failed');
+            setInfoMessage(error?.response?.data?.message || 'Action failed');
+            setInfoOpen(true);
+        }
+    };
+
+    const createPurchaseRequest = async () => {
+        if (!viewingSeller) return;
+        const productId = String(requestForm.productId || "").trim();
+        if (!productId) {
+            setInfoMessage("Please select a product.");
+            setInfoOpen(true);
+            return;
+        }
+        const qty = Math.max(1, Number(requestForm.quantity || 1));
+        try {
+            await adminApi.createManualPurchaseRequest({
+                vendorId: viewingSeller._id,
+                productId,
+                quantity: qty,
+            });
+            setRequestOpen(false);
+            setInfoMessage("Purchase request created.");
+            setInfoOpen(true);
+        } catch (error) {
+            setInfoMessage(error?.response?.data?.message || "Failed to create purchase request.");
+            setInfoOpen(true);
         }
     };
 
@@ -165,10 +227,23 @@ const ActiveSellers = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                     <h1 className="ds-h1 flex items-center gap-2">
-                        Active Sellers
-                        <Badge variant="success" className="text-[9px] px-1.5 py-0 font-bold tracking-wider uppercase">Verified</Badge>
+                        Sellers
                     </h1>
-                    <p className="ds-description mt-0.5">View and manage all active sellers.</p>
+                    <p className="ds-description mt-0.5">View and manage all sellers.</p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => {
+                            setFormState({ shopName: '', name: '', email: '', phone: '', password: '', category: 'Grocery', location: '', serviceRadius: 5 });
+                            setAddingSeller(true);
+                        }}
+                        className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold transition hover:bg-slate-800"
+                    >
+                        Add Seller
+                    </button>
+                    <button onClick={fetchSellers} className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 rounded-xl text-xs font-bold transition hover:bg-slate-50">
+                        Refresh
+                    </button>
                 </div>
             </div>
 
@@ -376,8 +451,16 @@ const ActiveSellers = () => {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end space-x-2">
                                             <button
+                                                onClick={() => { setViewingSeller(s); setRequestOpen(true); }}
+                                                className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-emerald-500"
+                                                title="Send Purchase Request"
+                                            >
+                                                <HiOutlineArchiveBox className="h-4 w-4" />
+                                            </button>
+                                            <button
                                                 onClick={() => openSellerDetails(s)}
                                                 className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-primary"
+                                                title="View Details"
                                             >
                                                 <HiOutlineEye className="h-4 w-4" />
                                             </button>
@@ -492,16 +575,16 @@ const ActiveSellers = () => {
                     </div>
                 )}
             </AnimatePresence>
-            {/* Edit Modal */}
+            {/* Edit/Add Modal */}
             <AnimatePresence>
-                {editingSeller && (
+                {(editingSeller || addingSeller) && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
-                            onClick={() => { setEditingSeller(null); }}
+                            onClick={() => { setEditingSeller(null); setAddingSeller(false); }}
                         />
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -511,15 +594,15 @@ const ActiveSellers = () => {
                         >
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-900">Edit Shop Profile</h3>
+                                    <h3 className="text-xl font-bold text-slate-900">{addingSeller ? 'Add New Seller' : 'Edit Shop Profile'}</h3>
                                     <p className="text-xs text-slate-500 font-medium">Configure store settings and identity.</p>
                                 </div>
-                                <button onClick={() => { setEditingSeller(null); }} className="p-2 hover:bg-slate-100 rounded-full">
+                                <button onClick={() => { setEditingSeller(null); setAddingSeller(false); }} className="p-2 hover:bg-slate-100 rounded-full">
                                     <HiOutlineXMark className="h-5 w-5 text-slate-400" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleEditUpdate} className="space-y-4">
+                            <form onSubmit={handleFormSubmit} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Shop Name</label>
@@ -576,6 +659,19 @@ const ActiveSellers = () => {
                                         />
                                     </div>
                                 </div>
+                                
+                                {addingSeller && (
+                                    <div className="space-y-1">
+                                        <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
+                                        <input
+                                            required
+                                            value={formState.password}
+                                            onChange={(e) => setFormState({ ...formState, password: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-xs font-bold outline-none"
+                                            placeholder="Enter initial password"
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-4 gap-4 items-end">
                                     <div className="col-span-3 space-y-1">
@@ -599,13 +695,46 @@ const ActiveSellers = () => {
                                 </div>
 
                                 <button type="submit" className="w-full py-3.5 bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-xl hover:bg-slate-800 transition-all transform active:scale-[0.98] mt-4">
-                                    UPDATE SHOP PROFILE
+                                    {addingSeller ? 'ADD SELLER' : 'UPDATE SHOP PROFILE'}
                                 </button>
                             </form>
                         </motion.div>
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Purchase Request Modal */}
+            <SupplyFormModal
+                isOpen={requestOpen}
+                onClose={() => setRequestOpen(false)}
+                title={`Send Purchase Request${viewingSeller ? ` - ${viewingSeller.shopName}` : ""}`}
+                submitLabel="Create"
+                fields={[
+                    {
+                        key: "productId",
+                        label: "Product",
+                        type: "select",
+                        options: [
+                            { value: "", label: "Select Product" },
+                            ...products.map((p) => ({
+                                value: p._id,
+                                label: p.name,
+                            })),
+                        ],
+                    },
+                    { key: "quantity", label: "Quantity", type: "number" },
+                ]}
+                values={requestForm}
+                onChange={(key, value) => setRequestForm((prev) => ({ ...prev, [key]: value }))}
+                onSubmit={createPurchaseRequest}
+            />
+
+            <SupplyInfoModal
+                isOpen={infoOpen}
+                onClose={() => setInfoOpen(false)}
+                title="Sellers Update"
+                message={infoMessage}
+            />
         </div>
     );
 };

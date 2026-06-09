@@ -436,25 +436,26 @@ const SearchPage = () => {
         )}
       >
         <div className={cn(PAGE_CONTAINER, 'py-3 md:py-4')}>
-          <div className="flex items-center gap-2 md:gap-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="shrink-0 rounded-full p-1.5 hover:bg-slate-50 md:hidden"
-              aria-label="Back"
-            >
-              <ChevronLeft size={22} className="text-slate-900" />
-            </button>
-
-            <Link to="/" className="hidden shrink-0 items-center gap-2 md:flex">
-              <img src={logoUrl} alt={settings?.appName || 'Home'} className={NAVBAR_LOGO_CLASS} />
-            </Link>
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="shrink-0 rounded-full p-1.5 hover:bg-slate-100 transition-colors -ml-1.5"
+                aria-label="Back"
+              >
+                <ChevronLeft size={22} className="text-slate-900" />
+              </button>
+              <span className="hidden md:block text-base font-semibold tracking-tight text-slate-800 ml-1">
+                Explore
+              </span>
+            </div>
 
             {searchInput}
 
             <Link
               to="/checkout"
-              className="relative shrink-0 rounded-full p-2 hover:bg-slate-50"
+              className="relative shrink-0 rounded-full p-2 hover:bg-slate-50 md:hidden"
               aria-label="Cart"
             >
               <ShoppingCart size={22} className="text-slate-800" />

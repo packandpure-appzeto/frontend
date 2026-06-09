@@ -31,7 +31,7 @@ const CustomerAuth = () => {
                 <CustomerLoginPanel
                     subtitle="Log in or Sign up"
                     onClose={handleClose}
-                    onSuccess={() => navigate(from, { replace: true })}
+                    onSuccess={() => navigate(from, { replace: true, state: location.state })}
                     className="text-center"
                 />
             </div>

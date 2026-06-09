@@ -272,17 +272,22 @@ const AddressesPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans">
-            <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-slate-200/60 mb-4 flex items-center gap-2">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="w-10 h-10 flex items-center justify-center hover:bg-slate-200/70 rounded-full transition-colors -ml-1"
-                >
-                    <ChevronLeft size={22} className="text-slate-800" />
-                </button>
-                <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Saved Addresses</h1>
-            </div>
-
-            <div className="max-w-2xl mx-auto px-4 pt-1 relative z-20 space-y-4">
+            <main className="max-w-2xl mx-auto px-4 pt-4 relative z-20 space-y-4">
+                <div className="mb-2">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="shrink-0 rounded-full p-1.5 hover:bg-slate-200/70 transition-colors -ml-1.5"
+                            aria-label="Back"
+                        >
+                            <ChevronLeft size={22} className="text-slate-900" />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Saved Addresses</h1>
+                        </div>
+                    </div>
+                </div>
                 {/* Add New Address Button */}
                 <button
                     onClick={openAddModal}
@@ -346,7 +351,7 @@ const AddressesPage = () => {
                         </div>
                     ))}
                 </div>
-            </div>
+            </main>
 
             {/* Add Address Modal */}
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
