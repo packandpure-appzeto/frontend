@@ -11,6 +11,47 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+const GeocodedLocation = ({ log }) => {
+    const [areaName, setAreaName] = useState(log.area);
+    const [isLoading, setIsLoading] = useState(!log.area && log.location?.coordinates);
+
+    useEffect(() => {
+        if (log.area) {
+            setAreaName(log.area);
+            setIsLoading(false);
+            return;
+        }
+        if (log.location && log.location.coordinates) {
+            const lat = log.location.coordinates[1];
+            const lon = log.location.coordinates[0];
+            
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        const area = data.locality || data.city || data.principalSubdivision || "Unknown Area";
+                        setAreaName(area);
+                    } else {
+                        setAreaName("Unknown Area");
+                    }
+                })
+                .catch(err => {
+                    console.error('Geocoding error:', err);
+                    setAreaName("Unknown Area");
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        } else {
+            setIsLoading(false);
+        }
+    }, [log]);
+
+    if (isLoading) return <span className="text-slate-300 animate-pulse">Locating...</span>;
+    if (areaName) return <>{areaName}</>;
+    return <>Unknown Area</>;
+};
+
 const DeliveryPartnerProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -159,7 +200,7 @@ const DeliveryPartnerProfile = () => {
                                             </p>
                                             {(log.area || (log.location && log.location.coordinates)) && (
                                                 <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                                                    {log.area || `[${log.location.coordinates[1].toFixed(4)}, ${log.location.coordinates[0].toFixed(4)}]`}
+                                                    <GeocodedLocation log={log} />
                                                 </p>
                                             )}
                                         </div>

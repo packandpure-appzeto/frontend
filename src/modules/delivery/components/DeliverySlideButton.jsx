@@ -97,7 +97,7 @@ const DeliverySlideButton = ({
   };
 
   return (
-    <div className="relative h-16 bg-gray-100 rounded-full overflow-hidden select-none">
+    <div className="relative h-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden select-none">
       {/* Label text */}
       <motion.div
         className={`absolute inset-0 flex items-center justify-center text-gray-400 font-bold text-sm pointer-events-none transition-opacity duration-300 ${
@@ -112,7 +112,7 @@ const DeliverySlideButton = ({
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Loader2 className="animate-spin text-primary" size={24} />
-          <span className="ml-2 text-sm font-medium text-gray-600">
+          <span className="ml-2 text-sm font-medium text-gray-600 dark:text-gray-300">
             Generating OTP...
           </span>
         </div>

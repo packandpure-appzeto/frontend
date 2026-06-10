@@ -149,10 +149,10 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-24">
+    <div className="bg-gray-100 dark:bg-gray-900 transition-colors min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-white shadow-sm p-4 sticky top-0 z-30 backdrop-blur-md bg-white/90">
-        <h1 className="ds-h2 text-gray-900 mb-4">Order History</h1>
+      <div className="bg-white dark:bg-gray-800 shadow-sm p-4 sticky top-0 z-30 backdrop-blur-md bg-white dark:bg-gray-800/90">
+        <h1 className="ds-h2 text-gray-900 dark:text-white mb-4">Order History</h1>
 
         {/* Search & Filter */}
         <div className="flex space-x-3 mb-4">
@@ -166,14 +166,14 @@ const OrderHistory = () => {
               placeholder="Search Order ID, Customer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all border border-transparent focus:border-primary/20"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all border border-transparent focus:border-primary/20"
             />
           </div>
           <Button
             variant="outline"
             size="icon"
-            className="bg-gray-100 border-transparent hover:bg-gray-200">
-            <Filter size={20} className="text-gray-600" />
+            className="bg-gray-100 dark:bg-gray-700 border-transparent hover:bg-gray-200">
+            <Filter size={20} className="text-gray-600 dark:text-gray-300" />
           </Button>
         </div>
 
@@ -185,7 +185,7 @@ const OrderHistory = () => {
               onClick={() => setFilter(status.toLowerCase())}
               className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filter === status.toLowerCase()
                 ? "bg-primary text-white shadow-lg shadow-primary/30 scale-105"
-                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "bg-white dark:bg-gray-800 border border-gray-200 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-900"
                 }`}>
               {status}
             </button>
@@ -230,7 +230,7 @@ const OrderHistory = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-bold text-gray-900 text-sm group-hover:text-primary transition-colors">
+                          <span className="font-bold text-gray-900 dark:text-white text-sm group-hover:text-primary transition-colors">
                             #{order.orderId}
                           </span>
                           <span
@@ -260,8 +260,8 @@ const OrderHistory = () => {
                       <div className="flex items-start">
                         <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                         <div>
-                          <p className="ds-caption text-gray-500 mb-0.5">Store</p>
-                          <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                          <p className="ds-caption text-gray-500 dark:text-gray-400 mb-0.5">Store</p>
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-100 line-clamp-1">
                             {order.seller?.shopName || "Unknown Store"}
                           </p>
                         </div>
@@ -269,23 +269,23 @@ const OrderHistory = () => {
                       <div className="flex items-start">
                         <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
                         <div>
-                          <p className="ds-caption text-gray-500 mb-0.5">
+                          <p className="ds-caption text-gray-500 dark:text-gray-400 mb-0.5">
                             Customer
                           </p>
-                          <p className="text-sm font-medium text-gray-800 line-clamp-1">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-100 line-clamp-1">
                             {order.customer?.name || "Customer"}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-xs text-gray-500">
+                    <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-3">
-                        <span className="flex items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                        <span className="flex items-center bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded border border-gray-100 dark:border-gray-700">
                           <MapPin size={12} className="mr-1 text-gray-400" />{" "}
                           2.4 km {/* Mock for now */}
                         </span>
-                        <span className="flex items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                        <span className="flex items-center bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded border border-gray-100 dark:border-gray-700">
                           <Clock size={12} className="mr-1 text-gray-400" /> 15
                           min
                         </span>
@@ -302,11 +302,11 @@ const OrderHistory = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Filter size={32} className="text-gray-400" />
                 </div>
-                <h3 className="ds-h3 text-gray-900">No Orders Found</h3>
-                <p className="text-gray-500 text-sm">Try changing your filters.</p>
+                <h3 className="ds-h3 text-gray-900 dark:text-white">No Orders Found</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Try changing your filters.</p>
               </motion.div>
             )}
           </AnimatePresence>

@@ -402,7 +402,7 @@ const OrderDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
         <Loader2 className="animate-spin text-primary" size={48} />
       </div>
     );
@@ -416,7 +416,7 @@ const OrderDetails = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-28 font-sans">
       {/* Header */}
-      <div className="bg-white/85 backdrop-blur-md sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-slate-100">
+      <div className="bg-white dark:bg-gray-800/85 backdrop-blur-md sticky top-0 z-30 px-4 py-3 flex items-center justify-between border-b border-slate-100">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -461,7 +461,7 @@ const OrderDetails = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl overflow-hidden shadow-lg border border-slate-200/50 bg-white"
+          className="rounded-3xl overflow-hidden shadow-lg border border-slate-200/50 bg-white dark:bg-gray-800"
         >
           <div className="h-[340px] sm:h-[420px]">
             <DeliveryTrackingMap
@@ -501,13 +501,13 @@ const OrderDetails = () => {
                 {summary.arrivingInText}
               </p>
             </div>
-            <div className="inline-flex items-center rounded-full bg-white/80 px-3 py-1.5 text-[11px] font-bold text-[#C87400] ring-1 ring-[#F4D98B]">
+            <div className="inline-flex items-center rounded-full bg-white dark:bg-gray-800/80 px-3 py-1.5 text-[11px] font-bold text-[#C87400] ring-1 ring-[#F4D98B]">
               Total distance: {summary.totalDistanceText}
             </div>
           </div>
       </motion.div>
 
-      <Card className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+      <Card className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-sm border border-slate-100">
         <div className="flex justify-between items-center px-2 mb-2 relative">
           <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-10 rounded-full" />
           <motion.div
@@ -553,14 +553,14 @@ const OrderDetails = () => {
             animate="visible"
             exit={{ opacity: 0, height: 0 }}
           >
-            <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="p-4 border-b border-gray-100 bg-orange-50/50 flex items-center justify-between">
+            <Card className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-orange-50/50 flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-2 bg-white rounded-full shadow-sm mr-3">
+                  <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm mr-3">
                     <Store className="text-orange-600" size={20} />
                   </div>
                   <div>
-                    <h2 className="font-bold text-gray-800">Pickup Location</h2>
+                    <h2 className="font-bold text-gray-800 dark:text-gray-100">Pickup Location</h2>
                     <p className="text-xs text-orange-600 font-medium">
                       {order?.hubFlowEnabled ? "Main Logistics Hub" : "Store Location"}
                     </p>
@@ -581,7 +581,7 @@ const OrderDetails = () => {
                 <h3 className="font-bold text-lg mb-1">
                   {order?.hubFlowEnabled ? (order.hubAddress || "Pack n Pure Hub") : (order?.seller?.shopName || "Seller Store")}
                 </h3>
-                <p className="text-gray-500 text-sm mb-4 leading-relaxed">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 leading-relaxed">
                   {order?.hubFlowEnabled ? (order.hubAddress || "Main Logistics Hub") : (order?.seller?.address || "Address not available")}
                 </p>
                 <Button onClick={handleNavigate} className="w-full" variant="outline">
@@ -601,14 +601,14 @@ const OrderDetails = () => {
             initial="hidden"
             animate="visible"
           >
-            <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="p-4 border-b border-gray-100 bg-blue-50/50 flex items-center justify-between">
+            <Card className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-blue-50/50 flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className="p-2 bg-white rounded-full shadow-sm mr-3">
+                  <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm mr-3">
                     <User className="text-blue-600" size={20} />
                   </div>
                   <div>
-                    <h2 className="font-bold text-gray-800">Customer Details</h2>
+                    <h2 className="font-bold text-gray-800 dark:text-gray-100">Customer Details</h2>
                     <div className="flex items-center space-x-2 mt-0.5">
                       <p
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
@@ -642,8 +642,8 @@ const OrderDetails = () => {
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-lg mb-1">{order.address?.name || "Customer"}</h3>
-                <p className="text-gray-500 text-sm mb-1">{order.address?.address}</p>
-                <p className="text-gray-500 text-sm mb-4">{order.address?.city}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">{order.address?.address}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{order.address?.city}</p>
                 <Button onClick={handleNavigate} className="w-full bg-blue-600 hover:bg-blue-700 text-white border-none">
                   <Navigation size={18} className="mr-2" /> Navigate to Customer
                 </Button>
@@ -653,18 +653,18 @@ const OrderDetails = () => {
         )}
       </AnimatePresence>
 
-      <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <Card className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <motion.div
-          className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
+          className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-100 dark:bg-gray-900 transition-colors"
           onClick={() => setItemsExpanded(!itemsExpanded)}
         >
-          <div className="flex items-center font-bold text-gray-800">
+          <div className="flex items-center font-bold text-gray-800 dark:text-gray-100">
             <div className="p-2 bg-purple-100 text-purple-600 rounded-lg mr-3">
               <Package size={20} />
             </div>
             <div>
               <span>Order Items</span>
-              <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                 {order.items?.length || 0} items
               </span>
             </div>
@@ -683,28 +683,28 @@ const OrderDetails = () => {
               transition={{ duration: 0.3 }}
               className="overflow-hidden"
             >
-              <div className="p-4 border-t border-gray-100 bg-gray-50/50 space-y-3">
+              <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 transition-colors space-y-3">
                 {order.items?.map((item, i) => {
                   const variantLabel = resolveOrderItemVariantLabel(item);
                   return (
                   <div key={i} className="flex justify-between items-center text-sm gap-3">
                     <div className="flex items-center min-w-0">
-                      <span className="font-bold text-gray-500 mr-3 text-xs w-6 bg-white border border-gray-200 text-center rounded py-0.5 shrink-0">
+                      <span className="font-bold text-gray-500 dark:text-gray-400 mr-3 text-xs w-6 bg-white dark:bg-gray-800 border border-gray-200 text-center rounded py-0.5 shrink-0">
                         x{item.quantity}
                       </span>
                       <div className="min-w-0">
-                        <span className="text-gray-800 font-medium block truncate">{item.name}</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-medium block truncate">{item.name}</span>
                         {variantLabel ? (
                           <span className="text-[11px] font-semibold text-[#E23744]">{variantLabel}</span>
                         ) : null}
                       </div>
                     </div>
-                    <span className="font-bold text-gray-600 shrink-0">Rs.{item.price * item.quantity}</span>
+                    <span className="font-bold text-gray-600 dark:text-gray-300 shrink-0">Rs.{item.price * item.quantity}</span>
                   </div>
                 );})}
                 <div className="pt-3 mt-2 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-gray-500 text-sm">Total Bill</span>
-                  <span className="text-lg font-bold text-gray-900">Rs.{order.pricing?.total}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Total Bill</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">Rs.{order.pricing?.total}</span>
                 </div>
               </div>
             </motion.div>
@@ -727,11 +727,11 @@ const OrderDetails = () => {
       {step === 3 && !showOtpInput && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="p-6 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex items-center mb-4 text-gray-800">
+            <div className="flex items-center mb-4 text-gray-800 dark:text-gray-100">
               <ShieldCheck className="mr-2 text-primary" size={24} />
               <h3 className="font-bold text-lg">Generate Delivery OTP</h3>
             </div>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
               Slide to generate an OTP for the customer. You must be within reach of the delivery location.
             </p>
             <DeliverySlideButton orderId={orderId} onSuccess={handleOtpGenerated} onError={handleOtpGenerationError} />
@@ -755,7 +755,7 @@ const OrderDetails = () => {
       </div>
 
       {step <= 2 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white dark:bg-gray-800/95 backdrop-blur-md shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
           <div className="max-w-2xl mx-auto p-4">
             <div className="relative h-16 bg-slate-100 rounded-full overflow-hidden select-none">
               <motion.div

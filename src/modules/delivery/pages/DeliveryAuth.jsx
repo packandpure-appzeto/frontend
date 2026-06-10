@@ -374,12 +374,12 @@ const DeliveryAuth = () => {
         className="w-full max-w-[420px] relative z-10"
       >
         {/* Card */}
-        <div className="bg-white rounded-[2.5rem] shadow-[0_24px_60px_rgba(99,102,241,0.1)] border border-indigo-50 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-[0_24px_60px_rgba(99,102,241,0.1)] border border-indigo-50 overflow-hidden">
 
           {/* Header with Lottie */}
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 flex flex-col items-center relative">
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/85 backdrop-blur-sm border border-indigo-100 shadow-sm flex items-center justify-center overflow-hidden">
+              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-gray-800/85 backdrop-blur-sm border border-indigo-100 shadow-sm flex items-center justify-center overflow-hidden">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
@@ -402,14 +402,14 @@ const DeliveryAuth = () => {
                 exit={{ opacity: 0, y: -8 }}
                 className="text-center mt-3"
               >
-                <h1 className="text-2xl font-black text-gray-900">
+                <h1 className="text-2xl font-black text-gray-900 dark:text-white">
                   {step === "otp"
                     ? "Verify OTP"
                     : mode === "login"
                       ? "Partner Login"
                       : "Partner Registration"}
                 </h1>
-                <p className="text-gray-500 text-sm mt-1 max-w-[240px] mx-auto">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 max-w-[240px] mx-auto">
                   {step === "otp"
                     ? `Enter the 4-digit code sent to +91 ${mode === "login" ? loginPhone : signupPhone}`
                     : mode === "login"
@@ -422,14 +422,14 @@ const DeliveryAuth = () => {
 
           {/* Tab Switch */}
           {step === "form" && (
-            <div className="flex mx-6 mt-6 bg-gray-100 rounded-2xl p-1">
+            <div className="flex mx-6 mt-6 bg-gray-100 dark:bg-gray-700 rounded-2xl p-1">
               {["login", "signup"].map((m) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
                   className={`flex-1 py-2.5 text-sm font-black rounded-xl transition-all duration-300 ${mode === m
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
+                    ? "bg-white dark:bg-gray-800 text-indigo-600 shadow-sm"
+                    : "text-gray-400 hover:text-gray-600 dark:text-gray-300"
                     }`}
                 >
                   {m === "login" ? "Login" : "Join Now"}
@@ -468,7 +468,7 @@ const DeliveryAuth = () => {
                                 type="text"
                                 value={signupName}
                                 onChange={(e) => setSignupName(e.target.value)}
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                                 placeholder="Enter your full name"
                               />
                             </div>
@@ -478,13 +478,13 @@ const DeliveryAuth = () => {
                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
                             <div className="relative">
                               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
-                              <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm border-r border-gray-200 pr-2.5">+91</span>
+                              <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-bold text-sm border-r border-gray-200 pr-2.5">+91</span>
                               <input
                                 type="tel"
                                 value={signupPhone}
                                 onChange={(e) => setSignupPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                                 maxLength={10}
-                                className="w-full pl-24 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                                className="w-full pl-24 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                                 placeholder="00000 00000"
                               />
                             </div>
@@ -498,7 +498,7 @@ const DeliveryAuth = () => {
                                 type="email"
                                 value={signupEmail}
                                 onChange={(e) => setSignupEmail(e.target.value)}
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                                 placeholder="example@gmail.com"
                               />
                             </div>
@@ -511,7 +511,7 @@ const DeliveryAuth = () => {
                               <textarea
                                 value={signupAddress}
                                 onChange={(e) => setSignupAddress(e.target.value)}
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all resize-none h-24"
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all resize-none h-24"
                                 placeholder="Complete building address..."
                               />
                             </div>
@@ -558,7 +558,7 @@ const DeliveryAuth = () => {
                               <button
                                 type="button"
                                 onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
-                                className="w-full pl-11 pr-10 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none text-left"
+                                className="w-full pl-11 pr-10 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none text-left"
                               >
                                 {VEHICLE_TYPES.find((v) => v.value === signupVehicle)?.label}
                               </button>
@@ -569,7 +569,7 @@ const DeliveryAuth = () => {
                                     initial={{ opacity: 0, y: -8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -8 }}
-                                    className="absolute top-full left-0 w-full bg-white border border-gray-100 rounded-2xl shadow-lg mt-2 overflow-hidden z-20"
+                                    className="absolute top-full left-0 w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-lg mt-2 overflow-hidden z-20"
                                   >
                                     {VEHICLE_TYPES.map((v) => (
                                       <button
@@ -594,7 +594,7 @@ const DeliveryAuth = () => {
                                 type="text"
                                 value={signupVehicleNumber}
                                 onChange={(e) => setSignupVehicleNumber(e.target.value.toUpperCase())}
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                                 placeholder="KA 05 MN 8921"
                               />
                             </div>
@@ -608,7 +608,7 @@ const DeliveryAuth = () => {
                                 type="text"
                                 value={signupDLNumber}
                                 onChange={(e) => setSignupDLNumber(e.target.value.toUpperCase())}
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                                 placeholder="DL-1420110012345"
                               />
                             </div>
@@ -617,7 +617,7 @@ const DeliveryAuth = () => {
                           <div className="flex gap-4 pt-2">
                             <button
                               onClick={() => setSignupStep(1)}
-                              className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                              className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
                             >
                               Back
                             </button>
@@ -654,7 +654,7 @@ const DeliveryAuth = () => {
                               type="text"
                               value={signupAadharNumber}
                               onChange={(e) => setSignupAadharNumber(e.target.value.replace(/\D/g, "").slice(0, 12))}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-mono"
+                              className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-mono"
                               placeholder="0000 0000 0000"
                             />
                           </div>
@@ -664,7 +664,7 @@ const DeliveryAuth = () => {
                               type="text"
                               value={signupPanNumber}
                               onChange={(e) => setSignupPanNumber(e.target.value.toUpperCase().slice(0, 10))}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-mono"
+                              className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-mono"
                               placeholder="ABCDE1234F"
                             />
                           </div>
@@ -674,7 +674,7 @@ const DeliveryAuth = () => {
                               type="text"
                               value={signupAccountHolder}
                               onChange={(e) => setSignupAccountHolder(e.target.value.toUpperCase())}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                              className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                               placeholder="AS PER BANK RECORDS"
                             />
                           </div>
@@ -684,7 +684,7 @@ const DeliveryAuth = () => {
                               type="text"
                               value={signupAccountNumber}
                               onChange={(e) => setSignupAccountNumber(e.target.value.replace(/\D/g, ""))}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                              className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                               placeholder="000000000000"
                             />
                           </div>
@@ -694,7 +694,7 @@ const DeliveryAuth = () => {
                               type="text"
                               value={signupIfsc}
                               onChange={(e) => setSignupIfsc(e.target.value.toUpperCase())}
-                              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                              className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
                               placeholder="HDFC0001234"
                             />
                           </div>
@@ -702,7 +702,7 @@ const DeliveryAuth = () => {
                           <div className="flex gap-4 pt-2">
                             <button
                               onClick={() => setSignupStep(2)}
-                              className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                              className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
                             >
                               Back
                             </button>
@@ -769,15 +769,15 @@ const DeliveryAuth = () => {
                                   htmlFor={doc.id}
                                   className={`flex items-center justify-between p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${doc.state
                                     ? "border-green-200 bg-green-50/50"
-                                    : "border-gray-100 bg-gray-50 hover:border-indigo-200 hover:bg-indigo-50/30"
+                                    : "border-gray-100 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 hover:border-indigo-200 hover:bg-indigo-50/30"
                                     }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-xl ${doc.state ? "bg-green-100 text-green-600" : "bg-white text-gray-400 shadow-sm"}`}>
+                                    <div className={`p-2 rounded-xl ${doc.state ? "bg-green-100 text-green-600" : "bg-white dark:bg-gray-800 text-gray-400 shadow-sm"}`}>
                                       {doc.state ? <CheckCircle className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
                                     </div>
                                     <div className="text-left">
-                                      <p className={`text-xs font-black uppercase tracking-tight ${doc.state ? "text-green-700" : "text-gray-500"}`}>
+                                      <p className={`text-xs font-black uppercase tracking-tight ${doc.state ? "text-green-700" : "text-gray-500 dark:text-gray-400"}`}>
                                         {doc.label}
                                       </p>
                                       <p className="text-[10px] text-gray-400 font-bold truncate max-w-[180px]">
@@ -914,7 +914,7 @@ const DeliveryAuth = () => {
                           <div className="flex gap-3">
                             <button
                               onClick={() => setSignupStep(3)}
-                              className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                              className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
                             >
                               Back
                             </button>
@@ -954,7 +954,7 @@ const DeliveryAuth = () => {
                         </label>
                         <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
-                          <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm border-r border-gray-200 pr-2.5">
+                          <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-bold text-sm border-r border-gray-200 pr-2.5">
                             +91
                           </span>
                           <input
@@ -965,7 +965,7 @@ const DeliveryAuth = () => {
                               setLoginPhone(val);
                             }}
                             maxLength={10}
-                            className="w-full pl-24 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all placeholder:text-gray-300"
+                            className="w-full pl-24 pr-4 py-3.5 bg-gray-100 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all placeholder:text-gray-300"
                             placeholder="00000 00000"
                           />
                         </div>
@@ -1012,7 +1012,7 @@ const DeliveryAuth = () => {
                           value={digit}
                           onChange={(e) => handleOtpChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(index, e)}
-                          className="w-14 h-14 text-center text-2xl font-black border-2 border-gray-100 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all bg-gray-50 text-gray-900"
+                          className="w-14 h-14 text-center text-2xl font-black border-2 border-gray-100 dark:border-gray-700 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition-all bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white"
                         />
                       ))}
                     </div>
@@ -1035,7 +1035,7 @@ const DeliveryAuth = () => {
                   </div>
 
                   {/* Terms checkbox */}
-                  <div className="flex items-start gap-3 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="flex items-start gap-3 bg-gray-100 dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-700">
                     <input
                       id="terms"
                       type="checkbox"
@@ -1043,7 +1043,7 @@ const DeliveryAuth = () => {
                       onChange={(e) => setAgreed(e.target.checked)}
                       className="mt-0.5 h-4 w-4 accent-indigo-600 cursor-pointer"
                     />
-                    <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed cursor-pointer">
+                    <label htmlFor="terms" className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed cursor-pointer">
                       I confirm my phone number is correct and I agree to the{" "}
                       <span className="text-indigo-600 font-bold">Terms of Service</span> &amp;{" "}
                       <span className="text-indigo-600 font-bold">Privacy Policy</span>.
@@ -1066,7 +1066,7 @@ const DeliveryAuth = () => {
                   {/* Back */}
                   <button
                     onClick={() => { setStep("form"); setOtp(["", "", "", ""]); }}
-                    className="w-full flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-600 text-sm font-bold transition-colors"
+                    className="w-full flex items-center justify-center gap-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-300 text-sm font-bold transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" /> Edit Phone Number
                   </button>
@@ -1079,7 +1079,7 @@ const DeliveryAuth = () => {
         {/* Footer */}
         <div className="mt-6 flex items-center justify-center gap-3 opacity-40">
           <span className="h-px w-8 bg-gray-400" />
-          <ShieldCheck className="text-gray-500 w-4 h-4" />
+          <ShieldCheck className="text-gray-500 dark:text-gray-400 w-4 h-4" />
           <span className="h-px w-8 bg-gray-400" />
         </div>
         <p className="text-center text-[10px] font-black text-gray-300 uppercase tracking-[4px] mt-2">

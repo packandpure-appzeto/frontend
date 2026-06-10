@@ -76,30 +76,30 @@ const Documents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="flex items-center p-4">
           <button 
             onClick={() => navigate(-1)} 
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-2"
+            className="p-2 rounded-full hover:bg-gray-100 dark:bg-gray-700 transition-colors mr-2"
           >
-            <ArrowLeft size={20} className="text-gray-600" />
+            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
-          <h1 className="ds-h3 text-gray-900">My Documents</h1>
+          <h1 className="ds-h3 text-gray-900 dark:text-white">My Documents</h1>
         </div>
       </div>
 
       <div className="p-4 max-w-lg mx-auto space-y-4">
         {docs.map((doc) => (
-          <Card key={doc.id} className="p-4 border border-gray-100">
+          <Card key={doc.id} className="p-4 border border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-start mb-2">
-              <h4 className="font-bold text-gray-800">{doc.title}</h4>
+              <h4 className="font-bold text-gray-800 dark:text-gray-100">{doc.title}</h4>
               {getStatusBadge(doc.status)}
             </div>
 
             {doc.fileName && (
-              <p className="text-xs text-gray-500 mb-3 flex items-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 flex items-center">
                 <span className="truncate max-w-[200px]">{doc.fileName}</span>
                 <span className="mx-2">•</span>
                 <span>{doc.uploadedOn}</span>

@@ -88,22 +88,22 @@ const Withdrawals = () => {
     };
 
     return (
-        <div className="bg-gray-50/50 min-h-screen pb-24">
+        <div className="bg-gray-100 dark:bg-gray-900 transition-colors min-h-screen pb-24">
             {/* Top Header */}
-            <div className="bg-white px-6 py-4 flex items-center shadow-sm sticky top-0 z-50">
+            <div className="bg-white dark:bg-gray-800 px-6 py-4 flex items-center shadow-sm sticky top-0 z-50">
                 <button
                     onClick={() => navigate(-1)}
-                    className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors mr-2"
+                    className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:bg-gray-700 transition-colors mr-2"
                 >
-                    <ArrowLeft className="text-gray-900" size={24} />
+                    <ArrowLeft className="text-gray-900 dark:text-white" size={24} />
                 </button>
-                <h1 className="text-xl font-bold text-gray-900">Money Request</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Money Request</h1>
             </div>
 
             <div className="p-6 space-y-6 max-w-lg mx-auto">
                 {/* Balance Card */}
                 <div className="bg-[#0066FF] p-6 rounded-2xl text-white shadow-xl shadow-blue-500/20 relative overflow-hidden border border-blue-400/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-gray-800/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -ml-12 -mb-12 blur-2xl"></div>
 
                     <div className="relative z-10">
@@ -113,7 +113,7 @@ const Withdrawals = () => {
                             {stats.availableBalance.toLocaleString()}
                         </h2>
 
-                        <div className="mt-6 flex items-center justify-between text-white bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/10">
+                        <div className="mt-6 flex items-center justify-between text-white bg-white dark:bg-gray-800/10 p-3 rounded-xl backdrop-blur-md border border-white/10">
                             <div className="flex items-center">
                                 <Clock size={16} className="mr-2 opacity-80" />
                                 <span className="text-[11px] font-bold">Pending: ₹{stats.pendingWithdrawals.toLocaleString()}</span>
@@ -129,7 +129,7 @@ const Withdrawals = () => {
                         <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                             <Wallet size={20} />
                         </div>
-                        <h3 className="font-bold text-gray-800">Request Fund Transfer</h3>
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100">Request Fund Transfer</h3>
                     </div>
 
                     <div className="space-y-4">
@@ -144,7 +144,7 @@ const Withdrawals = () => {
                                     placeholder="0.00"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
-                                    className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 font-bold text-xl outline-none ring-1 ring-gray-100 focus:ring-2 focus:ring-primary/20 transition-all"
+                                    className="w-full bg-gray-100 dark:bg-gray-900 border-none rounded-2xl py-4 pl-12 pr-4 font-bold text-xl outline-none ring-1 ring-gray-100 focus:ring-2 focus:ring-primary/20 transition-all"
                                 />
                             </div>
                         </div>
@@ -172,7 +172,7 @@ const Withdrawals = () => {
                 {/* History */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                        <h3 className="font-bold text-gray-800 flex items-center gap-2 uppercase tracking-widest text-[10px]">
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 uppercase tracking-widest text-[10px]">
                             Transfer History
                         </h3>
                         <button
@@ -192,7 +192,7 @@ const Withdrawals = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     key={item.id}
-                                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-between"
+                                    className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-between"
                                 >
                                     <div className="flex items-center">
                                         <div className={cn(
@@ -206,7 +206,7 @@ const Withdrawals = () => {
                                                     <Clock size={18} />}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">₹{Math.abs(item.amount).toLocaleString()}</p>
+                                            <p className="font-bold text-gray-900 dark:text-white">₹{Math.abs(item.amount).toLocaleString()}</p>
                                             <p className="text-[10px] font-medium text-gray-400 mt-0.5">
                                                 {new Date(item.date).toLocaleDateString()} • {item.id}
                                             </p>
@@ -218,7 +218,7 @@ const Withdrawals = () => {
                                 </motion.div>
                             ))
                         ) : (
-                            <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-200 text-center">
+                            <div className="bg-white dark:bg-gray-800 p-12 rounded-2xl border border-dashed border-gray-200 text-center">
                                 <Clock className="mx-auto text-gray-200 mb-2" size={32} />
                                 <p className="text-xs text-gray-400 font-medium tracking-tight">No history found</p>
                             </div>
@@ -232,7 +232,7 @@ const Withdrawals = () => {
 
 const Badge = ({ children, variant = "default" }) => {
     const variants = {
-        default: "bg-gray-100 text-gray-600",
+        default: "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
         success: "bg-green-50 text-green-600",
         warning: "bg-amber-50 text-amber-600",
         destructive: "bg-red-50 text-red-600",

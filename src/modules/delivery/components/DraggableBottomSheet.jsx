@@ -14,7 +14,7 @@ const DraggableBottomSheet = ({
 }) => {
   return (
     <motion.div
-      className="flex-1 bg-white rounded-t-3xl shadow-[0_-8px_30px_-5px_rgba(0,0,0,0.15)] relative overflow-hidden flex flex-col"
+      className="flex-1 bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-8px_30px_-5px_rgba(0,0,0,0.15)] relative overflow-hidden flex flex-col"
       style={{ height: `${sheetHeight}vh` }}
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}

@@ -53,6 +53,21 @@ const DeliveryLayout = () => {
 
   useEffect(() => {
     loadHandledIncomingOrderIds().forEach((id) => shownOrderIdsRef.current.add(id));
+
+    // Initialize Dark Mode setting for Delivery App
+    try {
+      const savedSettings = localStorage.getItem('deliveryAppSettings');
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    } catch (e) {
+      console.error("Failed to initialize dark mode", e);
+    }
   }, []);
 
   const applyFromBroadcastPayload = useCallback((payload) => {
@@ -366,7 +381,7 @@ const DeliveryLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden border-x border-gray-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white dark:text-gray-100 font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden border-x border-gray-100 dark:border-gray-700 dark:border-gray-800 transition-colors">
       {/* Status Bar / Safe Area Placeholder - Removed as it's not defined and causes spacing issues */}
 
       {/* Full-screen order alert — portaled so it always stacks above nav/content */}
@@ -386,7 +401,7 @@ const DeliveryLayout = () => {
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.96, opacity: 0, y: 16 }}
                   transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                  className="bg-white rounded-[32px] p-6 w-full max-w-[340px] shadow-2xl border-4 border-primary/20"
+                  className="bg-white dark:bg-gray-800 rounded-[32px] p-6 w-full max-w-[340px] shadow-2xl border-4 border-primary/20"
                 >
                   <div className="flex flex-col items-center">
                     <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 animate-bounce">

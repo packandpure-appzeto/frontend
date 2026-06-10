@@ -9,6 +9,9 @@ export const deliveryApi = {
   updateProfile: (data) => axiosInstance.put("/delivery/profile", data),
   getStats: () => axiosInstance.get("/delivery/stats"),
   getEarnings: () => axiosInstance.get("/delivery/earnings"),
+  uploadFile: (formData) => axiosInstance.post("/upload/single", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
   getOrderHistory: (params, config = {}) =>
     axiosInstance.get("/delivery/order-history", { params, ...config }),
   getAvailableOrders: () => axiosInstance.get("/orders/available"),

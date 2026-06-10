@@ -183,10 +183,10 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-lg font-bold text-gray-900 mb-1">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
           Enter Delivery OTP
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-300">
           Ask the customer for the 4-digit code
         </p>
       </div>
@@ -211,7 +211,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
                 ? "border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500"
                 : digit
                 ? "border-green-500 bg-green-50 text-green-900 focus:border-green-600 focus:ring-green-500"
-                : "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500"
+                : "border-gray-300 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500"
             } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             aria-label={`Digit ${index + 1}`}
           />
@@ -264,7 +264,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
       <button
         onClick={clearInputs}
         disabled={isLoading || otp.every((d) => !d)}
-        className="w-full h-10 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-10 rounded-xl font-medium text-gray-700 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Clear
       </button>
@@ -274,7 +274,7 @@ const OtpInput = ({ orderId, onSuccess, onError, onCancel }) => {
         <button
           onClick={onCancel}
           disabled={isLoading}
-          className="w-full h-10 rounded-xl font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-10 rounded-xl font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:text-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>

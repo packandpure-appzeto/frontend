@@ -458,7 +458,7 @@ const DeliveryTrackingMapComponent = ({
           />
         )}
       </GoogleMap>
-      <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur px-2 py-1 rounded-md text-[10px] text-slate-600 font-bold border border-slate-200 shadow-sm">
+      <div className="absolute bottom-2 right-2 bg-white dark:bg-gray-800/95 backdrop-blur px-2 py-1 rounded-md text-[10px] text-slate-600 font-bold border border-slate-200 shadow-sm">
         {routeLoading ? "Updating route…" : "Tracking View"}
       </div>
       {routeData?.degraded && (
