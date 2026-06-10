@@ -27,7 +27,7 @@ function DeliveryConfirmationPage({ orderId }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Page content */}
       <div className="p-4">
         <h1>Ready to Complete Delivery?</h1>
@@ -35,7 +35,7 @@ function DeliveryConfirmationPage({ orderId }) {
       </div>
 
       {/* Sticky slide button at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 shadow-lg">
         <DeliverySlideButton
           orderId={orderId}
           onSuccess={handleOtpGenerated}
@@ -53,7 +53,7 @@ function CustomStyledDeliveryPage({ orderId }) {
   const navigate = useNavigate();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white">
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800">
       <DeliverySlideButton
         orderId={orderId}
         label="SLIDE TO CONFIRM DELIVERY"
@@ -86,7 +86,7 @@ function DeliveryPageWithState({ orderId }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {!showOtpInput ? (
         <>
           <div className="p-4">
@@ -94,7 +94,7 @@ function DeliveryPageWithState({ orderId }) {
             <p>You are near the customer location</p>
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white">
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800">
             <DeliverySlideButton
               orderId={orderId}
               onSuccess={handleOtpGenerated}
@@ -125,7 +125,7 @@ function OrderDetailsIntegrationExample({ order, phase }) {
   // For phase 2 (out for delivery → complete delivery)
   if (phase === 2 && !isOrderDelivered(order)) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-lg z-40 max-w-md mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 shadow-lg z-40 max-w-md mx-auto">
         <DeliverySlideButton
           orderId={order.orderId}
           label="SLIDE TO GENERATE OTP"

@@ -56,7 +56,7 @@ const Navigation = () => {
       <div className="absolute top-0 left-0 right-0 p-4 pt-12 flex justify-between items-start bg-gradient-to-b from-black/50 to-transparent z-20 pointer-events-none">
         <button
           onClick={() => navigate(-1)}
-          className="bg-white text-gray-800 p-3 rounded-full shadow-lg pointer-events-auto hover:bg-gray-100 active:scale-95 transition-transform">
+          className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-3 rounded-full shadow-lg pointer-events-auto hover:bg-gray-100 dark:bg-gray-700 active:scale-95 transition-transform">
           <ArrowLeft size={24} />
         </button>
 
@@ -65,7 +65,7 @@ const Navigation = () => {
             <span className="text-xs font-medium text-gray-300">Distance</span>
             <span className="font-bold text-lg">1.2 km</span>
           </div>
-          <div className="w-px h-8 bg-gray-500"></div>
+          <div className="w-px h-8 bg-gray-100 dark:bg-gray-9000"></div>
           <div className="flex flex-col items-center">
             <span className="text-xs font-medium text-gray-300">ETA</span>
             <span className="font-bold text-lg text-green-400">4 min</span>
@@ -79,7 +79,7 @@ const Navigation = () => {
 
       {/* Floating Controls */}
       <div className="absolute right-4 bottom-48 flex flex-col space-y-3 z-20">
-        <button className="bg-white text-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-50 active:bg-gray-100 transition-colors">
+        <button className="bg-white dark:bg-gray-800 text-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 dark:bg-gray-900 active:bg-gray-100 dark:bg-gray-700 transition-colors">
           <LocateFixed size={24} />
         </button>
         <button className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 active:bg-blue-800 transition-colors">
@@ -88,17 +88,17 @@ const Navigation = () => {
       </div>
 
       {/* Bottom Sheet Summary */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] z-30 p-6 animate-slide-up">
+      <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] z-30 p-6 animate-slide-up">
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-400">
               <User size={24} />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-gray-900">Priya Sharma</h3>
-              <p className="text-gray-500 text-sm">
+              <h3 className="font-bold text-lg text-gray-900 dark:text-white">Priya Sharma</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Drop: Flat 302, Green Apts
               </p>
             </div>
@@ -111,7 +111,7 @@ const Navigation = () => {
         <div className="flex space-x-3">
           <button
             onClick={() => navigate("/delivery/order-details/123")}
-            className="flex-1 bg-gray-100 text-gray-800 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">
+            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">
             Order Details
           </button>
           <button

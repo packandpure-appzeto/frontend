@@ -76,32 +76,32 @@ const Earnings = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50/50">
+      <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 transition-colors">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-24">
+    <div className="bg-gray-100 dark:bg-gray-900 transition-colors min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-white shadow-sm p-6 sticky top-0 z-30">
+      <div className="bg-white dark:bg-gray-800 shadow-sm p-6 sticky top-0 z-30">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="ds-h2 text-gray-900">My Earnings</h1>
+          <h1 className="ds-h2 text-gray-900 dark:text-white">My Earnings</h1>
           <Button variant="ghost" size="icon">
-            <Download size={20} className="text-gray-600" />
+            <Download size={20} className="text-gray-600 dark:text-gray-300" />
           </Button>
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
           {["today", "weekly", "monthly"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all capitalize ${activeTab === tab
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-gray-800 text-primary shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
                 }`}>
               {tab}
             </button>
@@ -118,8 +118,8 @@ const Earnings = () => {
         <motion.div variants={itemVariants}>
           <div className="bg-gradient-to-br from-primary to-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-primary/30 relative overflow-hidden">
             {/* Background pattern */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 dark:bg-gray-800/20 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 dark:bg-gray-800/20 rounded-full -ml-10 -mb-10 blur-xl"></div>
 
             <p className="text-blue-100 font-medium text-sm uppercase tracking-wide mb-1 relative z-10">
               Total Earnings
@@ -148,7 +148,7 @@ const Earnings = () => {
         <motion.div variants={itemVariants}>
           <Card className="p-6 h-80">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-800 flex items-center">
+              <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center">
                 <TrendingUp size={20} className="mr-2 text-green-500" />
                 Earnings Trend
               </h3>
@@ -206,10 +206,10 @@ const Earnings = () => {
                 +8%
               </span>
             </div>
-            <p className="text-gray-500 text-xs font-medium uppercase">
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase">
               Online Pay
             </p>
-            <p className="text-xl font-bold text-gray-900">₹{earningsData.onlinePay.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">₹{earningsData.onlinePay.toLocaleString()}</p>
           </Card>
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
@@ -220,18 +220,18 @@ const Earnings = () => {
                 0%
               </span>
             </div>
-            <p className="text-gray-500 text-xs font-medium uppercase">
+            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase">
               Cash (COD)
             </p>
-            <p className="text-xl font-bold text-gray-900">₹{earningsData.cashCollected.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">₹{earningsData.cashCollected.toLocaleString()}</p>
           </Card>
         </motion.div>
 
         {/* Recent Transactions */}
         <motion.div variants={itemVariants}>
           <Card className="overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-gray-800">Recent Withdrawals</h3>
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-100 dark:bg-gray-900 transition-colors">
+              <h3 className="font-bold text-gray-800 dark:text-gray-100">Recent Withdrawals</h3>
               <Button
                 variant="link"
                 className="text-primary text-xs font-bold h-auto p-0">
@@ -242,21 +242,21 @@ const Earnings = () => {
               {earningsData.recentTransactions.length > 0 ? earningsData.recentTransactions.map((txn, idx) => (
                 <div
                   key={txn._id || txn.id || `txn-${idx}`}
-                  className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors cursor-pointer">
+                  className="p-4 flex justify-between items-center hover:bg-gray-100 dark:bg-gray-900 transition-colors cursor-pointer">
                   <div className="flex items-center">
                     <div
                       className={`p-2 rounded-full mr-3 ${txn.status === "Settled" || txn.status === "Completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"}`}>
                       <ArrowUpRight size={16} />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">{txn.type}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-bold text-gray-900 dark:text-white">{txn.type}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {txn.date || new Date(txn.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {txn.id || (txn._id ? txn._id.toString().slice(-6).toUpperCase() : 'N/A')}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">{txn.type.includes('Withdrawal') ? '-' : '+'}₹{txn.amount}</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{txn.type.includes('Withdrawal') ? '-' : '+'}₹{txn.amount}</p>
                     <p
                       className={`text-xs font-bold ${txn.status === "Settled" || txn.status === "Completed" ? "text-green-500" : "text-yellow-500"}`}>
                       {txn.status}

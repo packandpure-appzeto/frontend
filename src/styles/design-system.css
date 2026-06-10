@@ -544,3 +544,42 @@
 .ds-hover-scale:hover {
   transform: scale(1.05);
 }
+
+/* Dark Mode Overrides for Typography */
+.dark .ds-h1,
+.dark .ds-h2,
+.dark .ds-h3,
+.dark .ds-h4,
+.dark .ds-stat-large,
+.dark .ds-stat-medium,
+.dark .ds-stat-small,
+.dark .ds-empty-state-title {
+  color: #ffffff;
+}
+
+.dark .ds-body,
+.dark .ds-label,
+.dark .ds-table-cell {
+  color: #f3f4f6;
+}
+
+.dark .ds-body-sm,
+.dark .ds-caption,
+.dark .ds-description,
+.dark .ds-table-header-cell,
+.dark .ds-empty-state-description {
+  color: #9ca3af;
+}
+
+.dark .ds-card,
+.dark .ds-stat-card {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .ds-card-header,
+.dark .ds-card-footer,
+.dark .ds-divider,
+.dark .ds-table-row {
+  border-color: #374151;
+}

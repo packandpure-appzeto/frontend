@@ -88,9 +88,9 @@ const Notifications = () => {
   };
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-24 font-sans">
+    <div className="bg-gray-100 dark:bg-gray-900 transition-colors min-h-screen pb-24 font-sans">
       {/* Header */}
-      <div className="bg-white shadow-sm p-4 sticky top-0 z-30 backdrop-blur-md bg-white/90">
+      <div className="bg-white dark:bg-gray-800 shadow-sm p-4 sticky top-0 z-30 backdrop-blur-md bg-white dark:bg-gray-800/90">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <Button
@@ -100,7 +100,7 @@ const Notifications = () => {
               className="mr-2">
               <ArrowLeft size={24} />
             </Button>
-            <h1 className="ds-h3 text-gray-900">Notifications</h1>
+            <h1 className="ds-h3 text-gray-900 dark:text-white">Notifications</h1>
           </div>
           {notifications.some(n => !n.isRead) && (
             <Button
@@ -135,7 +135,7 @@ const Notifications = () => {
                   <Card
                     className={`p-4 border-none shadow-sm relative overflow-hidden transition-all duration-300 cursor-pointer ${!notification.isRead
                       ? "bg-blue-50/50 border-l-4 border-l-blue-500 shadow-blue-500/5 scale-[1.02]"
-                      : "bg-white opacity-90"
+                      : "bg-white dark:bg-gray-800 opacity-90"
                       }`}>
                     {!notification.isRead && (
                       <div className="absolute top-4 right-4 w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
@@ -145,17 +145,17 @@ const Notifications = () => {
                       <div
                         className={`p-3 rounded-full mr-4 flex-shrink-0 ${notification.type === "order"
                           ? "bg-orange-100 text-orange-600"
-                          : notification.isRead ? "bg-gray-100 text-gray-400" : "bg-blue-100 text-blue-600"
+                          : notification.isRead ? "bg-gray-100 dark:bg-gray-700 text-gray-400" : "bg-blue-100 text-blue-600"
                           }`}>
                         {notification.type === "order" ? <Megaphone size={20} /> : <Bell size={20} />}
                       </div>
 
                       <div className="flex-1">
                         <h3
-                          className={`font-extrabold text-gray-900 mb-0.5 text-sm ${!notification.isRead ? "text-blue-900" : "text-gray-700 font-bold"}`}>
+                          className={`font-extrabold text-gray-900 dark:text-white mb-0.5 text-sm ${!notification.isRead ? "text-blue-900" : "text-gray-700 font-bold"}`}>
                           {notification.title}
                         </h3>
-                        <p className={`text-xs mb-2 leading-snug ${!notification.isRead ? "text-gray-900 font-medium" : "text-gray-500"}`}>
+                        <p className={`text-xs mb-2 leading-snug ${!notification.isRead ? "text-gray-900 dark:text-white font-medium" : "text-gray-500 dark:text-gray-400"}`}>
                           {notification.message}
                         </p>
                         <div className="flex items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">
@@ -174,11 +174,11 @@ const Notifications = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-center py-20 px-6">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Bell size={40} className="text-gray-300" />
                 </div>
-                <h3 className="ds-h3 text-gray-900 mb-2">You're All Caught Up!</h3>
-                <p className="text-gray-500 text-sm max-w-[200px] mx-auto">
+                <h3 className="ds-h3 text-gray-900 dark:text-white mb-2">You're All Caught Up!</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm max-w-[200px] mx-auto">
                   New notifications will appear here automatically.
                 </p>
               </motion.div>

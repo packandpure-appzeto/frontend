@@ -45,16 +45,16 @@ const HelpSupport = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="flex items-center p-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-2">
-            <ArrowLeft size={20} className="text-gray-600" />
+            className="p-2 rounded-full hover:bg-gray-100 dark:bg-gray-700 transition-colors mr-2">
+            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
-          <h1 className="ds-h3 text-gray-900">Help & Support</h1>
+          <h1 className="ds-h3 text-gray-900 dark:text-white">Help & Support</h1>
         </div>
       </div>
 
@@ -65,21 +65,21 @@ const HelpSupport = () => {
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-3">
               <MessageCircle size={24} />
             </div>
-            <h4 className="font-bold text-gray-800">Chat Support</h4>
-            <p className="text-xs text-gray-500 mt-1">Wait time: ~2 mins</p>
+            <h4 className="font-bold text-gray-800 dark:text-gray-100">Chat Support</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Wait time: ~2 mins</p>
           </Card>
           <Card className="p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:shadow-md transition-shadow">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-3">
               <Phone size={24} />
             </div>
-            <h4 className="font-bold text-gray-800">Call Support</h4>
-            <p className="text-xs text-gray-500 mt-1">Available 24/7</p>
+            <h4 className="font-bold text-gray-800 dark:text-gray-100">Call Support</h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Available 24/7</p>
           </Card>
         </section>
 
         {/* FAQs */}
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
             <HelpCircle size={20} className="mr-2 text-primary" /> Frequently
             Asked Questions
           </h2>
@@ -89,8 +89,8 @@ const HelpSupport = () => {
                 key={index}
                 className="overflow-hidden cursor-pointer"
                 onClick={() => toggleAccordion(index)}>
-                <div className="p-4 flex justify-between items-center bg-white">
-                  <h4 className="font-medium text-gray-800 text-sm pr-4">
+                <div className="p-4 flex justify-between items-center bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-800 dark:text-gray-100 text-sm pr-4">
                     {faq.question}
                   </h4>
                   {openIndex === index ? (
@@ -105,8 +105,8 @@ const HelpSupport = () => {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-gray-50">
-                      <div className="p-4 text-sm text-gray-600 border-t border-gray-100 leading-relaxed">
+                      className="bg-gray-100 dark:bg-gray-900">
+                      <div className="p-4 text-sm text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 leading-relaxed">
                         {faq.answer}
                       </div>
                     </motion.div>
@@ -118,7 +118,7 @@ const HelpSupport = () => {
         </section>
 
         <div className="text-center pt-8">
-          <p className="text-gray-500 text-sm">Still need help?</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Still need help?</p>
           <Button variant="link" className="text-primary font-bold">
             View All FAQs
           </Button>

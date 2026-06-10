@@ -36,17 +36,17 @@ const VehicleInfo = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="flex items-center p-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors mr-2"
+            className="p-2 rounded-full hover:bg-gray-100 dark:bg-gray-700 transition-colors mr-2"
           >
-            <ArrowLeft size={20} className="text-gray-600" />
+            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
-          <h1 className="ds-h3 text-gray-900">Vehicle Information</h1>
+          <h1 className="ds-h3 text-gray-900 dark:text-white">Vehicle Information</h1>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ const VehicleInfo = () => {
               <h3 className="text-2xl font-bold">{vehicleDetails.plateNumber}</h3>
               <p className="text-gray-300">{vehicleDetails.model}</p>
             </div>
-            <div className="bg-white/10 p-2 rounded-full backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-800/10 p-2 rounded-full backdrop-blur-sm">
               <Truck size={24} className="text-white" />
             </div>
           </div>
@@ -78,18 +78,18 @@ const VehicleInfo = () => {
 
         {/* Documents List */}
         <div>
-          <h3 className="ds-h4 text-gray-900 mb-3 px-1">Vehicle Documents</h3>
+          <h3 className="ds-h4 text-gray-900 dark:text-white mb-3 px-1">Vehicle Documents</h3>
           <div className="space-y-3">
             {documents.map((doc, index) => (
-              <Card key={index} className="p-4 border border-gray-100">
+              <Card key={index} className="p-4 border border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between items-start">
                   <div className="flex items-start">
                     <div className={`p-2 rounded-lg mr-3 ${doc.alert ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
                       <FileText size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-800 text-sm">{doc.title}</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">{doc.number}</p>
+                      <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm">{doc.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{doc.number}</p>
                       <p className={`text-xs mt-1 ${doc.alert ? 'text-orange-600 font-medium' : 'text-gray-400'}`}>
                         Expires: {doc.expiry}
                       </p>

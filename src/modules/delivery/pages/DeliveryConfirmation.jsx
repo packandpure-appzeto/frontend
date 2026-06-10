@@ -89,21 +89,21 @@ const DeliveryConfirmation = () => {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          className="bg-white rounded-full p-6 shadow-xl mb-6">
+          className="bg-white dark:bg-gray-800 rounded-full p-6 shadow-xl mb-6">
           <CheckCircle className="text-green-500 w-24 h-24" strokeWidth={1.5} />
         </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-3xl font-bold text-gray-900 mb-2">
+          className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Delivery Successful!
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-gray-500 mb-8">
+          className="text-gray-500 dark:text-gray-400 mb-8">
           Order #{orderId} has been delivered.
         </motion.p>
         <motion.div
@@ -121,10 +121,10 @@ const DeliveryConfirmation = () => {
   }
 
   return (
-    <div className="bg-gray-50/50 min-h-screen flex flex-col p-6">
+    <div className="bg-gray-100 dark:bg-gray-900 transition-colors min-h-screen flex flex-col p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 pt-2">
-        <h1 className="ds-h2 text-gray-900">Confirm Delivery</h1>
+        <h1 className="ds-h2 text-gray-900 dark:text-white">Confirm Delivery</h1>
         <div className="text-xs font-bold text-gray-400">Order: #{orderId}</div>
       </div>
 
@@ -138,7 +138,7 @@ const DeliveryConfirmation = () => {
             className={`p-6 border-l-4 ${isPrepaid ? "border-l-green-500 bg-green-50/30" : "border-l-orange-500 bg-orange-50/30"}`}>
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
                   {isPrepaid ? "Payment Status" : "Amount to Collect"}
                 </p>
                 <h2
@@ -157,19 +157,19 @@ const DeliveryConfirmation = () => {
             </div>
 
             {!isPrepaid && (
-              <div className="bg-white p-4 rounded-xl border border-orange-100 shadow-sm mt-4">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-orange-100 shadow-sm mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cash Received
                 </label>
                 <div className="relative rounded-md shadow-sm">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <span className="text-gray-500 sm:text-sm font-bold">
+                    <span className="text-gray-500 dark:text-gray-400 sm:text-sm font-bold">
                       ₹
                     </span>
                   </div>
                   <input
                     type="number"
-                    className="block w-full rounded-lg border-gray-300 pl-8 pr-4 py-3 focus:border-orange-500 focus:ring-orange-500 text-lg font-bold bg-gray-50 focus:bg-white transition-all outline-none"
+                    className="block w-full rounded-lg border-gray-300 pl-8 pr-4 py-3 focus:border-orange-500 focus:ring-orange-500 text-lg font-bold bg-gray-100 dark:bg-gray-900 focus:bg-white dark:bg-gray-800 transition-all outline-none"
                     placeholder="0.00"
                     value={cashCollected}
                     onChange={(e) => setCashCollected(e.target.value)}
@@ -199,11 +199,11 @@ const DeliveryConfirmation = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.4 }}>
             <Card className="p-6">
-              <div className="flex items-center mb-4 text-gray-800">
+              <div className="flex items-center mb-4 text-gray-800 dark:text-gray-100">
                 <ShieldCheck className="mr-2 text-primary" size={24} />
                 <h3 className="font-bold text-lg">Generate Delivery OTP</h3>
               </div>
-              <p className="text-gray-500 text-sm mb-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                 Slide the button below to generate an OTP for the customer. You must be within reach of the delivery location.
               </p>
 
@@ -235,7 +235,7 @@ const DeliveryConfirmation = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.4 }}>
           <Card className="p-0 overflow-hidden">
-            <button className="w-full p-4 flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+            <button className="w-full p-4 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-900 transition-colors">
               <Camera size={32} className="mb-2 text-gray-400" />
               <span className="font-medium text-sm">
                 Upload Photo Proof (Optional)

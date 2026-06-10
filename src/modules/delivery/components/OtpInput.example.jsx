@@ -27,10 +27,10 @@ const OtpInputExample = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
             Delivery OTP Input Example
           </h1>
 
@@ -63,27 +63,27 @@ const OtpInputExample = () => {
         </div>
 
         {/* Integration Notes */}
-        <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
             Integration Notes
           </h2>
           <div className="space-y-3 text-sm text-gray-700">
             <div>
-              <strong className="text-gray-900">1. After OTP Generation:</strong>
+              <strong className="text-gray-900 dark:text-white">1. After OTP Generation:</strong>
               <p className="mt-1">
                 Show the OtpInput component after the DeliverySlideButton successfully generates an OTP.
               </p>
             </div>
 
             <div>
-              <strong className="text-gray-900">2. Success Handling:</strong>
+              <strong className="text-gray-900 dark:text-white">2. Success Handling:</strong>
               <p className="mt-1">
                 On successful validation, navigate to a success screen or update the order status in your UI.
               </p>
             </div>
 
             <div>
-              <strong className="text-gray-900">3. Error Handling:</strong>
+              <strong className="text-gray-900 dark:text-white">3. Error Handling:</strong>
               <p className="mt-1">
                 The component handles all error states internally (mismatch, expired, max attempts).
                 Clear inputs automatically after failed validation.
@@ -91,7 +91,7 @@ const OtpInputExample = () => {
             </div>
 
             <div>
-              <strong className="text-gray-900">4. Mobile Optimization:</strong>
+              <strong className="text-gray-900 dark:text-white">4. Mobile Optimization:</strong>
               <p className="mt-1">
                 Uses inputMode="numeric" for mobile numeric keyboard.
                 Supports paste for quick entry.
@@ -101,8 +101,8 @@ const OtpInputExample = () => {
         </div>
 
         {/* API Response Examples */}
-        <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
             API Response Examples
           </h2>
           
