@@ -231,33 +231,25 @@ const OffersPage = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans md:bg-slate-50">
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className={cn(PAGE_CONTAINER, 'py-3 md:py-4')}>
-          <div className="flex items-center gap-3">
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-4 md:pb-10 md:pt-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="shrink-0 rounded-full p-1.5 hover:bg-slate-50 md:hidden"
+              className="shrink-0 rounded-full p-1.5 hover:bg-slate-100 transition-colors -ml-1.5"
               aria-label="Back"
             >
               <ChevronLeft size={22} className="text-slate-900" />
             </button>
-
-            <Link to="/" className="hidden shrink-0 md:flex">
-              <img src={logoUrl} alt={appName} className={NAVBAR_LOGO_CLASS} />
-            </Link>
-
             <div className="min-w-0 flex-1">
-              <h1 className="text-base font-bold text-slate-900 md:text-lg">Offers</h1>
-              <p className="text-xs text-slate-500 md:text-sm">
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Offers</h1>
+              <p className="text-sm text-slate-500 mt-0.5">
                 Coupons and deals for your area
               </p>
             </div>
           </div>
         </div>
-      </header>
-
-      <main className={cn(PAGE_CONTAINER, 'py-4 pb-24 md:py-6 md:pb-12')}>
         {error ? (
           <p className="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700">
             {error}

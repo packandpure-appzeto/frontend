@@ -243,34 +243,25 @@ const OrdersPage = () => {
   }, [orders]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 md:pb-8">
-      {/* Mobile header */}
-      <div className="sticky top-0 z-30 border-b border-slate-200/60 bg-slate-50/95 backdrop-blur-sm md:hidden">
-        <div className="flex items-center gap-2 px-4 pb-3 pt-4">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="-ml-1 flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-200/70"
-            aria-label="Go back"
-          >
-            <ChevronLeft size={22} className="text-slate-800" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">Orders</h1>
-            <p className="text-[11px] font-medium text-slate-500">
-              {orders.length} order{orders.length === 1 ? '' : 's'}
-            </p>
+    <div className="min-h-screen bg-slate-50 pb-24 font-sans">
+      <main className="mx-auto max-w-2xl px-4 pt-4 md:max-w-3xl md:px-6 md:pt-8">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="shrink-0 rounded-full p-1.5 hover:bg-slate-200/70 transition-colors -ml-1.5"
+              aria-label="Back"
+            >
+              <ChevronLeft size={22} className="text-slate-900" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900">My orders</h1>
+              <p className="mt-0.5 text-sm text-slate-500">
+                {orders.length} order{orders.length === 1 ? '' : 's'} · Track deliveries and view history
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-2xl px-4 md:max-w-3xl md:px-6 md:pt-8">
-        {/* Desktop header */}
-        <div className="mb-5 hidden md:block">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">My orders</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Track deliveries and view order history
-          </p>
         </div>
 
         {loading ? (
@@ -328,7 +319,7 @@ const OrdersPage = () => {
             )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 };

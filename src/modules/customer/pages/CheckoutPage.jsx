@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation as useRouteLocation } from "react-router-dom";
 import Lottie from "lottie-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../../../core/context/AuthContext";
@@ -64,13 +64,13 @@ const CheckoutPage = () => {
   } = useCart();
   const { showToast } = useToast();
   const { user, isAuthenticated } = useAuth();
-  const { openCustomerLogin } = useCustomerLogin();
   const { settings } = useSettings();
 
   const appName = settings?.appName || "App";
   const { savedAddresses: locationSavedAddresses, currentLocation, refreshLocation, isFetchingLocation: isLocationFetching } =
     useAppLocation();
   const navigate = useNavigate();
+  const routeLocation = useRouteLocation();
 
   // State management
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("now");
@@ -359,10 +359,13 @@ const CheckoutPage = () => {
     } catch {
       // ignore parse errors
     }
+  }, []);
 
+  // Fetch coupons whenever user changes (so new users get their eligible coupons)
+  useEffect(() => {
     const fetchCoupons = async () => {
       try {
-        const res = await customerApi.getActivePromotions();
+        const res = await customerApi.getActivePromotions({ customerId: user?._id }, { forceRefresh: true });
         if (res.data.success) {
           const list = res.data.result || res.data.results || [];
           
@@ -378,7 +381,7 @@ const CheckoutPage = () => {
       }
     };
     fetchCoupons();
-  }, []);
+  }, [user?._id]);
 
   // Amazon-Style Dynamic Coupon Evaluation
   useEffect(() => {
@@ -569,15 +572,13 @@ const CheckoutPage = () => {
     }
 
     if (!isAuthenticated) {
-      openCustomerLogin({
-        onSuccess: () => {
-          executePlaceOrder();
-        },
-      });
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
       return;
     }
     executePlaceOrder();
-  }, [isAuthenticated, openCustomerLogin, executePlaceOrder, savedRecipient, currentAddress, showToast]);
+  }, [isAuthenticated, navigate, executePlaceOrder, savedRecipient, currentAddress, showToast]);
+
+
 
   // After place order: listen for seller timeout / rejection (customer room + order room) and poll as fallback
   useEffect(() => {

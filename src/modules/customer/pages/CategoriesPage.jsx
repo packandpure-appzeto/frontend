@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Search } from 'lucide-react';
 import { customerApi } from '../services/customerApi';
 import { buildHomeCategorySections } from '../utils/categoryTree';
 import HomeCategorySections from '../components/home/HomeCategorySections';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@core/context/SettingsContext';
-import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
+import { brandColor } from '../constants/brandTheme';
 
 /**
  * `/categories` — full “browse all” view (parent categories with name + image).
@@ -21,8 +21,6 @@ const CategoriesPage = () => {
 
   const { settings } = useSettings();
   const primary = brandColor(settings);
-  const logoUrl = brandLogo(settings);
-  const appName = settings?.appName || 'App';
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
@@ -71,34 +69,25 @@ const CategoriesPage = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans md:bg-slate-50">
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="md:hidden shrink-0 rounded-full p-1.5 hover:bg-slate-50"
-            aria-label="Back"
-          >
-            <ChevronLeft size={22} className="text-slate-900" />
-          </button>
-
-          <Link to="/" className="hidden shrink-0 items-center gap-2 md:flex">
-            <img
-              src={logoUrl}
-              alt={appName}
-              className={NAVBAR_LOGO_CLASS}
-            />
-          </Link>
-
-          <div className="min-w-0 flex-1">
-            <h1 className="text-base font-bold text-slate-900">Categories</h1>
-            <p className="text-xs text-slate-500">
-              Browse departments · Tap a category to see products
-            </p>
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-4 md:pb-10 md:pt-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="shrink-0 rounded-full p-1.5 hover:bg-slate-100 transition-colors -ml-1.5"
+              aria-label="Back"
+            >
+              <ChevronLeft size={22} className="text-slate-900" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Categories</h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Browse departments &middot; Tap a category to see products
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="mx-auto max-w-5xl px-4 pb-3">
+          
           <div className="relative">
             <Search
               size={18}
@@ -113,9 +102,6 @@ const CategoriesPage = () => {
             />
           </div>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-4 md:pb-10 md:pt-6">
         {error && (
           <p className="mb-4 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700">
             {error}

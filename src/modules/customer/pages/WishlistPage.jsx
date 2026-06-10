@@ -194,11 +194,21 @@ const WishlistPage = () => {
       <div className="mx-auto max-w-6xl px-4 md:px-6">
         {/* Desktop header */}
         <div className="mb-6 hidden items-center justify-between gap-4 md:flex md:pt-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">My wishlist</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {products.length} {products.length === 1 ? 'item' : 'items'} saved
-            </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              aria-label="Go back"
+            >
+              <ChevronLeft size={20} className="text-slate-800 pr-0.5" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">My wishlist</h1>
+              <p className="mt-1 text-sm text-slate-500">
+                {products.length} {products.length === 1 ? 'item' : 'items'} saved
+              </p>
+            </div>
           </div>
           {products.length > 0 && (
             <button

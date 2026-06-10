@@ -125,10 +125,37 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const syncLocalCartToBackend = async () => {
+    try {
+      const localCart = loadCartFromStorage();
+      if (localCart && localCart.length > 0) {
+        for (const item of localCart) {
+          try {
+            await customerApi.addToCart({
+              productId: item.productId || item.id || item._id,
+              quantity: item.quantity,
+              variantId: item.variantId || item.selectedVariantId || undefined,
+            });
+          } catch (err) {
+            console.error("Failed to sync local cart item", err);
+          }
+        }
+        localStorage.removeItem("cart");
+      }
+    } catch (err) {
+      console.error("Failed to sync local cart to backend", err);
+    }
+  };
+
   // Fetch cart from backend on mount or authentication change
   useEffect(() => {
     if (isAuthenticated) {
-      fetchCart();
+      const initCart = async () => {
+        setLoading(true);
+        await syncLocalCartToBackend();
+        await fetchCart();
+      };
+      initCart();
     } else {
       // Clear cart state and load from local storage for guests
       dispatch({ type: "set", cart: loadCartFromStorage() });

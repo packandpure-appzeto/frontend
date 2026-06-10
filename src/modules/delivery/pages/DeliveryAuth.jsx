@@ -32,6 +32,18 @@ const VEHICLE_TYPES = [
   { value: "cycle", label: "Cycle" },
 ];
 
+const PATTERNS = {
+  phone: /^[6-9]\d{9}$/,
+  pan: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+  aadhar: /^\d{12}$/,
+  ifsc: /^[A-Z]{4}0[A-Z0-9]{6}$/,
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  dl: /^[A-Z]{2}[0-9]{2}[0-9]{11}$/,
+  vehicle: /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$/,
+  account: /^\d{9,18}$/,
+  name: /^[a-zA-Z\s]+$/,
+};
+
 const DeliveryAuth = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
@@ -227,25 +239,40 @@ const DeliveryAuth = () => {
     try {
       setLoading(true);
       if (mode === "login") {
-        if (!loginPhone || loginPhone.length < 10) {
+        if (!PATTERNS.phone.test(loginPhone)) {
           toast.error("Please enter a valid 10-digit phone number");
           return;
         }
         const res = await deliveryApi.sendLoginOtp({ phone: loginPhone });
         toast.success(res.data?.message || "OTP sent!");
       } else {
-        if (!signupName.trim()) { toast.error("Please enter your name"); return; }
-        if (!signupPhone || signupPhone.length < 10) { toast.error("Please enter a valid 10-digit phone number"); return; }
+        const tName = signupName.trim();
+        const tEmail = signupEmail.trim();
+        const tAddress = signupAddress.trim();
+
+        if (!tName || !PATTERNS.name.test(tName)) { toast.error("Please enter a valid name (letters only)"); return; }
+        if (!PATTERNS.phone.test(signupPhone)) { toast.error("Please enter a valid 10-digit Indian phone number"); return; }
+        if (!PATTERNS.email.test(tEmail)) { toast.error("Please enter a valid email address"); return; }
+        if (tAddress.length < 10) { toast.error("Please enter a proper address"); return; }
+        if (!PATTERNS.vehicle.test(signupVehicleNumber)) { toast.error("Please enter a valid Vehicle Number"); return; }
+        if (!PATTERNS.dl.test(signupDLNumber)) { toast.error("Please enter a valid DL Number"); return; }
+        if (!PATTERNS.aadhar.test(signupAadharNumber)) { toast.error("Please enter a valid 12-digit Aadhar Number"); return; }
+        if (!PATTERNS.pan.test(signupPanNumber)) { toast.error("Please enter a valid PAN Number"); return; }
+        if (!signupAccountHolder.trim()) { toast.error("Please enter Account Holder Name"); return; }
+        if (!PATTERNS.account.test(signupAccountNumber)) { toast.error("Please enter a valid Bank Account Number"); return; }
+        if (!PATTERNS.ifsc.test(signupIfsc)) { toast.error("Please enter a valid IFSC Code"); return; }
 
         const formData = new FormData();
-        formData.append("name", signupName.trim());
+        formData.append("name", tName);
         formData.append("phone", signupPhone);
         formData.append("vehicleType", signupVehicle);
-        formData.append("email", signupEmail);
-        formData.append("address", signupAddress);
+        formData.append("email", tEmail);
+        formData.append("address", tAddress);
         formData.append("vehicleNumber", signupVehicleNumber);
         formData.append("drivingLicenseNumber", signupDLNumber);
-        formData.append("accountHolder", signupAccountHolder);
+        formData.append("aadharNumber", signupAadharNumber);
+        formData.append("panNumber", signupPanNumber);
+        formData.append("accountHolder", signupAccountHolder.trim());
         formData.append("accountNumber", signupAccountNumber);
         formData.append("ifsc", signupIfsc);
 
@@ -492,12 +519,20 @@ const DeliveryAuth = () => {
 
                           <button
                             onClick={() => {
-                              if (!signupName || !signupPhone || !signupEmail || !signupAddress) {
-                                toast.error("Please fill all personal information fields");
+                              if (!signupName.trim() || !PATTERNS.name.test(signupName.trim())) {
+                                toast.error("Please enter a valid name (letters only)");
                                 return;
                               }
-                              if (signupPhone.length !== 10) {
-                                toast.error("Please enter a valid 10-digit phone number");
+                              if (!PATTERNS.phone.test(signupPhone)) {
+                                toast.error("Please enter a valid 10-digit Indian phone number");
+                                return;
+                              }
+                              if (!PATTERNS.email.test(signupEmail.trim())) {
+                                toast.error("Please enter a valid email address");
+                                return;
+                              }
+                              if (signupAddress.trim().length < 10) {
+                                toast.error("Please enter a proper address");
                                 return;
                               }
                               setSignupStep(2);
@@ -588,12 +623,12 @@ const DeliveryAuth = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (!signupVehicleNumber) {
-                                  toast.error("Please enter your vehicle plate number");
+                                if (!PATTERNS.vehicle.test(signupVehicleNumber)) {
+                                  toast.error("Please enter a valid Vehicle Number");
                                   return;
                                 }
-                                if (!signupDLNumber) {
-                                  toast.error("Please enter your driving license number");
+                                if (!PATTERNS.dl.test(signupDLNumber)) {
+                                  toast.error("Please enter a valid Driving License Number");
                                   return;
                                 }
                                 setSignupStep(3);
@@ -673,16 +708,24 @@ const DeliveryAuth = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (!signupAadharNumber || !signupPanNumber || !signupAccountHolder || !signupAccountNumber || !signupIfsc) {
-                                  toast.error("Please fill all bank and identification fields");
+                                if (!PATTERNS.aadhar.test(signupAadharNumber)) {
+                                  toast.error("Please enter a valid 12-digit Aadhar Number");
                                   return;
                                 }
-                                if (signupAadharNumber.length !== 12) {
-                                  toast.error("Aadhar number must be 12 digits");
+                                if (!PATTERNS.pan.test(signupPanNumber)) {
+                                  toast.error("Please enter a valid PAN Number");
                                   return;
                                 }
-                                if (signupPanNumber.length !== 10) {
-                                  toast.error("PAN number must be 10 characters");
+                                if (!signupAccountHolder.trim()) {
+                                  toast.error("Please enter Account Holder Name");
+                                  return;
+                                }
+                                if (!PATTERNS.account.test(signupAccountNumber)) {
+                                  toast.error("Please enter a valid Bank Account Number");
+                                  return;
+                                }
+                                if (!PATTERNS.ifsc.test(signupIfsc)) {
+                                  toast.error("Please enter a valid IFSC Code");
                                   return;
                                 }
                                 setSignupStep(4);

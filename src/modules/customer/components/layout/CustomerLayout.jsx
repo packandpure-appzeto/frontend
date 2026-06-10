@@ -31,19 +31,7 @@ const CustomerLayout = ({ children, showHeader: showHeaderProp, fullHeight = fal
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-            {/* Header logic: Always show on desktop if showHeader is true. On mobile, hide if product detail is open. */}
-            {showHeader && (
-                <>
-                    <div className="hidden md:block">
-                        <Header />
-                    </div>
-                    {finalShowHeaderMobile && (
-                        <div className="block md:hidden">
-                            <Header />
-                        </div>
-                    )}
-                </>
-            )}
+            <Header showMobile={finalShowHeaderMobile} showDesktop={true} />
 
             <main className={cn("flex-1 md:pb-0", !showHeader && "pt-0", !fullHeight && "pb-16")}>
                 {children}

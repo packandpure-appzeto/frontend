@@ -441,30 +441,26 @@ const CategoryProductsPage = () => {
     <div className="relative flex min-h-screen flex-col bg-white font-sans md:bg-slate-50">
       <header
         className={cn(
-          'sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md',
-          isProductDetailOpen && 'hidden md:block',
+          'sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md md:hidden',
+          isProductDetailOpen && 'hidden'
         )}
       >
-        <div className={cn(PAGE_CONTAINER, 'py-3 md:py-4')}>
-          <div className="flex items-center gap-2 md:gap-4">
+        <div className={cn(PAGE_CONTAINER, 'py-3')}>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="shrink-0 rounded-full p-1.5 hover:bg-slate-50 md:hidden"
+              className="shrink-0 rounded-full p-1.5 hover:bg-slate-50"
               aria-label="Back"
             >
               <ChevronLeft size={22} className="text-slate-900" />
             </button>
 
-            <Link to="/" className="hidden shrink-0 items-center md:flex">
-              <img src={logoUrl} alt={appName} className={NAVBAR_LOGO_CLASS} />
-            </Link>
-
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-bold text-slate-900 md:text-lg">
+              <h1 className="truncate text-base font-bold text-slate-900">
                 {category?.name || 'Category'}
               </h1>
-              <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 md:text-sm">
+              <div className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                 <Link to="/categories" className="font-semibold text-brand-600 hover:underline">
                   Categories
                 </Link>
@@ -526,8 +522,36 @@ const CategoryProductsPage = () => {
         </main>
       </div>
 
+      {/* Desktop Breadcrumbs and Title */}
+      <div className={cn(PAGE_CONTAINER, 'hidden md:block pt-6 pb-2')}>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+            aria-label="Go back"
+          >
+            <ChevronLeft size={20} className="text-slate-800 pr-0.5" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold text-slate-900">
+              {category?.name || 'Category'}
+            </h1>
+            <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+              <Link to="/categories" className="font-semibold text-brand-600 hover:underline">
+                Categories
+              </Link>
+              <span>/</span>
+              <span className="font-medium text-slate-700">
+                {category?.name || '…'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Desktop: sidebar + grid */}
-      <div className={cn(PAGE_CONTAINER, 'hidden flex-1 gap-6 py-6 pb-12 md:flex')}>
+      <div className={cn(PAGE_CONTAINER, 'hidden flex-1 gap-6 py-4 pb-12 md:flex')}>
         <aside className="sticky top-24 hidden h-fit w-56 shrink-0 md:block lg:w-60">
           <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-500">
             Subcategories

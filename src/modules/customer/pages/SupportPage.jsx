@@ -84,17 +84,22 @@ const SupportPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans">
-            <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-slate-200/60 mb-4 flex items-center gap-2">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="w-10 h-10 flex items-center justify-center hover:bg-slate-200/70 rounded-full transition-colors -ml-1"
-                >
-                    <ChevronLeft size={22} className="text-slate-800" />
-                </button>
-                <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Help & Support</h1>
-            </div>
-
-            <div className="max-w-2xl mx-auto px-4 pt-1 relative z-20 space-y-5">
+            <main className="px-4 pt-4 max-w-2xl mx-auto space-y-5 relative z-20">
+                <div className="mb-2">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
+                            className="shrink-0 rounded-full p-1.5 hover:bg-slate-200/70 transition-colors -ml-1.5"
+                            aria-label="Back"
+                        >
+                            <ChevronLeft size={22} className="text-slate-900" />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Help & Support</h1>
+                        </div>
+                    </div>
+                </div>
                 {/* Contact Channels */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <ContactCard icon={MessageCircle} label="Chat Us" sub="Instant Support" to="/chat" />
@@ -140,7 +145,7 @@ const SupportPage = () => {
                         </Link>
                     </div>
                 </div>
-            </div>
+            </main>
 
             {/* Ticket Creation Modal */}
             <AnimatePresence>

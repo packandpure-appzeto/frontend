@@ -99,6 +99,7 @@ export const adminApi = {
 
     // Delivery Partners
     getDeliveryPartners: (params) => axiosInstance.get('/admin/delivery-partners', { params }),
+    getDeliveryPartnerById: (id) => axiosInstance.get(`/admin/delivery-partners/${id}`),
     approveDeliveryPartner: (id) => axiosInstance.patch(`/admin/delivery-partners/approve/${id}`),
     rejectDeliveryPartner: (id) => axiosInstance.delete(`/admin/delivery-partners/reject/${id}`),
     getActiveFleet: (params) => axiosInstance.get('/admin/active-fleet', { params }),

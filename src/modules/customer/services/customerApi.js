@@ -104,5 +104,5 @@ export const customerApi = {
 
   // Promotions
   validatePromotion: (data) => axiosInstance.post("/promotions/validate", data),
-  getActivePromotions: () => getWithDedupe("/promotions/available", {}),
+  getActivePromotions: (params, options) => getWithDedupe("/promotions/available", params, options),
 };

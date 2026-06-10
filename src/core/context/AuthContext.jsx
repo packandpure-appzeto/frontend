@@ -110,7 +110,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (currentRole === 'delivery' && token) {
+      try {
+        await axiosInstance.post('/delivery/logout');
+      } catch (error) {
+        console.error('Failed to notify backend of delivery logout:', error);
+      }
+    }
+
     Object.values(ROLE_STORAGE_KEYS).forEach((key) => {
       localStorage.removeItem(key);
     });
@@ -130,7 +138,7 @@ export const AuthProvider = ({ children }) => {
     else if (pathname.startsWith('/delivery')) window.location.href = '/delivery/auth';
     else if (pathname.startsWith('/pickup')) window.location.href = '/pickup/auth';
     else window.location.href = '/login';
-  }, [pathname]);
+  }, [pathname, currentRole, token]);
 
   const refreshUser = useCallback(async () => {
     if (!token) return null;

@@ -25,11 +25,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import Pagination from '@shared/components/ui/Pagination';
 import { adminApi } from '../services/adminApi';
+import { useNavigate } from 'react-router-dom';
 
 const ActiveDeliveryBoys = () => {
+    const navigate = useNavigate();
     const [riders, setRiders] = useState([]);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
@@ -99,7 +100,7 @@ const ActiveDeliveryBoys = () => {
 
     const handleAction = (type, rider) => {
         if (type === 'view') {
-            setViewingRider(rider);
+            navigate(`/admin/delivery-boys/${rider.id}`);
         } else if (type === 'edit') {
             setFormState(rider);
             setSelectedRider(rider);
@@ -351,107 +352,6 @@ const ActiveDeliveryBoys = () => {
                     loading={isLoading}
                 />
             </div>
-
-            {/* Profile Detail Modal */}
-            <AnimatePresence>
-                {viewingRider && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-                            onClick={() => setViewingRider(null)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-2xl relative z-10 bg-white rounded-2xl shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-10">
-                                <div className="flex justify-between items-start mb-10">
-                                    <div className="flex gap-6">
-                                        <div className="h-24 w-24 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                                            <User className="h-14 w-14" />
-                                        </div>
-                                        <div>
-                                            <h2 className="ds-h1">{viewingRider.name}</h2>
-                                            <div className="flex items-center gap-3 mt-2">
-                                                <Badge variant={viewingRider.status === 'available' ? 'success' : viewingRider.status === 'busy' ? 'warning' : 'neutral'} className="uppercase font-black text-[9px] px-3">
-                                                    {viewingRider.status}
-                                                </Badge>
-                                                <span className="text-xs font-bold text-slate-400">Rider ID: RD-00{viewingRider.id.slice(1)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => setViewingRider(null)} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all">
-                                        <XCircle className="h-6 w-6 text-slate-400" />
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Number</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.phone}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.email}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fleet Partner Since</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.joinDate}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vehicle Assigned</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.vehicle}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registration No.</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.vehicleNum}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Synced Area</p>
-                                        <p className="text-sm font-bold text-slate-900">{viewingRider.location}</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-6 bg-slate-50 rounded-xl">
-                                    <div className="text-center">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Lifetime Rating</p>
-                                        <div className="flex justify-center items-center gap-1">
-                                            <Star className="h-4 w-4 text-amber-500 fill-current" />
-                                            <span className="text-lg font-black text-slate-900">{viewingRider.rating}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-center border-l border-slate-200">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Fleet Rank</p>
-                                        <span className="text-lg font-black text-slate-900">#42</span>
-                                    </div>
-                                    <div className="text-center border-l border-slate-200">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Total Deliveries</p>
-                                        <span className="text-lg font-black text-slate-900 text-indigo-600">{viewingRider.totalOrders}</span>
-                                    </div>
-                                    <div className="text-center border-l border-slate-200">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Wallet Creds</p>
-                                        <span className="text-lg font-black text-slate-900 text-emerald-600">₹4,250</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 flex gap-4">
-                                    <button className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">
-                                        Send Message
-                                    </button>
-                                    <button className="px-6 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-100 transition-all active:scale-95">
-                                        DEACTIVATE
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
             {/* Onboard / Edit Modal */}
             <AnimatePresence>

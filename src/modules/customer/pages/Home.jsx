@@ -4,7 +4,7 @@ import { BRAND_COLOR } from '../constants/brandTheme';
 import { useLocation } from '../context/LocationContext';
 import { useHomePage } from '../hooks/useHomePage';
 import HomeReviewHeader from '../components/home/HomeReviewHeader';
-import HomeDesktopNavbar from '../components/home/HomeDesktopNavbar';
+
 import HomeHeroBanners from '../components/home/HomeHeroBanners';
 import HomeCategorySections from '../components/home/HomeCategorySections';
 import HomePromoBelowCategories from '../components/home/HomePromoBelowCategories';
@@ -70,11 +70,7 @@ const Home = () => {
                 onLocationClick={openLocation}
             />
 
-            <HomeDesktopNavbar
-                deliveryLabel={deliveryLabel}
-                outlet={outlet}
-                onLocationClick={openLocation}
-            />
+
 
             <HomeHeroBanners slides={heroSlides} />
 
