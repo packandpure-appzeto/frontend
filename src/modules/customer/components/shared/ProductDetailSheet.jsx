@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { X, Heart, Share2, Minus, Plus, Package, Loader2 } from 'lucide-react';
+import { X, Heart, Share2, Minus, Plus, Package, Loader2, ChevronRight, Star } from 'lucide-react';
 import { useProductDetail } from '../../context/ProductDetailContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -203,57 +203,7 @@ function VariantPicker({ variants, selectedKey, onSelect, variantCartMap }) {
   );
 }
 
-function SelectedVariantDetails({ variant, productUnit }) {
-  if (!variant) return null;
-  const { sale, mrp, savings, discountPct } = getVariantPricing(variant);
-  const stock = getVariantStock(variant);
-  const inStock = stock > 0;
-  const unit = variant.unit || productUnit;
 
-  const rows = [
-    { label: 'Pack', value: variant.name },
-    unit ? { label: 'Unit', value: unit } : null,
-    { label: 'Selling price', value: formatInr(sale) },
-    mrp > sale ? { label: 'MRP', value: formatInr(mrp), strike: true } : null,
-    savings > 0 ? { label: 'You save', value: formatInr(savings), highlight: true } : null,
-    { label: 'Availability', value: inStock ? `${stock} available` : 'Out of stock' },
-  ].filter(Boolean);
-
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
-      <div className="mb-2.5 flex items-center gap-2">
-        <Package size={14} className="text-brand-600" />
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
-          Selected variant
-        </p>
-        {discountPct > 0 && inStock ? (
-          <span className="ml-auto rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-            {discountPct}% OFF
-          </span>
-        ) : null}
-      </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              {row.label}
-            </dt>
-            <dd
-              className={cn(
-                'text-sm font-bold',
-                row.strike && 'text-slate-400 line-through font-semibold',
-                row.highlight && 'text-emerald-700',
-                !row.strike && !row.highlight && 'text-slate-800',
-              )}
-            >
-              {row.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
 
 function useLockBodyScroll(locked) {
   useEffect(() => {
@@ -304,7 +254,30 @@ function QuantityControls({
   onSet,
   compact,
 }) {
+  const [inputValue, setInputValue] = useState(String(quantity));
+
+  useEffect(() => {
+    setInputValue(String(quantity));
+  }, [quantity]);
+
+  useEffect(() => {
+    if (!onSet) return;
+    const val = parseInt(inputValue, 10);
+    if (!isNaN(val) && val >= 1 && val !== quantity) {
+      const timer = setTimeout(() => {
+        onSet(val);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [inputValue, quantity, onSet]);
+
   const atMax = maxQty != null && quantity >= maxQty;
+
+  const handleMinus = () => {
+    if (quantity > 1) {
+      if (onDec) onDec();
+    }
+  };
 
   if (quantity > 0) {
     return (
@@ -320,7 +293,7 @@ function QuantityControls({
       >
         <button
           type="button"
-          onClick={onDec}
+          onClick={handleMinus}
           className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 active:bg-white/30 shrink-0"
           aria-label="Decrease"
         >
@@ -328,15 +301,13 @@ function QuantityControls({
         </button>
         <input
           type="number"
-          min="0"
-          value={quantity}
-          onChange={(e) => {
-            if (!onSet) return;
-            const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
-            if (val === '') {
-              onSet(0);
-            } else if (!isNaN(val)) {
-              onSet(val);
+          min="1"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onBlur={() => {
+            const val = parseInt(inputValue, 10);
+            if (isNaN(val) || val < 1) {
+              setInputValue(String(quantity));
             }
           }}
           className="w-12 bg-transparent text-center text-lg font-black border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none text-white"
@@ -387,6 +358,7 @@ function ProductDetailFooter({
   inStock,
   maxQty,
   cartCount,
+  cart,
   onAdd,
   onInc,
   onDec,
@@ -398,6 +370,11 @@ function ProductDetailFooter({
     price: effectiveProduct?.originalPrice,
     salePrice: effectiveProduct?.price,
   });
+
+  const effectiveQty = Math.max(1, quantity || 1);
+  const displaySale = sale * effectiveQty;
+  const displayMrp = mrp * effectiveQty;
+  const displaySavings = savings * effectiveQty;
 
   return (
     <div
@@ -413,14 +390,14 @@ function ProductDetailFooter({
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500">Price for selected pack</p>
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-2xl font-bold text-slate-900">{formatInr(sale)}</span>
-              {mrp > sale ? (
-                <span className="text-sm text-slate-400 line-through">{formatInr(mrp)}</span>
+              <span className="text-2xl font-bold text-slate-900">{formatInr(displaySale)}</span>
+              {displayMrp > displaySale ? (
+                <span className="text-sm text-slate-400 line-through">{formatInr(displayMrp)}</span>
               ) : null}
             </div>
-            {savings > 0 ? (
+            {displaySavings > 0 ? (
               <p className="mt-0.5 text-xs font-semibold text-emerald-700">
-                Save {formatInr(savings)}
+                Save {formatInr(displaySavings)}
               </p>
             ) : null}
             {maxQty != null && inStock ? (
@@ -431,10 +408,10 @@ function ProductDetailFooter({
           <div className="flex items-center justify-between gap-2 px-0.5">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</p>
-              <span className="text-xl font-black text-slate-900">{formatInr(sale)}</span>
+              <span className="text-xl font-black text-slate-900">{formatInr(displaySale)}</span>
             </div>
-            {mrp > sale ? (
-              <span className="text-xs font-semibold text-slate-400 line-through">{formatInr(mrp)}</span>
+            {displayMrp > displaySale ? (
+              <span className="text-xs font-semibold text-slate-400 line-through">{formatInr(displayMrp)}</span>
             ) : null}
           </div>
         )}
@@ -454,16 +431,39 @@ function ProductDetailFooter({
       </div>
 
       {cartCount > 0 ? (
-        <Link
-          to="/checkout"
-          onClick={onClose}
-          className="mt-3 flex w-full items-center justify-between rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          <span>View cart</span>
-          <span>
-            {cartCount} item{cartCount === 1 ? '' : 's'}
-          </span>
+        <div className="flex justify-end mt-3">
+            <Link
+            to="/cart"
+            onClick={onClose}
+            style={{
+                backgroundColor: "var(--customer-mini-cart-color, #E23744)",
+            }}
+            className="flex w-full max-w-[148px] items-center gap-2 text-white py-1.5 px-2.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.22)] hover:scale-[1.02] active:scale-95 transition-all group border border-white/10 relative overflow-hidden"
+            >
+          <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
+              <div className="mini-cart-shimmer absolute inset-y-0 left-[-40%] w-[40%] bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg]" />
+          </div>
+
+          <div className="h-7 w-7 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden">
+              {cart && cart.length > 0 && (
+                  <img
+                      src={cart[0].image}
+                      alt={cart[0].name}
+                      className="w-full h-full object-contain p-0.5"
+                  />
+              )}
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center min-w-0 text-left">
+              <h4 className="text-[12px] font-black leading-tight truncate">View cart</h4>
+              <p className="text-[9px] opacity-90 font-bold leading-tight">{cartCount} {cartCount === 1 ? 'item' : 'items'}</p>
+          </div>
+
+          <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <ChevronRight size={15} strokeWidth={3} className="text-white" />
+          </div>
         </Link>
+        </div>
       ) : null}
     </div>
   );
@@ -671,7 +671,6 @@ const ProductDetailSheet = () => {
         onSelect={setSelectedVariantKey}
         variantCartMap={variantCartMap}
       />
-      <SelectedVariantDetails variant={selectedVariant} productUnit={selectedProduct?.unit} />
       {totalProductCartQty > 0 && variantsInCartCount > 1 ? (
         <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-800">
           {totalProductCartQty} items in cart across {variantsInCartCount} pack sizes
@@ -680,12 +679,31 @@ const ProductDetailSheet = () => {
     </div>
   ) : null;
 
-  const aboutSection = desc ? (
-    <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">About</p>
-      <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{desc}</p>
+  const ratingVal = effectiveProduct?.rating || 5.0;
+  const reviewCount = effectiveProduct?.reviewCount || 124;
+
+  const aboutSection = (
+    <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-3 mt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Product Info & Rating</p>
+        <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-100">
+            <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={12} className={i < Math.floor(ratingVal) ? "fill-[#E23744] text-[#E23744]" : "text-slate-200"} />
+                ))}
+            </div>
+            <span className="text-xs font-black text-slate-800 ml-1">{Number(ratingVal).toFixed(1)}</span>
+            <span className="text-[10px] font-bold text-slate-400">({reviewCount})</span>
+        </div>
+      </div>
+      
+      {desc ? (
+        <div className="pt-2 border-t border-slate-100/50">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600 font-medium">{desc}</p>
+        </div>
+      ) : null}
     </div>
-  ) : null;
+  );
 
   return (
     <AnimatePresence>
@@ -793,6 +811,7 @@ const ProductDetailSheet = () => {
                     inStock={inStock}
                     maxQty={maxQty}
                     cartCount={cartCount}
+                    cart={cart}
                     onAdd={handleAdd}
                     onInc={inc}
                     onDec={dec}
@@ -877,6 +896,7 @@ const ProductDetailSheet = () => {
                 inStock={inStock}
                 maxQty={maxQty}
                 cartCount={cartCount}
+                cart={cart}
                 onAdd={handleAdd}
                 onInc={inc}
                 onDec={dec}

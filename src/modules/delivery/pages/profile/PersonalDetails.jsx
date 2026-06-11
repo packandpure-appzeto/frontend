@@ -13,6 +13,7 @@ const PersonalDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
   
   const [formData, setFormData] = useState({
     fullName: user?.name || "",
@@ -40,17 +41,31 @@ const PersonalDetails = () => {
 
   const handleSave = async () => {
     try {
-      await deliveryApi.updateProfile({
+      const updatePayload = {
         email: formData.email,
         address: formData.address,
         bloodGroup: formData.bloodGroup
-      });
-      patchUser({
+      };
+
+      if (uploadedImageUrl) {
+        updatePayload.profileImage = uploadedImageUrl;
+      }
+
+      await deliveryApi.updateProfile(updatePayload);
+      
+      const userPatch = {
         email: formData.email,
         address: formData.address,
         bloodGroup: formData.bloodGroup
-      });
+      };
+
+      if (uploadedImageUrl) {
+        userPatch.documents = { ...user.documents, profileImage: uploadedImageUrl };
+      }
+
+      patchUser(userPatch);
       setIsEditing(false);
+      setUploadedImageUrl(null);
       toast.success("Personal details updated successfully!");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update details");
@@ -69,9 +84,8 @@ const PersonalDetails = () => {
       const uploadResponse = await deliveryApi.uploadFile(formData);
       const imageUrl = uploadResponse.data.result.url;
 
-      await deliveryApi.updateProfile({ profileImage: imageUrl });
-      patchUser({ documents: { ...user.documents, profileImage: imageUrl } });
-      toast.success("Profile picture updated!");
+      setUploadedImageUrl(imageUrl);
+      toast.success("Image uploaded! Click Save to apply changes.");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to upload image");
     } finally {
@@ -127,7 +141,7 @@ const PersonalDetails = () => {
                 </div>
               ) : (
                 <img
-                  src={user?.documents?.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`}
+                  src={uploadedImageUrl || user?.documents?.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`}
                   alt="Profile"
                   className="w-full h-full rounded-full object-cover bg-gray-100 dark:bg-gray-700"
                 />

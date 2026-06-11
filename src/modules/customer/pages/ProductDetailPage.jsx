@@ -62,6 +62,25 @@ const ProductDetailPage = () => {
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
 
+    const cartItem = cart.find(item => item.id === (product?._id || product?.id));
+    const quantity = cartItem ? cartItem.quantity : 0;
+    
+    const [inputValue, setInputValue] = useState(String(quantity));
+
+    useEffect(() => {
+        setInputValue(String(quantity));
+    }, [quantity]);
+
+    useEffect(() => {
+        const val = parseInt(inputValue, 10);
+        if (!isNaN(val) && val >= 1 && val !== quantity) {
+            const timer = setTimeout(() => {
+                updateQuantity(product._id || product.id, val - quantity);
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [inputValue, quantity, product, updateQuantity]);
+
     useEffect(() => {
         if (id) {
             fetchProduct();
@@ -158,8 +177,6 @@ const ProductDetailPage = () => {
         );
     }
 
-    const cartItem = cart.find(item => item.id === product._id || item.id === product.id);
-    const quantity = cartItem ? cartItem.quantity : 0;
     const isWishlisted = isInWishlist(product._id || product.id);
 
     const productDetails = [
@@ -250,21 +267,24 @@ const ProductDetailPage = () => {
                         {quantity > 0 ? (
                             <div className="flex items-center bg-[#E23744] text-white rounded-2xl h-16 w-full sm:w-auto px-2 shadow-xl shadow-rose-100">
                                 <button
-                                    onClick={() => updateQuantity(product._id || product.id, -1)}
+                                    onClick={() => {
+                                        if (quantity > 1) {
+                                            updateQuantity(product._id || product.id, -1);
+                                        }
+                                    }}
                                     className="w-12 h-12 flex items-center justify-center hover:bg-white/20 rounded-xl transition-all"
                                 >
                                     <Minus size={24} strokeWidth={3} />
                                 </button>
                                 <input
                                     type="number"
-                                    min="0"
-                                    value={quantity}
-                                    onChange={(e) => {
-                                        const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
-                                        if (val === '') {
-                                            updateQuantity(product._id || product.id, 0 - quantity);
-                                        } else if (!isNaN(val)) {
-                                            updateQuantity(product._id || product.id, val - quantity);
+                                    min="1"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onBlur={() => {
+                                        const val = parseInt(inputValue, 10);
+                                        if (isNaN(val) || val < 1) {
+                                            setInputValue(String(quantity));
                                         }
                                     }}
                                     className="w-16 bg-transparent text-center font-black text-xl border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none text-white placeholder-white/50"

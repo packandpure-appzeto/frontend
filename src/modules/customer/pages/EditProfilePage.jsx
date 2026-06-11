@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Phone, Mail, Camera, Save } from 'lucide-react';
+import { ChevronLeft, User, Phone, Mail, Camera, Save, MapPin, Building2, FileText, Shield, Leaf } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@core/context/AuthContext';
@@ -23,6 +23,11 @@ const EditProfilePage = () => {
         name: '',
         phone: '',
         email: '',
+        businessName: '',
+        businessAddress: '',
+        panNo: '',
+        gstNo: '',
+        fssaiNumber: '',
     });
 
     const revokePreviewBlob = () => {
@@ -43,6 +48,11 @@ const EditProfilePage = () => {
                     name: profile.name ?? '',
                     phone: profile.phone ?? '',
                     email: profile.email ?? '',
+                    businessName: profile.businessName ?? '',
+                    businessAddress: profile.businessAddress ?? '',
+                    panNo: profile.panNo ?? '',
+                    gstNo: profile.gstNo ?? '',
+                    fssaiNumber: profile.fssaiNumber ?? '',
                 });
                 const url = profile.avatar ?? '';
                 setSavedAvatarUrl(url);
@@ -53,6 +63,11 @@ const EditProfilePage = () => {
                         name: user.name ?? '',
                         phone: user.phone ?? '',
                         email: user.email ?? '',
+                        businessName: user.businessName ?? '',
+                        businessAddress: user.businessAddress ?? '',
+                        panNo: user.panNo ?? '',
+                        gstNo: user.gstNo ?? '',
+                        fssaiNumber: user.fssaiNumber ?? '',
                     });
                     const url = user.avatar ?? '';
                     setSavedAvatarUrl(url);
@@ -118,6 +133,11 @@ const EditProfilePage = () => {
                 name: formData.name.trim(),
                 email: formData.email?.trim() || undefined,
                 avatar: avatarUrl || undefined,
+                businessName: formData.businessName?.trim() || undefined,
+                businessAddress: formData.businessAddress?.trim() || undefined,
+                panNo: formData.panNo?.trim() || undefined,
+                gstNo: formData.gstNo?.trim() || undefined,
+                fssaiNumber: formData.fssaiNumber?.trim() || undefined,
             });
 
             revokePreviewBlob();
@@ -145,6 +165,11 @@ const EditProfilePage = () => {
         const hasChanges =
             formData.name !== (user?.name ?? '') ||
             (formData.email || '') !== (user?.email || '') ||
+            (formData.businessName || '') !== (user?.businessName || '') ||
+            (formData.businessAddress || '') !== (user?.businessAddress || '') ||
+            (formData.panNo || '') !== (user?.panNo || '') ||
+            (formData.gstNo || '') !== (user?.gstNo || '') ||
+            (formData.fssaiNumber || '') !== (user?.fssaiNumber || '') ||
             hasPendingPhoto;
 
         if (hasChanges) {
@@ -158,14 +183,23 @@ const EditProfilePage = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-10">
-            <div className="bg-white sticky top-0 z-30 px-4 py-3 flex items-center gap-3 shadow-sm">
-                <button type="button" onClick={handleBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors">
-                    <ArrowLeft size={24} className="text-slate-600" />
-                </button>
-                <h1 className="text-lg font-black text-slate-800">Edit Profile</h1>
-            </div>
-
-            <div className="max-w-xl mx-auto p-5">
+            <main className="max-w-2xl mx-auto px-4 pt-4 space-y-5">
+                {/* Header — matches ProfilePage style */}
+                <div className="mb-2">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleBack}
+                            className="shrink-0 rounded-full p-1.5 hover:bg-slate-200/70 transition-colors -ml-1.5"
+                            aria-label="Back"
+                        >
+                            <ChevronLeft size={22} className="text-slate-900" />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Edit Profile</h1>
+                        </div>
+                    </div>
+                </div>
                 <div className="flex flex-col items-center mb-8">
                     <div className="relative">
                         <div className="h-28 w-28 rounded-full bg-slate-200 border-4 border-white shadow-md flex items-center justify-center overflow-hidden">
@@ -251,6 +285,93 @@ const EditProfilePage = () => {
                         </div>
                     </div>
 
+                    {/* Business Info Section */}
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Building2 size={16} className="text-[#E23744]" />
+                            <p className="text-sm font-black text-slate-700">Business Info</p>
+                            <span className="text-[10px] text-slate-400 font-medium">(optional)</span>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Business Name</label>
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                <Building2 size={20} className="text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="businessName"
+                                    value={formData.businessName}
+                                    onChange={handleChange}
+                                    className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium"
+                                    placeholder="Enter business name"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Business Address</label>
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                <MapPin size={20} className="text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="businessAddress"
+                                    value={formData.businessAddress}
+                                    onChange={handleChange}
+                                    className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium"
+                                    placeholder="Enter business address"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">PAN Number</label>
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                <FileText size={20} className="text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="panNo"
+                                    value={formData.panNo}
+                                    onChange={handleChange}
+                                    className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium uppercase"
+                                    placeholder="Enter PAN number"
+                                    maxLength={10}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">GST Number</label>
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                <Shield size={20} className="text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="gstNo"
+                                    value={formData.gstNo}
+                                    onChange={handleChange}
+                                    className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium uppercase"
+                                    placeholder="Enter GST number"
+                                    maxLength={15}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">FSSAI Number</label>
+                            <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                <Leaf size={20} className="text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="fssaiNumber"
+                                    value={formData.fssaiNumber}
+                                    onChange={handleChange}
+                                    className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium"
+                                    placeholder="Enter FSSAI number"
+                                    maxLength={14}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -268,9 +389,10 @@ const EditProfilePage = () => {
                             : 'Save Changes'}
                     </button>
                 </form>
-            </div>
+            </main>
         </div>
     );
 };
+
 
 export default EditProfilePage;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { BRAND_COLOR } from "../../constants/brandTheme";
 import { cartKey } from "@/shared/utils/variantHelpers";
@@ -41,11 +41,25 @@ export default function CheckoutCartItemRow({
   const lineTotal = unitPrice * qty;
   const imageSrc = resolveProductImageUrl(item);
 
+  const [inputValue, setInputValue] = useState(String(qty));
+
+  useEffect(() => {
+    setInputValue(String(qty));
+  }, [qty]);
+
+  useEffect(() => {
+    const val = parseInt(inputValue, 10);
+    if (!isNaN(val) && val >= 1 && val !== qty) {
+      const timer = setTimeout(() => {
+        onUpdateQuantity(productId, val - qty, variantId || undefined);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [inputValue, qty, productId, variantId, onUpdateQuantity]);
+
   const handleMinus = () => {
     if (qty > 1) {
       onUpdateQuantity(productId, -1, variantId || undefined);
-    } else {
-      onRemove(productId, variantId || undefined);
     }
   };
 
@@ -107,14 +121,13 @@ export default function CheckoutCartItemRow({
           </button>
           <input
             type="number"
-            min="0"
-            value={qty}
-            onChange={(e) => {
-              const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
-              if (val === '') {
-                onUpdateQuantity(productId, 0 - qty, variantId || undefined);
-              } else if (!isNaN(val)) {
-                onUpdateQuantity(productId, val - qty, variantId || undefined);
+            min="1"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onBlur={() => {
+              const val = parseInt(inputValue, 10);
+              if (isNaN(val) || val < 1) {
+                setInputValue(String(qty));
               }
             }}
             className="w-12 bg-transparent text-center text-base font-black border-none outline-none [-moz-appearance:_textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none"

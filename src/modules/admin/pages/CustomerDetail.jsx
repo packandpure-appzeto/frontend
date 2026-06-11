@@ -26,7 +26,11 @@ import {
     Bell,
     Package,
     IndianRupee,
-    CheckCircle2
+    CheckCircle2,
+    Building2,
+    FileText,
+    Shield,
+    Leaf,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Modal from '@shared/components/ui/Modal';
@@ -298,6 +302,93 @@ const CustomerDetail = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Delivery & Order History */}
                 <div className="lg:col-span-2 space-y-8">
+
+                    {/* Profile Details Card */}
+                    <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl p-6">
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 mb-6">
+                            <User className="h-4 w-4 text-sky-500" />
+                            Profile Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                            {/* Personal Info */}
+                            {customer.phone && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-sky-50 rounded-xl text-sky-500 shrink-0"><Phone className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.phone}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {customer.email && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-sky-50 rounded-xl text-sky-500 shrink-0"><Mail className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5 break-all">{customer.email}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Business Info */}
+                            {customer.businessName && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-violet-50 rounded-xl text-violet-500 shrink-0"><Building2 className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Name</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.businessName}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {customer.businessAddress && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-violet-50 rounded-xl text-violet-500 shrink-0"><MapPin className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Address</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.businessAddress}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Compliance Info */}
+                            {customer.panNo && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-amber-50 rounded-xl text-amber-500 shrink-0"><FileText className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PAN Number</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5 uppercase tracking-widest">{customer.panNo}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {customer.gstNo && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-amber-50 rounded-xl text-amber-500 shrink-0"><Shield className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GST Number</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5 uppercase tracking-widest">{customer.gstNo}</p>
+                                    </div>
+                                </div>
+                            )}
+                            {customer.fssaiNumber && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500 shrink-0"><Leaf className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FSSAI Number</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.fssaiNumber}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* No data fallback */}
+                            {!customer.email && !customer.businessName && !customer.businessAddress && !customer.panNo && !customer.gstNo && !customer.fssaiNumber && (
+                                <div className="col-span-2 py-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                    <User className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No additional profile details</p>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+
                     {/* Delivery addresses */}
                     <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl p-4">
                         <div className="flex items-center justify-between mb-8">

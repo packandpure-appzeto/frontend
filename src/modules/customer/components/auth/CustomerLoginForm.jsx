@@ -132,26 +132,9 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         const updatedCustomer = { ...customer, name: savedName };
         setPendingLoginData(null);
         patchUser({ name: savedName });
-        sessionStorage.removeItem('name_prompt_skipped'); // name is set — clear the flag
         toast.success(`Welcome, ${savedName}!`);
         if (onSuccess) {
             onSuccess(updatedCustomer, token);
-        } else if (onClose) {
-            onClose();
-        } else {
-            navigate('/');
-        }
-    };
-
-    /** Called when user taps "Skip for now" on the name modal. */
-    const handleNameSkip = () => {
-        setShowSetName(false);
-        const { customer, token } = pendingLoginData || {};
-        setPendingLoginData(null);
-        sessionStorage.setItem('name_prompt_skipped', '1'); // tell CustomerLayoutWrapper to not re-open
-        toast.success('Welcome back!');
-        if (onSuccess) {
-            onSuccess(customer, token);
         } else if (onClose) {
             onClose();
         } else {
@@ -380,7 +363,6 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         <SetNameModal
             open={showSetName}
             onSuccess={handleNameSaved}
-            onSkip={handleNameSkip}
         />
         </>  
     );
