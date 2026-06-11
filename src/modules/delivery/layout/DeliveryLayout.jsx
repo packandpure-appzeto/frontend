@@ -263,42 +263,6 @@ const DeliveryLayout = () => {
     });
   }, [user?.isOnline]);
 
-  // When a new DB notification arrives (same row as bell list), open the same popup if socket was missed
-  useEffect(() => {
-    if (!user?.isOnline) return undefined;
-    const poll = async () => {
-      try {
-        const res = await deliveryApi.getNotifications();
-        if (!res.data?.success) return;
-        const result = res.data.result || res.data.data;
-        const notifications = result?.notifications || [];
-        if (activeOrderRef.current) return;
-        for (const n of notifications) {
-          if (n.type !== "order" || n.isRead || !n.data?.orderId) continue;
-          const oid = n.data.orderId;
-          if (shownOrderIdsRef.current.has(oid)) continue;
-          const fromStored = applyFromBroadcastPayload({
-            orderId: oid,
-            preview: n.data.preview,
-            deliverySearchExpiresAt: n.data.deliverySearchExpiresAt,
-          });
-          if (fromStored) return;
-          const r2 = await deliveryApi.getAvailableOrders();
-          if (r2.data.success) {
-            const list = r2.data.results || r2.data.result || [];
-            applyAvailableOrdersList(list);
-          }
-          return;
-        }
-      } catch {
-        /* ignore */
-      }
-    };
-    poll();
-    const iv = setInterval(poll, 12000);
-    return () => clearInterval(iv);
-  }, [user?.isOnline, applyFromBroadcastPayload, applyAvailableOrdersList, suppressIncomingModal]);
-
   const skipOrder = useCallback(async () => {
     const current = activeOrderRef.current;
     if (!current || acceptInFlightRef.current) return;

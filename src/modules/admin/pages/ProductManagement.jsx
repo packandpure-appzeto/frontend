@@ -25,6 +25,8 @@ import {
     HiOutlineSwatch,
     HiOutlineSquaresPlus,
     HiOutlineArrowTopRightOnSquare,
+    HiOutlineTruck,
+    HiOutlineClipboardDocumentList,
 } from 'react-icons/hi2';
 import Modal from '@shared/components/ui/Modal';
 import Pagination from '@shared/components/ui/Pagination';
@@ -32,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiOutlineLink } from 'react-icons/hi2';
 import SearchableCategorySelect from '../components/SearchableCategorySelect';
+import PurchaseRequestListPanel from '../components/PurchaseRequestListPanel';
 import { PRODUCT_UNITS, DEFAULT_PRODUCT_UNIT } from '@shared/constants/productUnits';
 import { useDebouncedValue, useDebouncedCallback, DEBOUNCE_MS } from '@shared/hooks/useDebounce';
 import {
@@ -68,20 +71,38 @@ const ProductManagement = () => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-    const [requestData, setRequestData] = useState({ productId: '', vendorId: '', productName: '', quantity: 1, notes: '' });
+    const [prContext, setPrContext] = useState(null);
+    const [productPrRequests, setProductPrRequests] = useState([]);
+    const [prLoading, setPrLoading] = useState(false);
+    const [prSubmitting, setPrSubmitting] = useState(false);
+    const [requestData, setRequestData] = useState({
+        productId: '',
+        vendorId: '',
+        productName: '',
+        quantity: 10,
+        notes: '',
+    });
     const [itemToDelete, setItemToDelete] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
     const [modalTab, setModalTab] = useState('general');
 
-    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-    const [approveRow, setApproveRow] = useState(null);
-    const [approvePrice, setApprovePrice] = useState("");
+    const [isGoLiveModalOpen, setIsGoLiveModalOpen] = useState(false);
+    const [goLiveRow, setGoLiveRow] = useState(null);
+    const [goLivePreview, setGoLivePreview] = useState(null);
+    const [goLiveLoading, setGoLiveLoading] = useState(false);
+    const [goLiveSaving, setGoLiveSaving] = useState(false);
+    const [goLiveAction, setGoLiveAction] = useState('create_master');
+    const [selectedMasterId, setSelectedMasterId] = useState('');
+    const [variantSellPrices, setVariantSellPrices] = useState([]);
 
     const [formData, setFormData] = useState({ ...EMPTY_PRODUCT_FORM, variants: [{ ...EMPTY_PRODUCT_FORM.variants[0], id: Date.now() }] });
     const [listStats, setListStats] = useState(null);
+    const [filterSellerId, setFilterSellerId] = useState('');
 
     const [viewingVariants, setViewingVariants] = useState(null);
     const [isVariantsViewModalOpen, setIsVariantsViewModalOpen] = useState(false);
+    const [viewingSellerSupply, setViewingSellerSupply] = useState(null);
+    const [isSellerSupplyModalOpen, setIsSellerSupplyModalOpen] = useState(false);
 
     const [imageFiles, setImageFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
@@ -176,6 +197,7 @@ const ProductManagement = () => {
             }
             if (filterStatus !== 'all') params.status = filterStatus;
             params.ownerType = activeTab === 'master' ? 'admin' : 'seller';
+            if (filterSellerId && activeTab === 'seller') params.sellerId = filterSellerId;
 
             const response = await adminApi.getProducts(params);
             const { items, total: apiTotal, page: apiPage, stats } = parseAdminProductListResponse(response);
@@ -203,6 +225,20 @@ const ProductManagement = () => {
             document.body.style.overflow = prevOverflow;
         };
     }, [isProductModalOpen]);
+
+    useEffect(() => {
+        const st = location.state;
+        if (st?.sellerFilterId && st?.productTab === 'seller') {
+            setActiveTab('seller');
+            setFilterSellerId(String(st.sellerFilterId));
+            navigate(location.pathname, {
+                replace: true,
+                state: {
+                    ...(st.productDraft ? { productDraft: st.productDraft } : {}),
+                },
+            });
+        }
+    }, [location.state?.sellerFilterId, location.state?.productTab]);
 
     useEffect(() => {
         const st = location.state;
@@ -237,7 +273,7 @@ const ProductManagement = () => {
 
     useEffect(() => {
         fetchProducts(1);
-    }, [debouncedSearchTerm, filterCategory, filterStatus, pageSize, activeTab]);
+    }, [debouncedSearchTerm, filterCategory, filterStatus, pageSize, activeTab, filterSellerId]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -272,7 +308,11 @@ const ProductManagement = () => {
                 toast.success('Product updated successfully');
             } else {
                 await adminApi.createProduct(data);
-                toast.success('Product created successfully');
+                toast.success(
+                    activeTab === 'master'
+                        ? 'Master product is live in the catalog'
+                        : 'Product created successfully',
+                );
             }
             setIsProductModalOpen(false);
             fetchProducts(editingItem?._id ? page : 1);
@@ -338,22 +378,80 @@ const ProductManagement = () => {
         }));
     };
 
+    const openPurchaseRequestModal = async (product) => {
+        setRequestData({
+            productId: product._id,
+            vendorId: product.sellerId?._id || product.sellerId,
+            productName: product.name,
+            quantity: 10,
+            notes: '',
+        });
+        setPrContext(null);
+        setProductPrRequests([]);
+        setIsRequestModalOpen(true);
+        setPrLoading(true);
+        try {
+            const [ctxRes, prRes] = await Promise.all([
+                adminApi.getPurchaseRequestProductContext(product._id),
+                adminApi.getPurchaseRequests({ productId: product._id, limit: 50, page: 1 }),
+            ]);
+            const ctx = ctxRes.data?.result || ctxRes.data;
+            const prPayload = prRes?.data?.result || {};
+            setPrContext(ctx);
+            setProductPrRequests(Array.isArray(prPayload.items) ? prPayload.items : []);
+            if (ctx?.product?.sellerStock > 0) {
+                setRequestData((prev) => ({
+                    ...prev,
+                    quantity: Math.min(10, ctx.product.sellerStock),
+                }));
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to load purchase request details');
+            setIsRequestModalOpen(false);
+        } finally {
+            setPrLoading(false);
+        }
+    };
+
     const handleRequestStock = async () => {
-        if (!requestData.quantity || requestData.quantity < 1) {
-            toast.error("Please enter a valid quantity");
+        if (!requestData.quantity || Number(requestData.quantity) < 1) {
+            toast.error('Please enter a valid quantity');
             return;
         }
+        if (prContext && !prContext.canCreateRequest) {
+            toast.error(prContext.blockReason || 'Cannot create a new request right now');
+            return;
+        }
+        const maxQty = prContext?.product?.sellerStock;
+        if (maxQty != null && Number(requestData.quantity) > maxQty) {
+            toast.error(`Vendor only has ${maxQty} units available`);
+            return;
+        }
+        setPrSubmitting(true);
         try {
             await adminApi.createManualPurchaseRequest({
                 vendorId: requestData.vendorId,
                 productId: requestData.productId,
-                quantity: requestData.quantity,
-                notes: requestData.notes
+                quantity: Number(requestData.quantity),
+                notes: requestData.notes,
             });
-            toast.success(`Purchase request sent to seller for ${requestData.productName}`);
-            setIsRequestModalOpen(false);
+            toast.success(`Purchase request sent to ${prContext?.vendor?.shopName || 'vendor'}`);
+            const [ctxRes, prRes] = await Promise.all([
+                adminApi.getPurchaseRequestProductContext(requestData.productId),
+                adminApi.getPurchaseRequests({
+                    productId: requestData.productId,
+                    limit: 50,
+                    page: 1,
+                }),
+            ]);
+            setPrContext(ctxRes.data?.result || ctxRes.data);
+            const prPayload = prRes?.data?.result || {};
+            setProductPrRequests(Array.isArray(prPayload.items) ? prPayload.items : []);
+            setRequestData((prev) => ({ ...prev, notes: '' }));
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to create purchase request");
+            toast.error(error.response?.data?.message || 'Failed to create purchase request');
+        } finally {
+            setPrSubmitting(false);
         }
     };
 
@@ -403,29 +501,94 @@ const ProductManagement = () => {
         setIsProductModalOpen(true);
     };
 
-    const openApproveModal = (row) => {
-        setApproveRow(row);
-        setApprovePrice(String(row.salePrice || row.price || ""));
-        setIsApproveModalOpen(true);
+    const initGoLivePrices = (preview) => {
+        const sp = preview?.sellerProduct;
+        const supply = Number(sp?.supplyPrice ?? sp?.purchasePrice ?? sp?.price ?? 0);
+        const rows =
+            sp?.variants?.length > 0
+                ? sp.variants
+                : [{ name: 'Default', price: supply }];
+        setVariantSellPrices(
+            rows.map((v) => ({
+                name: v.name || 'Default',
+                salePrice: String(
+                    v.salePrice || v.price || (supply > 0 ? Math.ceil(supply * 1.15) : ''),
+                ),
+            })),
+        );
     };
 
-    const handleQuickApprove = async () => {
-        if (!approveRow) return;
+    const openGoLiveModal = async (row) => {
+        setGoLiveRow(row);
+        setGoLivePreview(null);
+        setIsGoLiveModalOpen(true);
+        setGoLiveLoading(true);
         try {
-            const data = new FormData();
-            data.append('status', 'active');
-            data.append('customerPrice', Number(approvePrice));
-            data.append('salePrice', Number(approvePrice));
-            data.append('price', Number(approvePrice)); 
-            
-            await adminApi.updateProduct(approveRow._id, data);
-            toast.success(`${approveRow.name} approved and live at ₹${approvePrice}`);
-            setIsApproveModalOpen(false);
-            fetchProducts(page);
+            const res = await adminApi.getProductGoLivePreview(row._id);
+            const preview = res.data?.result || res.data;
+            setGoLivePreview(preview);
+            initGoLivePrices(preview);
+
+            if (preview?.linkedMaster?._id) {
+                setGoLiveAction('activate_linked');
+                setSelectedMasterId(String(preview.linkedMaster._id));
+            } else if (preview?.exactMatches?.length > 0) {
+                setGoLiveAction('link_existing');
+                setSelectedMasterId(String(preview.exactMatches[0]._id));
+            } else {
+                setGoLiveAction('create_master');
+                setSelectedMasterId('');
+            }
         } catch (error) {
-            toast.error("Approval failed");
+            toast.error(error.response?.data?.message || 'Failed to load go-live preview');
+            setIsGoLiveModalOpen(false);
+        } finally {
+            setGoLiveLoading(false);
         }
     };
+
+    const updateVariantSellPrice = (index, value) => {
+        setVariantSellPrices((prev) =>
+            prev.map((row, i) => (i === index ? { ...row, salePrice: value } : row)),
+        );
+    };
+
+    const handlePublishGoLive = async (forceCreate = false) => {
+        if (!goLiveRow) return;
+        setGoLiveSaving(true);
+        try {
+            const payload = {
+                action: goLiveAction,
+                variantSellPrices,
+                defaultSellPrice: Number(variantSellPrices[0]?.salePrice) || 0,
+                forceCreate,
+            };
+            if (goLiveAction === 'link_existing' || goLiveAction === 'activate_linked') {
+                payload.masterProductId = selectedMasterId;
+            }
+            await adminApi.publishProductGoLive(goLiveRow._id, payload);
+            toast.success(`${goLiveRow.name} is now live in the catalog`);
+            setIsGoLiveModalOpen(false);
+            setGoLiveRow(null);
+            setGoLivePreview(null);
+            fetchProducts(page);
+        } catch (error) {
+            const status = error.response?.status;
+            const msg = error.response?.data?.message;
+            if (status === 409 && !forceCreate) {
+                toast.error(msg || 'A matching master product already exists');
+            } else {
+                toast.error(msg || 'Go live failed');
+            }
+        } finally {
+            setGoLiveSaving(false);
+        }
+    };
+
+    const sellerNeedsGoLive = (p) =>
+        activeTab === 'seller' &&
+        p.ownerType === 'seller' &&
+        (p.status === 'pending_approval' || !p.masterProductId);
 
     const editFormSummary = useMemo(() => {
         const variants = formData.variants || [];
@@ -511,7 +674,7 @@ const ProductManagement = () => {
             {/* Tab Navigation */}
             <div className="flex items-center gap-1 p-1 bg-slate-100/80 backdrop-blur rounded-2xl w-full lg:w-fit mt-2">
                 <button
-                    onClick={() => setActiveTab('master')}
+                    onClick={() => { setActiveTab('master'); setFilterSellerId(''); }}
                     className={cn(
                         "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
                         activeTab === 'master' 
@@ -537,6 +700,21 @@ const ProductManagement = () => {
                     {activeTab === 'seller' && <Badge variant="warning" className="ml-1 text-[8px] px-1">Supply</Badge>}
                 </button>
             </div>
+
+            {filterSellerId && activeTab === 'seller' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-violet-50 ring-1 ring-violet-200 rounded-xl">
+                    <p className="text-xs font-bold text-violet-800">
+                        Showing products for one supplier only
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => setFilterSellerId('')}
+                        className="text-[10px] font-black uppercase tracking-wider text-violet-700 hover:text-violet-900"
+                    >
+                        Clear supplier filter
+                    </button>
+                </div>
+            )}
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -667,9 +845,27 @@ const ProductManagement = () => {
 
                                     {/* Seller Column */}
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-2 w-2 rounded-full bg-blue-500" />
-                                            <span className="text-xs font-bold text-slate-700">{p.sellerId?.shopName || 'Admin'}</span>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+                                                <span className="text-xs font-bold text-slate-700">
+                                                    {p.sellerId?.shopName || (activeTab === 'master' ? 'Hub Catalog' : 'Admin')}
+                                                </span>
+                                            </div>
+                                            {activeTab === 'master' && (p.linkedSellerCount > 0 || p.sellerSupplyBreakdown?.length > 0) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setViewingSellerSupply(p);
+                                                        setIsSellerSupplyModalOpen(true);
+                                                    }}
+                                                    className="text-[9px] font-bold text-violet-600 hover:text-violet-800 text-left pl-4 underline underline-offset-2"
+                                                >
+                                                    {p.linkedSellerCount ?? p.sellerSupplyBreakdown?.length ?? 0} supplier
+                                                    {(p.linkedSellerCount ?? p.sellerSupplyBreakdown?.length ?? 0) !== 1 ? 's' : ''}
+                                                    {typeof p.activeSellerCount === 'number' ? ` · ${p.activeSellerCount} active` : ''}
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
 
@@ -793,17 +989,29 @@ const ProductManagement = () => {
                                                         <span className="text-[10px] font-bold text-sky-600">H</span>
                                                         {hub}
                                                     </span>
-                                                    <span
-                                                        className="inline-flex items-center gap-1 text-sm font-black px-2.5 py-1 rounded-lg bg-violet-50 text-violet-800 border border-violet-200 min-w-[52px] justify-center"
+                                                    <button
+                                                        type="button"
+                                                        disabled={activeTab !== 'master' || seller <= 0}
+                                                        onClick={() => {
+                                                            if (activeTab === 'master' && (p.sellerSupplyBreakdown?.length || seller > 0)) {
+                                                                setViewingSellerSupply(p);
+                                                                setIsSellerSupplyModalOpen(true);
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "inline-flex items-center gap-1 text-sm font-black px-2.5 py-1 rounded-lg bg-violet-50 text-violet-800 border border-violet-200 min-w-[52px] justify-center",
+                                                            activeTab === 'master' && seller > 0 && "hover:bg-violet-100 cursor-pointer",
+                                                            (activeTab !== 'master' || seller <= 0) && "cursor-default",
+                                                        )}
                                                         title={
                                                             activeTab === 'master'
-                                                                ? 'Total stock from all sellers'
+                                                                ? 'Total seller supply — click to see per-supplier breakdown'
                                                                 : 'This seller listing stock'
                                                         }
                                                     >
                                                         <span className="text-[10px] font-bold text-violet-600">S</span>
                                                         {seller}
-                                                    </span>
+                                                    </button>
                                                 </div>
                                             );
                                         })()}
@@ -819,20 +1027,11 @@ const ProductManagement = () => {
                                         <div className="flex items-center justify-end space-x-1.5">
                                             {activeTab === 'seller' && (
                                                 <button
-                                                    onClick={() => {
-                                                        setRequestData({
-                                                            productId: p._id,
-                                                            vendorId: p.sellerId?._id || p.sellerId,
-                                                            productName: p.name,
-                                                            quantity: 10,
-                                                            notes: ''
-                                                        });
-                                                        setIsRequestModalOpen(true);
-                                                    }}
-                                                    className="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"
-                                                    title="Request Stock"
+                                                    onClick={() => openPurchaseRequestModal(p)}
+                                                    className="px-2 py-1.5 text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all ring-1 ring-indigo-100 text-[9px] font-black uppercase tracking-wider"
+                                                    title="Send purchase request to vendor"
                                                 >
-                                                    <HiOutlinePlus className="h-4 w-4" />
+                                                    PR
                                                 </button>
                                             )}
                                             <button
@@ -842,13 +1041,13 @@ const ProductManagement = () => {
                                             >
                                                 <HiOutlinePencilSquare className="h-3.5 w-3.5" />
                                             </button>
-                                            {p.status === 'pending_approval' && (
+                                            {sellerNeedsGoLive(p) && (
                                                 <button
-                                                    onClick={() => openApproveModal(p)}
+                                                    onClick={() => openGoLiveModal(p)}
                                                     className="px-2 py-1.5 bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-sm"
-                                                    title="Quick Approve"
+                                                    title="Review and publish to live catalog"
                                                 >
-                                                    Approve
+                                                    Go Live
                                                 </button>
                                             )}
                                             <button
@@ -881,24 +1080,202 @@ const ProductManagement = () => {
                 </div>
             </Card>
 
-            {/* Request Stock Modal */}
+            {/* Purchase Request (PR) Modal */}
             <Modal
                 isOpen={isRequestModalOpen}
-                onClose={() => setIsRequestModalOpen(false)}
-                title="Request Stock from Vendor"
-                size="sm"
+                onClose={() => {
+                    setIsRequestModalOpen(false);
+                    setPrContext(null);
+                    setProductPrRequests([]);
+                }}
+                title="Purchase Request to Vendor"
+                size="xl"
                 footer={
                     <>
-                        <button onClick={() => setIsRequestModalOpen(false)} className="px-4 py-2 text-xs font-bold text-slate-400 uppercase">Cancel</button>
-                        <button onClick={handleRequestStock} className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700">Submit Request</button>
+                        <button
+                            onClick={() => {
+                                setIsRequestModalOpen(false);
+                                setPrContext(null);
+                            }}
+                            className="px-4 py-2 text-xs font-bold text-slate-400 uppercase"
+                        >
+                            Cancel
+                        </button>
+                        {prContext?.openRequests?.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => navigate('/admin/purchase-requests')}
+                                className="px-4 py-2 text-xs font-bold text-indigo-600 uppercase"
+                            >
+                                View all PRs
+                            </button>
+                        )}
+                        <button
+                            onClick={handleRequestStock}
+                            disabled={prLoading || prSubmitting || !prContext?.canCreateRequest}
+                            className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {prSubmitting ? 'Sending...' : 'Send purchase request'}
+                        </button>
                     </>
                 }
             >
-                <div className="space-y-4 py-2">
-                    <p className="text-xs text-slate-500">Requesting replenishment for <span className="font-bold">{requestData.productName}</span></p>
-                    <input type="number" value={requestData.quantity} onChange={(e) => setRequestData({...requestData, quantity: e.target.value})} className="w-full p-3 bg-slate-100 rounded-xl text-sm" placeholder="Quantity" />
-                    <textarea value={requestData.notes} onChange={(e) => setRequestData({...requestData, notes: e.target.value})} className="w-full p-3 bg-slate-100 rounded-xl text-sm h-24" placeholder="Add notes for the vendor..." />
-                </div>
+                {prLoading ? (
+                    <div className="py-16 text-center text-sm text-slate-500">Loading vendor & request status...</div>
+                ) : prContext ? (
+                    <div className="space-y-5 py-1">
+                        <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            {prContext.product?.mainImage && (
+                                <img
+                                    src={prContext.product.mainImage}
+                                    alt=""
+                                    className="h-16 w-16 rounded-xl object-cover shrink-0"
+                                />
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-base font-black text-slate-900">{prContext.product?.name}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    {prContext.product?.category}
+                                    {prContext.product?.subcategory ? ` · ${prContext.product.subcategory}` : ''}
+                                </p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    <Badge
+                                        variant={prContext.listingType === 'catalog' ? 'info' : 'warning'}
+                                        className="text-[9px] uppercase"
+                                    >
+                                        {prContext.listingType === 'catalog' ? 'Hub catalog listing' : 'Seller-owned product'}
+                                    </Badge>
+                                    {prContext.masterProduct && (
+                                        <Badge variant="gray" className="text-[9px]">
+                                            Master: {prContext.masterProduct.name}
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                                <p className="text-[9px] font-bold text-indigo-600 uppercase">Vendor</p>
+                                <p className="text-sm font-black text-indigo-900 truncate">{prContext.vendor?.shopName}</p>
+                                {prContext.vendor?.phone && (
+                                    <p className="text-[10px] text-indigo-700/80">{prContext.vendor.phone}</p>
+                                )}
+                            </div>
+                            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <p className="text-[9px] font-bold text-emerald-600 uppercase">Supply price</p>
+                                <p className="text-lg font-black text-emerald-800">₹{prContext.product?.supplyPrice}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-violet-50 border border-violet-100">
+                                <p className="text-[9px] font-bold text-violet-600 uppercase">Vendor stock</p>
+                                <p className="text-lg font-black text-violet-800">{prContext.product?.sellerStock ?? 0}</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-100">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase">Listing status</p>
+                                <p className="text-sm font-black text-slate-800 capitalize">
+                                    {prContext.product?.status?.replace('_', ' ')}
+                                </p>
+                            </div>
+                        </div>
+
+                        {prContext.product?.variants?.length > 0 && (
+                            <div className="p-4 rounded-2xl border border-slate-100 bg-white">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Variant stock at vendor</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {prContext.product.variants.map((v, i) => (
+                                        <span
+                                            key={i}
+                                            className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-slate-100 text-slate-700"
+                                        >
+                                            {v.name}: {v.stock} @ ₹{v.price}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {prContext.listingType === 'catalog' && prContext.masterProduct && (
+                            <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs text-blue-900">
+                                <p className="font-bold flex items-center gap-2">
+                                    <HiOutlineLink className="h-4 w-4" />
+                                    Catalog-linked listing
+                                </p>
+                                <p className="mt-1 text-blue-800/90">
+                                    This vendor sells the hub product <strong>{prContext.masterProduct.name}</strong>
+                                    {prContext.masterProduct.customerPrice
+                                        ? ` (customer price ₹${prContext.masterProduct.customerPrice})`
+                                        : ''}
+                                    . Procurement uses the vendor&apos;s supply price above, not the customer MRP.
+                                </p>
+                            </div>
+                        )}
+
+                        {prContext.listingType === 'seller_own' && (
+                            <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100 text-xs text-amber-900">
+                                <p className="font-bold">Seller-created product</p>
+                                <p className="mt-1">
+                                    This item is owned by the vendor and is not yet tied to the hub master catalog.
+                                    Use <strong>Go Live</strong> first if you want it on the customer app before stocking the hub.
+                                </p>
+                            </div>
+                        )}
+
+                        <PurchaseRequestListPanel
+                            requests={productPrRequests}
+                            loading={false}
+                            showProductColumn={false}
+                            emptyMessage={`No purchase requests for ${prContext.product?.name || 'this product'} yet.`}
+                        />
+
+                        {!prContext.canCreateRequest && prContext.blockReason && (
+                            <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-xs text-rose-800 font-medium">
+                                {prContext.blockReason}
+                            </div>
+                        )}
+
+                        <div className={cn(
+                            'space-y-3 pt-2 border-t border-slate-100',
+                            !prContext.canCreateRequest && 'opacity-50 pointer-events-none',
+                        )}>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">New purchase request</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label className="block">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">Quantity to buy</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max={prContext.product?.sellerStock || undefined}
+                                        value={requestData.quantity}
+                                        onChange={(e) => setRequestData({ ...requestData, quantity: e.target.value })}
+                                        className="mt-1 w-full px-4 py-3 bg-slate-100 rounded-xl text-sm font-black outline-none"
+                                        placeholder="e.g. 50"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1 ml-1">
+                                        Max available from vendor: {prContext.product?.sellerStock ?? 0}
+                                    </p>
+                                </label>
+                                <label className="block sm:col-span-1">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">Est. procurement cost</span>
+                                    <p className="mt-2 text-2xl font-black text-slate-900">
+                                        ₹{(
+                                            (Number(requestData.quantity) || 0) *
+                                            (prContext.product?.supplyPrice || 0)
+                                        ).toLocaleString('en-IN')}
+                                    </p>
+                                </label>
+                            </div>
+                            <label className="block">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">Notes for vendor</span>
+                                <textarea
+                                    value={requestData.notes}
+                                    onChange={(e) => setRequestData({ ...requestData, notes: e.target.value })}
+                                    className="mt-1 w-full px-4 py-3 bg-slate-100 rounded-xl text-xs font-semibold outline-none min-h-[80px] resize-none"
+                                    placeholder="Pickup timing, packaging, urgency..."
+                                />
+                            </label>
+                        </div>
+                    </div>
+                ) : null}
             </Modal>
 
             {/* Super Detailed Modal */}
@@ -1700,97 +2077,315 @@ const ProductManagement = () => {
                 </div>
             </Modal>
 
-            {/* Quick Approval Modal */}
+            {/* Seller supply breakdown (master catalog) */}
             <Modal
-                isOpen={isApproveModalOpen}
-                onClose={() => setIsApproveModalOpen(false)}
-                title="Approve & Set Selling Price"
-                size="sm"
+                isOpen={isSellerSupplyModalOpen}
+                onClose={() => setIsSellerSupplyModalOpen(false)}
+                title="Supplier stock breakdown"
+                size="md"
+            >
+                <div className="space-y-4 py-1">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Master product</p>
+                        <p className="text-sm font-black text-slate-900">{viewingSellerSupply?.name}</p>
+                        <p className="text-[10px] text-slate-500 mt-1">
+                            Hub (H): {hubAndSellerStockFromItem(viewingSellerSupply, 'master').hub} ·
+                            Total seller supply (S): {hubAndSellerStockFromItem(viewingSellerSupply, 'master').seller}
+                        </p>
+                    </div>
+
+                    {(viewingSellerSupply?.sellerSupplyBreakdown || []).length === 0 ? (
+                        <p className="text-center text-xs font-bold text-slate-400 py-8 uppercase tracking-widest">
+                            No suppliers linked to this product yet
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto rounded-xl border border-slate-100">
+                            <table className="w-full text-left text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">Supplier</th>
+                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">Listing</th>
+                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Stock (S)</th>
+                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Cost</th>
+                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {viewingSellerSupply.sellerSupplyBreakdown.map((row) => (
+                                        <tr key={String(row.productId || row.sellerId)} className="hover:bg-slate-50/50">
+                                            <td className="px-4 py-3">
+                                                <p className="font-bold text-slate-900">{row.shopName}</p>
+                                                {row.sellerName ? (
+                                                    <p className="text-[10px] text-slate-400">{row.sellerName}</p>
+                                                ) : null}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-600">{row.productName || '—'}</td>
+                                            <td className="px-4 py-3 text-center font-black text-violet-700">{row.stock}</td>
+                                            <td className="px-4 py-3 text-center font-bold text-slate-700">
+                                                ₹{Number(row.purchasePrice || 0).toLocaleString('en-IN')}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <Badge
+                                                    variant={
+                                                        row.status === 'active'
+                                                            ? 'success'
+                                                            : row.status === 'pending_approval'
+                                                              ? 'warning'
+                                                              : 'secondary'
+                                                    }
+                                                    className="text-[8px] uppercase"
+                                                >
+                                                    {row.status?.replace('_', ' ') || '—'}
+                                                </Badge>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </Modal>
+
+            {/* Go Live — seller product → master catalog */}
+            <Modal
+                isOpen={isGoLiveModalOpen}
+                onClose={() => setIsGoLiveModalOpen(false)}
+                title="Publish to Live Catalog"
+                size="xl"
                 footer={
                     <>
-                        <button onClick={() => setIsApproveModalOpen(false)} className="px-4 py-2 text-xs font-bold text-slate-400 uppercase">Cancel</button>
-                        <button 
-                            onClick={handleQuickApprove}
-                            className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-emerald-700 transition-all"
+                        <button
+                            onClick={() => setIsGoLiveModalOpen(false)}
+                            className="px-4 py-2 text-xs font-bold text-slate-400 uppercase"
                         >
-                            Confirm & Go Live
+                            Cancel
+                        </button>
+                        {goLivePreview?.hasExistingMaster &&
+                            goLiveAction === 'create_master' &&
+                            !goLivePreview?.linkedMaster && (
+                            <button
+                                onClick={() => handlePublishGoLive(true)}
+                                disabled={goLiveSaving || goLiveLoading}
+                                className="px-4 py-2 text-xs font-bold text-amber-700 uppercase"
+                            >
+                                Create anyway
+                            </button>
+                        )}
+                        <button
+                            onClick={() => handlePublishGoLive(false)}
+                            disabled={goLiveSaving || goLiveLoading}
+                            className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-emerald-700 transition-all disabled:opacity-50"
+                        >
+                            {goLiveSaving ? 'Publishing...' : 'Confirm & Go Live'}
                         </button>
                     </>
                 }
             >
-                <div className="space-y-4 py-2">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Product</p>
-                        <p className="text-sm font-black text-slate-900">{approveRow?.name}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                            <p className="text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-1">Vendor Cost</p>
-                            <p className="text-lg font-black text-blue-700">₹{approveRow?.purchasePrice || approveRow?.price}</p>
+                {goLiveLoading ? (
+                    <div className="py-16 text-center text-sm text-slate-500">Loading product details...</div>
+                ) : goLivePreview ? (
+                    <div className="space-y-5 py-1">
+                        <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            {goLivePreview.sellerProduct?.mainImage && (
+                                <img
+                                    src={goLivePreview.sellerProduct.mainImage}
+                                    alt=""
+                                    className="h-20 w-20 rounded-xl object-cover shrink-0"
+                                />
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-base font-black text-slate-900">{goLivePreview.sellerProduct?.name}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    {goLivePreview.sellerProduct?.categoryId?.name || '—'}
+                                    {goLivePreview.sellerProduct?.sellerId?.shopName
+                                        ? ` · ${goLivePreview.sellerProduct.sellerId.shopName}`
+                                        : ''}
+                                </p>
+                                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">
+                                    {goLivePreview.sellerProduct?.description || 'No description'}
+                                </p>
+                            </div>
                         </div>
-                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                            <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Est. Profit</p>
-                            <p className="text-lg font-black text-emerald-700">
-                                ₹{(Number(approvePrice || 0) - Number(approveRow?.purchasePrice || approveRow?.price || 0)).toLocaleString()}
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                                <p className="text-[9px] font-bold text-blue-600 uppercase">Supply price</p>
+                                <p className="text-lg font-black text-blue-800">₹{goLivePreview.sellerProduct?.supplyPrice}</p>
+                            </div>
+                            <div className="p-3 bg-violet-50 rounded-xl border border-violet-100">
+                                <p className="text-[9px] font-bold text-violet-600 uppercase">Seller stock</p>
+                                <p className="text-lg font-black text-violet-800">{goLivePreview.sellerProduct?.sellerStock ?? 0}</p>
+                            </div>
+                            <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                                <p className="text-[9px] font-bold text-amber-600 uppercase">Variants</p>
+                                <p className="text-lg font-black text-amber-800">{goLivePreview.sellerProduct?.variants?.length || 1}</p>
+                            </div>
+                            <div className="p-3 bg-slate-100 rounded-xl">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase">Status</p>
+                                <p className="text-sm font-black text-slate-800 capitalize">
+                                    {goLivePreview.sellerProduct?.status?.replace('_', ' ')}
+                                </p>
+                            </div>
+                        </div>
+
+                        {(goLivePreview.linkedMaster ||
+                            goLivePreview.exactMatches?.length > 0 ||
+                            goLivePreview.relatedMasters?.length > 0) && (
+                            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                                <p className="text-xs font-bold text-amber-900">
+                                    Existing catalog matches — review before creating a duplicate
+                                </p>
+                                {goLivePreview.linkedMaster && (
+                                    <div className="p-3 bg-white rounded-xl ring-1 ring-amber-100">
+                                        <p className="text-[10px] font-bold text-emerald-600 uppercase">Already linked</p>
+                                        <p className="text-sm font-bold text-slate-900">{goLivePreview.linkedMaster.name}</p>
+                                        <p className="text-xs text-slate-500">
+                                            ₹{goLivePreview.linkedMaster.salePrice || goLivePreview.linkedMaster.price} ·{' '}
+                                            {goLivePreview.linkedMaster.variants?.length || 0} variant(s)
+                                        </p>
+                                    </div>
+                                )}
+                                {[...(goLivePreview.exactMatches || []), ...(goLivePreview.relatedMasters || [])].map((m) => (
+                                    <label
+                                        key={m._id}
+                                        className={cn(
+                                            'flex items-start gap-3 p-3 bg-white rounded-xl ring-1 cursor-pointer',
+                                            selectedMasterId === String(m._id)
+                                                ? 'ring-emerald-400 bg-emerald-50/30'
+                                                : 'ring-slate-100',
+                                        )}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="masterPick"
+                                            checked={selectedMasterId === String(m._id)}
+                                            onChange={() => {
+                                                setSelectedMasterId(String(m._id));
+                                                setGoLiveAction('link_existing');
+                                            }}
+                                            className="mt-1"
+                                        />
+                                        {m.mainImage && (
+                                            <img src={m.mainImage} alt="" className="h-12 w-12 rounded-lg object-cover shrink-0" />
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-bold text-slate-900 truncate">{m.name}</p>
+                                            <p className="text-xs text-slate-500">
+                                                {m.categoryId?.name || '—'} · ₹{m.salePrice || m.price} ·{' '}
+                                                {m.variants?.length || 0} variant(s) · {m.status}
+                                            </p>
+                                            {m.variants?.length > 0 && (
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {m.variants.map((v, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className="text-[9px] font-semibold px-1.5 py-0.5 bg-slate-100 rounded text-slate-600"
+                                                        >
+                                                            {v.name}: ₹{v.salePrice ?? v.price} (stock {v.stock ?? 0})
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Publish action</p>
+                            <div className="flex flex-wrap gap-2">
+                                {goLivePreview.canCreateNewMaster && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setGoLiveAction('create_master')}
+                                        className={cn(
+                                            'px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest',
+                                            goLiveAction === 'create_master'
+                                                ? 'bg-slate-900 text-white'
+                                                : 'bg-slate-100 text-slate-600',
+                                        )}
+                                    >
+                                        Create new master copy
+                                    </button>
+                                )}
+                                {(goLivePreview.exactMatches?.length > 0 || goLivePreview.linkedMaster) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setGoLiveAction(
+                                                goLivePreview.linkedMaster ? 'activate_linked' : 'link_existing',
+                                            );
+                                            if (!selectedMasterId && goLivePreview.exactMatches?.[0]) {
+                                                setSelectedMasterId(String(goLivePreview.exactMatches[0]._id));
+                                            }
+                                        }}
+                                        className={cn(
+                                            'px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest',
+                                            goLiveAction === 'link_existing' || goLiveAction === 'activate_linked'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-emerald-50 text-emerald-700',
+                                        )}
+                                    >
+                                        Link to existing master
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                                Customer selling prices (per variant)
+                            </p>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {variantSellPrices.map((row, idx) => {
+                                    const supply = Number(goLivePreview.sellerProduct?.supplyPrice) || 0;
+                                    const sell = Number(row.salePrice) || 0;
+                                    const sellerVariant = goLivePreview.sellerProduct?.variants?.[idx];
+                                    return (
+                                        <div
+                                            key={`${row.name}-${idx}`}
+                                            className="grid grid-cols-12 gap-2 items-center p-3 bg-slate-50 rounded-xl"
+                                        >
+                                            <div className="col-span-5">
+                                                <p className="text-xs font-bold text-slate-800">{row.name}</p>
+                                                {sellerVariant && (
+                                                    <p className="text-[9px] text-slate-400">
+                                                        Supply ₹{sellerVariant.price ?? supply} · Stock {sellerVariant.stock ?? 0}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="col-span-4">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={row.salePrice}
+                                                    onChange={(e) => updateVariantSellPrice(idx, e.target.value)}
+                                                    className="w-full px-3 py-2 bg-white rounded-lg text-sm font-black outline-none ring-1 ring-slate-200"
+                                                    placeholder="Sell price"
+                                                />
+                                            </div>
+                                            <div className="col-span-3 text-right">
+                                                <p className="text-[9px] text-slate-400 uppercase">Margin</p>
+                                                <p className={cn(
+                                                    'text-xs font-black',
+                                                    sell - supply >= 0 ? 'text-emerald-600' : 'text-rose-600',
+                                                )}>
+                                                    ₹{(sell - supply).toLocaleString('en-IN')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-[10px] text-slate-400">
+                                Hub stock for a new master copy starts at 0. Seller supply stock is unchanged.
                             </p>
                         </div>
                     </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Final Selling Price (MRP)</label>
-                        <input
-                            type="number"
-                            autoFocus
-                            value={approvePrice}
-                            onChange={(e) => setApprovePrice(e.target.value)}
-                            className="w-full px-5 py-4 bg-slate-100 border-none rounded-2xl text-xl font-black text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20"
-                            placeholder="Set Price for Customers"
-                        />
-                        <p className="text-[10px] text-slate-400 italic px-1 font-medium">This is the price customers will see on the app.</p>
-                    </div>
-                </div>
+                ) : null}
             </Modal>
-            {/* Manual Request Stock Modal */}
-            {isRequestModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <div>
-                                <h3 className="text-lg font-black text-slate-900 tracking-tight italic">Manual Stock Request</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{requestData.productName}</p>
-                            </div>
-                            <button onClick={() => setIsRequestModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-all">
-                                <HiOutlinePlus className="h-6 w-6 text-slate-400 rotate-45" />
-                            </button>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Quantity to Request</label>
-                                <input
-                                    type="number"
-                                    value={requestData.quantity}
-                                    onChange={(e) => setRequestData({ ...requestData, quantity: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-black outline-none focus:ring-2 focus:ring-primary/20"
-                                    placeholder="e.g. 50"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Special Notes for Seller</label>
-                                <textarea
-                                    value={requestData.notes}
-                                    onChange={(e) => setRequestData({ ...requestData, notes: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-none"
-                                    placeholder="Optional instructions..."
-                                />
-                            </div>
-                            <Button onClick={handleRequestStock} className="w-full h-12 rounded-2xl font-black italic text-sm tracking-tight shadow-xl shadow-primary/20">
-                                Send Procurement Request
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

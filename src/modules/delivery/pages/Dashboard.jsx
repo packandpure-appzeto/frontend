@@ -56,17 +56,6 @@ const Dashboard = () => {
     }
   };
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await deliveryApi.getNotifications();
-      if (response.data.success && response.data.result) {
-        setUnreadCount(response.data.result.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error("Failed to fetch notifications");
-    }
-  };
-
   const fetchAvailableOrders = async () => {
     try {
       const response = await deliveryApi.getAvailableOrders();
@@ -89,6 +78,17 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Failed to fetch pickup assignments:", error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await deliveryApi.getNotifications();
+      if (response.data.success) {
+        setUnreadCount(response.data.result?.unreadCount ?? 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
     }
   };
 

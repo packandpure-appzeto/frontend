@@ -2,15 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
-// motion used only for verified-banner animation
 
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import BottomNav from './BottomNav';
-import SellerOrderAlertModal from './SellerOrderAlertModal';
 import { useAuth } from '@core/context/AuthContext';
 import { cn } from '@/lib/utils';
-import SellerOrdersContext from '@/modules/seller/context/SellerOrdersContext';
 import SellerEarningsContext, { defaultEarnings } from '@/modules/seller/context/SellerEarningsContext';
 import { useSellerDashboard } from '@/modules/seller/hooks/useSellerDashboard';
 import { useAdminOrderNotifications } from '@/modules/admin/hooks/useAdminOrderNotifications';
@@ -35,23 +32,6 @@ const DashboardLayout = ({ children, navItems, title }) => {
   const handleMenuClick = () => {
     setIsSidebarCollapsed((prev) => !prev);
   };
-
-  const ordersContextValue = useMemo(
-    () =>
-      isSeller
-        ? {
-            orders: sellerDashboard.sellerOrders,
-            ordersLoading: sellerDashboard.ordersLoading,
-            refreshOrders: sellerDashboard.refreshOrders,
-          }
-        : { orders: [], ordersLoading: false, refreshOrders: () => {} },
-    [
-      isSeller,
-      sellerDashboard.sellerOrders,
-      sellerDashboard.ordersLoading,
-      sellerDashboard.refreshOrders,
-    ],
-  );
 
   const earningsContextValue = useMemo(
     () =>
@@ -118,7 +98,7 @@ const DashboardLayout = ({ children, navItems, title }) => {
                   <h4 className="font-bold text-sm md:text-base">Account Pending Approval</h4>
                   <p className="text-xs md:text-sm opacity-90">
                     Your account is currently being reviewed by our team. You can explore the
-                    panel, but you cannot add products or fulfill orders until verified.
+                    panel, but you cannot add products or fulfill purchase orders until verified.
                   </p>
                 </motion.div>
                 <motion.div className="hidden md:block">
@@ -129,24 +109,12 @@ const DashboardLayout = ({ children, navItems, title }) => {
               </motion.div>
             )}
 
-            <SellerOrdersContext.Provider value={ordersContextValue}>
-              <SellerEarningsContext.Provider value={earningsContextValue}>
-                {children}
-              </SellerEarningsContext.Provider>
-            </SellerOrdersContext.Provider>
+            <SellerEarningsContext.Provider value={earningsContextValue}>
+              {children}
+            </SellerEarningsContext.Provider>
           </motion.div>
         </motion.main>
       </motion.div>
-
-      {isSeller && (
-        <SellerOrderAlertModal
-          order={sellerDashboard.newOrderAlert}
-          timeLeft={sellerDashboard.timeLeft}
-          acceptWindowTotalRef={sellerDashboard.acceptWindowTotalRef}
-          onAccept={sellerDashboard.handleAcceptOrder}
-          onDecline={sellerDashboard.handleDeclineOrder}
-        />
-      )}
 
       {(isAdmin || isSeller) && <BottomNav navItems={navItems} />}
     </motion.div>

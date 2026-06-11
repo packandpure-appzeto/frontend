@@ -181,10 +181,7 @@ export function buildAdminProductFormData(formData, { editingItem, activeTab }) 
   const purchasePrice = Number(first.purchasePrice ?? formData.purchasePrice) || 0;
 
   const isMaster = activeTab === 'master' || editingItem?.ownerType === 'admin';
-  const status =
-    isMaster && !editingItem
-      ? 'active'
-      : formData.status || (isMaster ? 'active' : 'pending_approval');
+  const status = isMaster ? 'active' : formData.status || 'pending_approval';
 
   const fields = {
     name: String(formData.name || '').trim(),

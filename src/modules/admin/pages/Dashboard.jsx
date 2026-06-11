@@ -82,7 +82,7 @@ const AdminDashboard = () => {
             bg: 'bg-purple-50',
             trend: '+5.2%',
             description: 'Verified stores',
-            path: '/admin/sellers/active'
+            path: '/admin/suppliers'
         },
         {
             label: 'Total Orders',

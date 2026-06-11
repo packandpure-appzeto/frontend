@@ -37,7 +37,10 @@ import {
   EMPTY_SELLER_PRODUCT_FORM,
   productToSellerForm,
   validateSellerProductForm,
+  validateCatalogLinkedSellerForm,
   buildSellerProductFormData,
+  buildCatalogLinkedSellerUpdateData,
+  isCatalogLinkedListing,
   totalVariantStock,
   variantPricesList,
   variantPriceRangeLabel,
@@ -64,6 +67,11 @@ const ProductManagement = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
+  const [listStats, setListStats] = useState(null);
+
+  const catalogStockOf = (p) =>
+    Number(p?.catalogStock ?? p?.availableQtySeller ?? p?.stock ?? 0) || 0;
+
   const fetchProducts = async (requestedPage = 1) => {
     setIsLoading(true);
     try {
@@ -73,10 +81,15 @@ const ProductManagement = () => {
         const rawProducts = Array.isArray(payload.items)
           ? payload.items
           : (res.data.results || []);
-        const safe = Array.isArray(rawProducts) ? rawProducts : [];
+        const safe = (Array.isArray(rawProducts) ? rawProducts : []).map((p) => ({
+          ...p,
+          stock: catalogStockOf(p),
+          catalogStock: catalogStockOf(p),
+        }));
         setProducts(safe);
         setTotal(typeof payload.total === "number" ? payload.total : safe.length);
         setPage(typeof payload.page === "number" ? payload.page : requestedPage);
+        setListStats(payload.stats || null);
       }
     } catch (error) {
       toast.error("Failed to fetch products");
@@ -136,6 +149,22 @@ const ProductManagement = () => {
   }, [isFilterOpen]);
 
   const [formData, setFormData] = useState(EMPTY_SELLER_PRODUCT_FORM);
+
+  const isCatalogLocked = Boolean(editingItem && isCatalogLinkedListing(editingItem));
+
+  const modalTabs = useMemo(
+    () =>
+      isCatalogLocked
+        ? [{ id: "variants", label: "Supply price & stock", icon: HiOutlineSwatch }]
+        : [
+            { id: "general", label: "General", icon: HiOutlineTag },
+            { id: "variants", label: "Variants & stock", icon: HiOutlineSwatch },
+            { id: "category", label: "Category", icon: HiOutlineFolderOpen },
+            { id: "media", label: "Photos", icon: HiOutlinePhoto },
+            { id: "details", label: "Extra details", icon: HiOutlineScale },
+          ],
+    [isCatalogLocked],
+  );
 
   const [masterSuggestions, setMasterSuggestions] = useState([]);
   const [showMasterSuggestions, setShowMasterSuggestions] = useState(false);
@@ -207,8 +236,8 @@ const ProductManagement = () => {
 
       let matchesStatus = filterStatus === "All";
       if (filterStatus === "Active") matchesStatus = p.status === "active";
-      if (filterStatus === "Low Stock") matchesStatus = p.stock > 0 && p.stock <= 10;
-      if (filterStatus === "Out of Stock") matchesStatus = p.stock === 0;
+      if (filterStatus === "Low Stock") matchesStatus = catalogStockOf(p) > 0 && catalogStockOf(p) <= 10;
+      if (filterStatus === "Out of Stock") matchesStatus = catalogStockOf(p) === 0;
 
       let matchesPrice = true;
       const effectivePrice = Number(p.salePrice ?? p.price ?? 0);
@@ -219,12 +248,22 @@ const ProductManagement = () => {
     });
   }, [safeProducts, debouncedSearchTerm, filterCategory, filterStatus, priceMin, priceMax]);
 
-  const stats = useMemo(() => ({
-    total: safeProducts.length,
-    lowStock: safeProducts.filter((p) => p.stock > 0 && p.stock <= 10).length,
-    outOfStock: safeProducts.filter((p) => p.stock === 0).length,
-    active: safeProducts.filter((p) => p.status === "active").length,
-  }), [safeProducts]);
+  const stats = useMemo(() => {
+    if (listStats && typeof listStats === "object") {
+      return {
+        total: listStats.total ?? safeProducts.length,
+        lowStock: safeProducts.filter((p) => catalogStockOf(p) > 0 && catalogStockOf(p) <= 10).length,
+        outOfStock: listStats.outOfStock ?? safeProducts.filter((p) => catalogStockOf(p) === 0).length,
+        active: listStats.active ?? safeProducts.filter((p) => p.status === "active").length,
+      };
+    }
+    return {
+      total: safeProducts.length,
+      lowStock: safeProducts.filter((p) => catalogStockOf(p) > 0 && catalogStockOf(p) <= 10).length,
+      outOfStock: safeProducts.filter((p) => catalogStockOf(p) === 0).length,
+      active: safeProducts.filter((p) => p.status === "active").length,
+    };
+  }, [safeProducts, listStats]);
 
   const updateVariants = (variants) => {
     setFormData((prev) => ({
@@ -236,28 +275,40 @@ const ProductManagement = () => {
 
   const handleSave = async () => {
     if (isSaving) return;
-    const missing = validateSellerProductForm(formData);
+    const catalogLocked = Boolean(editingItem && isCatalogLinkedListing(editingItem));
+    const missing = catalogLocked
+      ? validateCatalogLinkedSellerForm(formData)
+      : validateSellerProductForm(formData);
     if (missing.length) {
       toast.error(`Required: ${missing.join(", ")}`);
-      if (missing.some((m) => m.includes("category"))) setModalTab("category");
-      else if (missing.some((m) => m.includes("Variant"))) setModalTab("variants");
+      if (!catalogLocked && missing.some((m) => m.includes("category"))) setModalTab("category");
+      else setModalTab("variants");
       return;
     }
 
     setIsSaving(true);
     try {
-      const { data } = buildSellerProductFormData(formData, { editingItem });
+      const { data } = catalogLocked
+        ? buildCatalogLinkedSellerUpdateData(formData, editingItem)
+        : buildSellerProductFormData(formData, { editingItem });
 
-      if (formData.mainImageFile) {
-        data.append("mainImage", formData.mainImageFile);
+      if (!catalogLocked) {
+        if (formData.mainImageFile) {
+          data.append("mainImage", formData.mainImageFile);
+        }
+        const galleryFiles = (formData.galleryItems || [])
+          .filter((it) => !!it?.file)
+          .map((it) => it.file);
+        galleryFiles.forEach((file) => data.append("galleryImages", file));
       }
-
-      const galleryFiles = (formData.galleryItems || []).filter((it) => !!it?.file).map((it) => it.file);
-      galleryFiles.forEach((file) => data.append("galleryImages", file));
 
       if (editingItem) {
         await sellerApi.updateProduct(editingItem._id || editingItem.id, data);
-        toast.success("Product updated successfully");
+        toast.success(
+          catalogLocked
+            ? "Supply price and stock updated"
+            : "Product updated successfully",
+        );
       } else {
         await sellerApi.createProduct(data);
         toast.success("Product created and sent for admin approval");
@@ -326,7 +377,7 @@ const ProductManagement = () => {
         },
     );
     setEditingItem(item || null);
-    setModalTab("general");
+    setModalTab(item && isCatalogLinkedListing(item) ? "variants" : "general");
     setIsProductModalOpen(true);
   };
 
@@ -372,6 +423,17 @@ const ProductManagement = () => {
           <ShimmerButton onClick={exportProducts} className="shadow-2xl" background="white" color="black">
             <span className="whitespace-pre-wrap text-center text-xs font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
               <HiOutlineArrowPath className="h-4 w-4" /> Export CSV
+            </span>
+          </ShimmerButton>
+          <ShimmerButton
+            disabled={!isVerified}
+            onClick={() => navigate("/seller/catalog")}
+            className="shadow-2xl"
+            background="white"
+            color="black"
+          >
+            <span className="whitespace-pre-wrap text-center text-xs font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
+              <HiOutlineSquaresPlus className="h-4 w-4" /> Hub Catalog
             </span>
           </ShimmerButton>
           <ShimmerButton disabled={!isVerified} onClick={() => openEditModal()} className="shadow-2xl">
@@ -469,7 +531,12 @@ const ProductManagement = () => {
                     <img src={p.mainImage || p.galleryImages?.[0] || "https://images.unsplash.com/photo-1550989460-0adf9ea622e2"} alt={p.name} className="h-full w-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-bold text-slate-900 truncate">{p.name}</h4>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h4 className="text-base font-bold text-slate-900 truncate">{p.name}</h4>
+                      {isCatalogLinkedListing(p) && (
+                        <Badge variant="info" className="shrink-0 text-[8px]">Hub</Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5">{variantPriceRangeLabel(p)}</p>
                     <p className="text-xs text-slate-500">{p.categoryId?.name || "N/A"}</p>
                   </div>
@@ -485,7 +552,7 @@ const ProductManagement = () => {
                   </div>
                   <div className="flex flex-col items-center">
                     <span className="text-xs font-bold text-slate-400">Stock</span>
-                    <span className={cn("text-base font-black", p.stock === 0 ? "text-rose-600" : p.stock <= 10 ? "text-amber-600" : "text-emerald-600")}>{p.stock}</span>
+                    <span className={cn("text-base font-black", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => openEditModal(p)} className="p-2.5 hover:bg-slate-50 text-slate-600 ring-1 ring-slate-200 rounded-xl transition-all"><HiOutlinePencilSquare className="h-4 w-4" /></button>
@@ -518,7 +585,12 @@ const ProductManagement = () => {
                         <div className="h-16 w-16 rounded-xl overflow-hidden bg-slate-100 ring-1 ring-slate-200">
                           <img src={p.mainImage || p.galleryImages?.[0] || "https://images.unsplash.com/photo-1550989460-0adf9ea622e2"} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         </div>
-                        <p className="text-base font-medium text-slate-900">{p.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-base font-medium text-slate-900">{p.name}</p>
+                          {isCatalogLinkedListing(p) && (
+                            <Badge variant="info" className="text-[8px] shrink-0">Hub</Badge>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -548,7 +620,7 @@ const ProductManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={cn("text-base font-bold", p.stock === 0 ? "text-rose-600" : p.stock <= 10 ? "text-amber-600" : "text-emerald-600")}>{p.stock}</span>
+                      <span className={cn("text-base font-bold", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -581,7 +653,11 @@ const ProductManagement = () => {
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-lg font-bold text-slate-900 truncate">
-                      {editingItem ? "Edit product" : "Add product"}
+                      {isCatalogLocked
+                        ? "Update supply price & stock"
+                        : editingItem
+                          ? "Edit product"
+                          : "Add product"}
                     </h3>
                     {editingItem && (
                       <p className="text-xs font-semibold text-slate-500 truncate">{editingItem.name}</p>
@@ -592,6 +668,35 @@ const ProductManagement = () => {
                   <HiOutlineXMark className="h-5 w-5" />
                 </button>
               </div>
+
+              {isCatalogLocked && (
+                <div className="mx-6 mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-start gap-3">
+                  <HiOutlineLink className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-indigo-900">Hub catalog product</p>
+                    <p className="text-xs text-indigo-700 mt-0.5">
+                      Photos, categories, and variants are managed by admin. You can only update your supply price and stock.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {isCatalogLocked && editingItem?.mainImage && (
+                <div className="px-6 pt-4 flex items-center gap-4">
+                  <img
+                    src={editingItem.mainImage}
+                    alt=""
+                    className="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">{editingItem.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {editingItem.categoryId?.name || "—"}
+                      {editingItem.brand ? ` · ${editingItem.brand}` : ""}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Live summary — variant-wise totals */}
               <div className="px-6 py-3 bg-gradient-to-r from-slate-50 to-indigo-50/40 border-b border-slate-100 grid grid-cols-3 gap-3">
@@ -615,13 +720,7 @@ const ProductManagement = () => {
                   onWheel={(e) => e.stopPropagation()}
                   onTouchMove={(e) => e.stopPropagation()}
                 >
-                  {[
-                    { id: "general", label: "General", icon: HiOutlineTag },
-                    { id: "variants", label: "Variants & stock", icon: HiOutlineSwatch },
-                    { id: "category", label: "Category", icon: HiOutlineFolderOpen },
-                    { id: "media", label: "Photos", icon: HiOutlinePhoto },
-                    { id: "details", label: "Extra details", icon: HiOutlineScale },
-                  ].map((tab) => (
+                  {modalTabs.map((tab) => (
                     <button key={tab.id} onClick={() => setModalTab(tab.id)} className={cn("w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left", modalTab === tab.id ? "bg-white text-primary shadow-sm ring-1 ring-slate-100" : "text-slate-600 hover:bg-slate-100")}>
                       <tab.icon className="h-4 w-4" /> <span>{tab.label}</span>
                     </button>
@@ -640,12 +739,14 @@ const ProductManagement = () => {
                         <input
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/5"
+                          disabled={isCatalogLocked}
+                          className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/5 disabled:opacity-60 disabled:cursor-not-allowed"
                           placeholder="e.g. Premium Basmati Rice"
                         />
                       </div>
 
                       {/* HUB-FIRST MAPPING SECTION */}
+                      {!isCatalogLocked && (
                       <div className="p-4 bg-slate-900 rounded-2xl relative overflow-visible group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                           <HiOutlineLink className="h-16 w-16 text-white rotate-12" />
@@ -689,9 +790,10 @@ const ProductManagement = () => {
                           )}
                         </div>
                       </div>
+                      )}
 
                       <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Description</label>
-                        <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-semibold min-h-[120px] outline-none" placeholder="Product details..." />
+                        <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} disabled={isCatalogLocked} className="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-semibold min-h-[120px] outline-none disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Product details..." />
                       </div>
                     </div>
                   )}
@@ -705,6 +807,7 @@ const ProductManagement = () => {
                             Each row is one pack/size you sell. Set <strong>supply price</strong> (what hub pays you) and <strong>your stock</strong> per variant.
                           </p>
                         </div>
+                        {!isCatalogLocked && (
                         <button
                           type="button"
                           onClick={() =>
@@ -724,6 +827,7 @@ const ProductManagement = () => {
                         >
                           <HiOutlinePlus className="h-3.5 w-3.5" /> Add variant
                         </button>
+                        )}
                       </div>
 
                       <div className="space-y-3">
@@ -741,8 +845,9 @@ const ProductManagement = () => {
                                   next[idx] = { ...next[idx], name: e.target.value };
                                   updateVariants(next);
                                 }}
+                                disabled={isCatalogLocked}
                                 placeholder="e.g. 1 kg pack"
-                                className="w-full px-3 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-semibold outline-none"
+                                className="w-full px-3 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-semibold outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             </div>
                             <div className="col-span-6 sm:col-span-2 space-y-1">
@@ -754,7 +859,8 @@ const ProductManagement = () => {
                                   next[idx] = { ...next[idx], unit: e.target.value };
                                   updateVariants(next);
                                 }}
-                                className="w-full px-2 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-bold outline-none"
+                                disabled={isCatalogLocked}
+                                className="w-full px-2 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-bold outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                               >
                                 {PRODUCT_UNITS.map((u) => (
                                   <option key={u.value} value={u.value}>{u.label}</option>
@@ -791,7 +897,7 @@ const ProductManagement = () => {
                               />
                             </div>
                             <div className="col-span-6 sm:col-span-1 flex justify-end">
-                              {(formData.variants?.length || 0) > 1 && (
+                              {!isCatalogLocked && (formData.variants?.length || 0) > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => updateVariants(formData.variants.filter((_, i) => i !== idx))}
@@ -806,6 +912,7 @@ const ProductManagement = () => {
                         ))}
                       </div>
 
+                      {!isCatalogLocked && (
                       <div className="grid grid-cols-2 gap-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
                         <div>
                           <p className="text-[9px] font-bold text-amber-700 uppercase tracking-widest">Default unit (product)</p>
@@ -830,6 +937,7 @@ const ProductManagement = () => {
                           />
                         </div>
                       </div>
+                      )}
                     </div>
                   )}
 
@@ -963,16 +1071,16 @@ const ProductManagement = () => {
 
               <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
                 <button onClick={() => setIsProductModalOpen(false)} className="px-6 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 uppercase tracking-widest">Cancel</button>
-                {modalTab !== "details" ? (
+                {isCatalogLocked || modalTab === "details" ? (
+                  <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : isCatalogLocked ? "Save price & stock" : "Save Changes"}</button>
+                ) : (
                   <button onClick={() => {
-                    const tabs = ["general", "variants", "category", "media", "details"];
-                    const currentIdx = tabs.indexOf(modalTab);
-                    if (currentIdx < tabs.length - 1) setModalTab(tabs[currentIdx + 1]);
+                    const tabIds = modalTabs.map((t) => t.id);
+                    const currentIdx = tabIds.indexOf(modalTab);
+                    if (currentIdx < tabIds.length - 1) setModalTab(tabIds[currentIdx + 1]);
                   }} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest">
                     Next
                   </button>
-                ) : (
-                  <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : "Save Changes"}</button>
                 )}
               </div>
             </motion.div>

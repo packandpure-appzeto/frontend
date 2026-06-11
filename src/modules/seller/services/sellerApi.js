@@ -9,6 +9,10 @@ export const sellerApi = {
     }),
     // Products
     getProducts: (params) => axiosInstance.get('/products/seller/me', { params }),
+    getMasterCatalog: (params) =>
+        axiosInstance.get('/products', {
+            params: { ownerType: 'admin', status: 'active', limit: 100, ...params },
+        }),
     getProductById: (id) => axiosInstance.get(`/products/${id}`),
     createProduct: (data) => axiosInstance.post('/products', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -24,8 +28,6 @@ export const sellerApi = {
 
     // Others
     getStats: (range) => axiosInstance.get('/seller/stats', { params: { range } }),
-    getOrders: (params) => axiosInstance.get('/orders/seller-orders', { params }),
-    updateOrderStatus: (orderId, data) => axiosInstance.put(`/orders/status/${orderId}`, data),
     getEarnings: () => axiosInstance.get('/seller/earnings'),
     getProfile: () => axiosInstance.get('/seller/profile'),
     updateProfile: (data) => axiosInstance.put('/seller/profile', data),

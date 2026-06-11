@@ -30,12 +30,46 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@shared/components/ui/Toast';
 import Modal from '@shared/components/ui/Modal';
 import { motion } from 'framer-motion';
+import { adminApi } from '../services/adminApi';
+
+function formatLocation(data) {
+    if (typeof data?.address === 'string' && data.address.trim()) return data.address.trim();
+    if (data?.locationText) return data.locationText;
+    const coords = data?.location?.coordinates;
+    if (Array.isArray(coords) && coords.length >= 2) {
+        return `${Number(coords[1]).toFixed(4)}, ${Number(coords[0]).toFixed(4)}`;
+    }
+    return 'Not mapped';
+}
+
+function formatCoords(data) {
+    const coords = data?.location?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+    return `${Number(coords[1]).toFixed(4)}, ${Number(coords[0]).toFixed(4)}`;
+}
+
+function money(n) {
+    return `₹${(Number(n) || 0).toLocaleString('en-IN')}`;
+}
+
+function sellerStatusMeta(data) {
+    if (!data?.isVerified) return { label: 'pending', variant: 'warning' };
+    if (data?.isActive === false) return { label: 'inactive', variant: 'gray' };
+    return { label: 'active', variant: 'success' };
+}
+
+function hasBankDetails(bank) {
+    if (!bank || typeof bank !== 'object') return false;
+    const name = String(bank.bankName || '').trim();
+    const acct = String(bank.accountNo || '').trim();
+    return Boolean(name && name !== 'Not Provided' && acct && acct !== 'N/A');
+}
 
 const SellerDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [activeTab, setActiveTab] = useState('orders');
+    const [activeTab, setActiveTab] = useState('products');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [seller, setSeller] = useState(null);
@@ -44,29 +78,55 @@ const SellerDetail = () => {
         try {
             setIsLoading(true);
             const res = await adminApi.getSellerById(id);
-            const data = res?.data?.result;
+            const body = res?.data || {};
+            const data = body.result ?? body.data ?? (body.success === false ? null : body);
+            if (body.success === false || !data || typeof data !== 'object') {
+                throw new Error(body.message || 'Seller not found');
+            }
             if (data) {
                 setSeller({
                     ...data,
-                    ownerName: data.name,
+                    id: data._id || data.id,
+                    ownerName: data.name || '—',
                     category: data.category || 'General',
-                    status: data.isVerified ? 'active' : 'pending',
-                    joinedDate: new Date(data.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-                    totalOrders: data.stats?.totalOrders || 0,
-                    totalRevenue: data.stats?.totalRevenue || 0,
-                    recentOrders: data.stats?.recentOrders || [],
-                    walletBalance: data.walletBalance || 0,
+                    status: sellerStatusMeta(data).label,
+                    statusVariant: sellerStatusMeta(data).variant,
+                    isVerified: !!data.isVerified,
+                    isActive: data.isActive !== false,
+                    description: data.description || '',
+                    documents: data.documents || null,
+                    coordsLabel: formatCoords(data),
+                    joinedDate: data.createdAt
+                        ? new Date(data.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—',
+                    totalOrders: Number(data.stats?.totalOrders) || 0,
+                    totalRevenue: Number(data.stats?.totalRevenue) || 0,
+                    recentOrders: Array.isArray(data.stats?.recentOrders) ? data.stats.recentOrders : [],
+                    products: Array.isArray(data.products) ? data.products : [],
+                    productStats: data.productStats || data.stats?.productStats || {
+                        totalProducts: Number(data.productCount) || 0,
+                        activeProducts: 0,
+                        pendingProducts: 0,
+                        inStockProducts: 0,
+                        totalStock: 0,
+                    },
+                    productCount: Number(data.productCount) || Number(data.productStats?.totalProducts) || 0,
+                    walletBalance: Number(data.walletBalance) || 0,
+                    rating: Number(data.rating) || 0,
+                    serviceRadius: Number(data.serviceRadius) || 5,
+                    commissionRate: data.commissionRate ?? 'N/A',
+                    locationLabel: formatLocation(data),
                     bankInfo: data.bankDetails || {
                         bankName: 'Not Provided',
                         accountNo: 'N/A',
-                        ifsc: 'N/A'
-                    }
+                        ifsc: 'N/A',
+                    },
                 });
             }
         } catch (error) {
             console.error('Fetch seller detail failed:', error);
             showToast('Failed to load seller details', 'error');
-            navigate('/admin/sellers/active');
+            navigate('/admin/suppliers');
         } finally {
             setIsLoading(false);
         }
@@ -102,7 +162,7 @@ const SellerDetail = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => navigate('/admin/sellers/active')}
+                        onClick={() => navigate('/admin/suppliers')}
                         className="p-2.5 bg-white ring-1 ring-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm group"
                     >
                         <ChevronLeft className="h-5 w-5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
@@ -110,7 +170,7 @@ const SellerDetail = () => {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="ds-h1">{seller.shopName}</h1>
-                            <Badge variant="success" className="text-[10px] font-black uppercase tracking-widest">{seller.status}</Badge>
+                            <Badge variant={seller.statusVariant || 'gray'} className="text-[10px] font-black uppercase tracking-widest">{seller.status}</Badge>
                         </div>
                         <p className="ds-description mt-1 text-slate-500 font-medium">Owned by {seller.ownerName} • {seller.category}</p>
                     </div>
@@ -134,10 +194,10 @@ const SellerDetail = () => {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Wallet Balance', value: `₹${seller.walletBalance.toLocaleString()}`, icon: Wallet, color: 'emerald', sub: 'Available for Payout' },
-                    { label: 'Total Revenue', value: `₹${(seller.totalRevenue / 1000).toFixed(1)}k`, icon: TrendingUp, color: 'blue', sub: 'Gross Sales' },
-                    { label: 'Orders Handled', value: seller.totalOrders, icon: ShoppingBag, color: 'indigo', sub: 'Lifetime Orders' },
-                    { label: 'Store Rating', value: `${seller.rating} / 5.0`, icon: Star, color: 'amber', sub: 'Based on 450+ reviews' },
+                    { label: 'Product Listings', value: seller.productCount ?? 0, icon: ShoppingBag, color: 'indigo', sub: `${seller.productStats?.activeProducts ?? 0} active · ${seller.productStats?.pendingProducts ?? 0} pending` },
+                    { label: 'Supply Stock', value: seller.productStats?.totalStock ?? 0, icon: TrendingUp, color: 'blue', sub: 'Total units (S)' },
+                    { label: 'Orders Handled', value: seller.totalOrders, icon: History, color: 'emerald', sub: 'Lifetime Orders' },
+                    { label: 'Total Revenue', value: seller.totalRevenue >= 1000 ? `₹${(seller.totalRevenue / 1000).toFixed(1)}k` : money(seller.totalRevenue), icon: Wallet, color: 'amber', sub: 'Delivered orders' },
                 ].map((stat, i) => (
                     <Card key={i} className="p-6 border-none shadow-xl ring-1 ring-slate-100 bg-white group hover:ring-primary/20 transition-all">
                         <div className="flex items-center justify-between mb-4">
@@ -163,10 +223,9 @@ const SellerDetail = () => {
                     {/* Tabs Navigation */}
                     <div className="flex items-center gap-2 p-1 bg-slate-100/50 backdrop-blur-sm rounded-2xl w-fit">
                         {[
+                            { id: 'products', label: 'Products', icon: ShoppingBag },
                             { id: 'orders', label: 'Order History', icon: History },
-                            { id: 'transactions', label: 'Transactions', icon: Banknote },
-                            { id: 'delivery', label: 'Delivery', icon: MapPin },
-                            { id: 'payouts', label: 'Withdrawals', icon: Wallet },
+                            { id: 'delivery', label: 'Coverage', icon: MapPin },
                             { id: 'info', label: 'Store Info', icon: Building2 },
                         ].map((tab) => (
                             <button
@@ -187,6 +246,66 @@ const SellerDetail = () => {
 
                     {/* Tab Content */}
                     <Card className="border-none shadow-xl ring-1 ring-slate-100 bg-white rounded-xl overflow-hidden min-h-[500px]">
+                        {activeTab === 'products' && (
+                            <div className="animate-in fade-in slide-in-from-right-2 duration-300">
+                                <div className="p-4 pb-4 flex items-center justify-between border-b border-slate-50">
+                                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">
+                                        Supplier product listings
+                                    </h4>
+                                    <Badge variant="primary" className="text-[9px] font-black">
+                                        {seller.productCount ?? seller.products?.length ?? 0} items
+                                    </Badge>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="bg-slate-50/50 border-b border-slate-50">
+                                                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product</th>
+                                                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Stock (S)</th>
+                                                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Supply cost</th>
+                                                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                                                <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Master catalog</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                            {(seller.products || []).length > 0 ? seller.products.map((product) => (
+                                                <tr key={product._id} className="hover:bg-slate-50/50">
+                                                    <td className="px-4 py-4">
+                                                        <span className="text-xs font-black text-slate-900">{product.name}</span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-center font-black text-violet-700">
+                                                        {Number(product.stock) || 0}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-center font-bold text-slate-800">
+                                                        {money(product.purchasePrice)}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-center">
+                                                        <Badge
+                                                            variant={product.status === 'active' ? 'success' : product.status === 'pending_approval' ? 'warning' : 'gray'}
+                                                            className="text-[9px] font-black"
+                                                        >
+                                                            {(product.status || '—').replace(/_/g, ' ').toUpperCase()}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-xs text-slate-600">
+                                                        {product.masterProductName || (
+                                                            <span className="text-slate-400 italic">Not mapped</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan="5" className="px-4 py-10 text-center text-slate-400 font-bold text-xs">
+                                                        No products listed by this supplier yet.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
                         {activeTab === 'orders' && (
                             <div className="animate-in fade-in slide-in-from-right-2 duration-300">
                                 <div className="p-4 pb-4 flex items-center justify-between border-b border-slate-50">
@@ -227,14 +346,14 @@ const SellerDetail = () => {
                                                     </td>
                                                     <td className="px-4 py-5 text-center">
                                                         <Badge
-                                                            variant={order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning'}
+                                                            variant={order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'error' : 'warning'}
                                                             className="text-[9px] font-black"
                                                         >
-                                                            {order.status.toUpperCase()}
+                                                            {String(order.status || 'pending').toUpperCase()}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-4 py-5 text-right font-black text-slate-900">
-                                                        ₹{order.amount.toLocaleString()}
+                                                        {money(order.amount)}
                                                     </td>
                                                 </tr>
                                             )) : (
@@ -244,42 +363,6 @@ const SellerDetail = () => {
                                             )}
                                         </tbody>
                                     </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'transactions' && (
-                            <div className="animate-in fade-in slide-in-from-right-2 duration-300 p-4">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Financial ledger</h4>
-                                    <Badge variant="blue" className="text-[9px] font-black">LAST 30 DAYS</Badge>
-                                </div>
-                                <div className="space-y-4">
-                                    {[
-                                        { id: 'TXN-8821', type: 'credit', desc: 'Order #ORD-9912 Settlement', amount: 765, date: 'Today, 14:20' },
-                                        { id: 'TXN-8810', type: 'debit', desc: 'Withdrawal to Bank', amount: 15000, date: 'Yesterday' },
-                                        { id: 'TXN-8792', type: 'credit', desc: 'Order #ORD-9821 Settlement', amount: 405, date: 'Yesterday' },
-                                        { id: 'TXN-8750', type: 'credit', desc: 'Order #ORD-9690 Settlement', amount: 135, date: '14 Feb' },
-                                    ].map((txn, i) => (
-                                        <div key={i} className="flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className={cn("p-2 rounded-xl flex items-center justify-center",
-                                                    txn.type === 'credit' ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
-                                                )}>
-                                                    {txn.type === 'credit' ? <TrendingUp className="h-4 w-4" /> : <Banknote className="h-4 w-4" />}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black text-slate-900">{txn.desc}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{txn.id} • {txn.date}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={cn("text-sm font-black", txn.type === 'credit' ? "text-emerald-600" : "text-rose-600")}>
-                                                    {txn.type === 'credit' ? '+' : '-'} ₹{txn.amount.toLocaleString()}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
                                 </div>
                             </div>
                         )}
@@ -317,26 +400,16 @@ const SellerDetail = () => {
                                 <div className="absolute top-6 left-6 flex flex-col gap-2">
                                     <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-white/50">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Coverage View</p>
-                                        <h5 className="text-sm font-black text-slate-900">{seller.serviceRadius}km Delivery Area</h5>
+                                        <h5 className="text-sm font-black text-slate-900">{seller.serviceRadius} km radius</h5>
+                                        {seller.coordsLabel ? (
+                                            <p className="text-[10px] text-slate-500 mt-1">GPS: {seller.coordsLabel}</p>
+                                        ) : null}
                                     </div>
                                 </div>
-                                <div className="absolute bottom-6 right-6 p-4 max-w-[200px] bg-slate-900/90 backdrop-blur rounded-2xl text-white shadow-2xl border border-white/10">
-                                    <p className="text-[9px] font-black opacity-60 uppercase mb-1">Live Telemetry</p>
-                                    <p className="text-[10px] font-bold leading-relaxed">System monitoring active traffic within the {seller.serviceRadius}km designated boundary.</p>
+                                <div className="absolute bottom-6 right-6 p-4 max-w-[240px] bg-slate-900/90 backdrop-blur rounded-2xl text-white shadow-2xl border border-white/10">
+                                    <p className="text-[9px] font-black opacity-60 uppercase mb-1">Service address</p>
+                                    <p className="text-[10px] font-bold leading-relaxed">{seller.locationLabel}</p>
                                 </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'payouts' && (
-                            <div className="animate-in fade-in slide-in-from-right-2 duration-300 p-4 text-center py-20">
-                                <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Clock className="h-10 w-10 text-slate-200" />
-                                </div>
-                                <h4 className="text-lg font-black text-slate-900 uppercase">Withdrawal tracking</h4>
-                                <p className="text-sm font-bold text-slate-400 mt-2 max-w-xs mx-auto">View withdrawal history and pending requests here.</p>
-                                <button className="mt-8 px-4 py-3 bg-slate-950 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:-translate-y-1 shadow-xl shadow-slate-200 transition-all">
-                                    START MANUAL PAYOUT
-                                </button>
                             </div>
                         )}
 
@@ -358,29 +431,63 @@ const SellerDetail = () => {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Commission</p>
-                                                        <p className="text-xs font-black text-slate-900">{seller.commissionRate}</p>
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Category</p>
+                                                        <p className="text-xs font-black text-slate-900">{seller.category}</p>
                                                     </div>
                                                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Joined</p>
                                                         <p className="text-xs font-black text-slate-900">{seller.joinedDate}</p>
                                                     </div>
                                                 </div>
+                                                {seller.description ? (
+                                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Description</p>
+                                                        <p className="text-xs font-semibold text-slate-700">{seller.description}</p>
+                                                    </div>
+                                                ) : null}
+                                                {seller.documents ? (
+                                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Documents</p>
+                                                        {seller.documents.tradeLicense ? (
+                                                            <a href={seller.documents.tradeLicense} target="_blank" rel="noreferrer" className="block text-xs font-bold text-primary hover:underline">Trade license</a>
+                                                        ) : null}
+                                                        {seller.documents.gstCertificate ? (
+                                                            <a href={seller.documents.gstCertificate} target="_blank" rel="noreferrer" className="block text-xs font-bold text-primary hover:underline">GST certificate</a>
+                                                        ) : null}
+                                                        {seller.documents.idProof ? (
+                                                            <a href={seller.documents.idProof} target="_blank" rel="noreferrer" className="block text-xs font-bold text-primary hover:underline">ID proof</a>
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         </div>
 
                                         <div>
-                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Bank Verification</h5>
-                                            <div className="p-6 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-4">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Bank / settlement</h5>
+                                            <div className={cn(
+                                                'p-6 rounded-xl border space-y-4',
+                                                hasBankDetails(seller.bankInfo)
+                                                    ? 'bg-emerald-50/50 border-emerald-100'
+                                                    : 'bg-slate-50 border-slate-100',
+                                            )}>
                                                 <div className="flex items-center justify-between">
-                                                    <p className="text-xs font-bold text-slate-600">Account Verified</p>
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    <p className="text-xs font-bold text-slate-600">
+                                                        {hasBankDetails(seller.bankInfo) ? 'Account on file' : 'Not provided'}
+                                                    </p>
+                                                    {hasBankDetails(seller.bankInfo) ? (
+                                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    ) : (
+                                                        <XCircle className="h-4 w-4 text-slate-400" />
+                                                    )}
                                                 </div>
-                                                <div>
-                                                    <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest mb-1">Settlement Account</p>
-                                                    <p className="text-sm font-black text-slate-900">{seller.bankInfo.bankName}</p>
-                                                    <p className="text-xs font-bold text-slate-500 font-mono mt-0.5">{seller.bankInfo.accountNo}</p>
-                                                </div>
+                                                {hasBankDetails(seller.bankInfo) ? (
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-900">{seller.bankInfo.bankName}</p>
+                                                        <p className="text-xs font-bold text-slate-500 font-mono mt-0.5">{seller.bankInfo.accountNo}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs text-slate-500">Supplier has not added bank details yet.</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -391,19 +498,27 @@ const SellerDetail = () => {
                                             <div className="p-6 bg-slate-900 rounded-xl text-white">
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest">LIVE NOW</span>
+                                                        <div className={cn(
+                                                            'h-2 w-2 rounded-full',
+                                                            seller.isActive && seller.isVerified ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500',
+                                                        )} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">
+                                                            {seller.isActive && seller.isVerified ? 'ACTIVE' : seller.isVerified ? 'INACTIVE' : 'PENDING'}
+                                                        </span>
                                                     </div>
-                                                    <button className="text-[10px] font-black text-rose-400 uppercase hover:underline">Force Close</button>
                                                 </div>
-                                                <div className="space-y-4 opacity-70">
+                                                <div className="space-y-4 opacity-90">
                                                     <div className="flex items-center justify-between py-2 border-b border-white/10">
-                                                        <span className="text-xs font-bold">Visibility</span>
-                                                        <span className="text-xs font-black uppercase tracking-widest">Global</span>
+                                                        <span className="text-xs font-bold">Verified</span>
+                                                        <span className="text-xs font-black uppercase tracking-widest">{seller.isVerified ? 'Yes' : 'No'}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between py-2 border-b border-white/10">
+                                                        <span className="text-xs font-bold">Account active</span>
+                                                        <span className="text-xs font-black uppercase tracking-widest">{seller.isActive ? 'Yes' : 'No'}</span>
                                                     </div>
                                                     <div className="flex items-center justify-between py-2">
-                                                        <span className="text-xs font-bold">Delivery Partner</span>
-                                                        <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Integrated</span>
+                                                        <span className="text-xs font-bold">Service radius</span>
+                                                        <span className="text-xs font-black uppercase tracking-widest">{seller.serviceRadius} km</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -453,11 +568,16 @@ const SellerDetail = () => {
                                 </div>
                                 <span className="text-xs font-bold">{seller.phone}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-slate-500">
-                                <div className="p-2 bg-slate-50 rounded-xl">
+                            <div className="flex items-start gap-3 text-slate-500">
+                                <div className="p-2 bg-slate-50 rounded-xl shrink-0">
                                     <MapPin className="h-4 w-4" />
                                 </div>
-                                <span className="text-xs font-bold leading-relaxed">{seller.location}</span>
+                                <div>
+                                    <span className="text-xs font-bold leading-relaxed block">{seller.locationLabel}</span>
+                                    {seller.coordsLabel ? (
+                                        <span className="text-[10px] text-slate-400 mt-1 block">GPS: {seller.coordsLabel}</span>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
 

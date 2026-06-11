@@ -38,8 +38,7 @@ const Topbar = ({ onMenuClick }) => {
             const term = q.toLowerCase();
             if (term.includes('product')) return navigate('/seller/products');
             if (term.includes('stock') || term.includes('inventor')) return navigate('/seller/inventory');
-            if (term.includes('customer') || term.includes('order')) return navigate('/seller/orders');
-            if (term.includes('purchas') || term.includes('procure')) return navigate('/seller/procurement');
+            if (term.includes('customer') || term.includes('order') || term.includes('purchas') || term.includes('procure')) return navigate('/seller/procurement');
             if (term.includes('return')) return navigate('/seller/returns');
             if (term.includes('track') || term.includes('ship')) return navigate('/seller/tracking');
             if (term.includes('analytic') || term.includes('report')) return navigate('/seller/analytics');
@@ -52,8 +51,7 @@ const Topbar = ({ onMenuClick }) => {
         } else if (role === 'admin') {
             const term = q.toLowerCase();
             if (term.includes('product')) return navigate('/admin/products');
-            if (term.includes('vendor')) return navigate('/admin/vendors');
-            if (term.includes('seller')) return navigate('/admin/sellers/active');
+            if (term.includes('vendor') || term.includes('seller') || term.includes('supplier')) return navigate('/admin/suppliers');
             if (term.includes('categor')) return navigate('/admin/categories/hierarchy');
             if (term.includes('customer') || term.includes('user')) return navigate('/admin/customers');
             if (term.includes('order')) return navigate('/admin/orders/all');
@@ -86,12 +84,13 @@ const Topbar = ({ onMenuClick }) => {
         }
     };
 
-    React.useEffect(() => {
-        fetchNotifications();
-        // Polling every 30 seconds
-        const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
-    }, [isSeller, role]);
+    const handleToggleNotifications = () => {
+        const willOpen = !showNotifications;
+        setShowNotifications(willOpen);
+        if (willOpen) {
+            fetchNotifications();
+        }
+    };
 
     // Handle Click Outside
     React.useEffect(() => {
@@ -137,8 +136,7 @@ const Topbar = ({ onMenuClick }) => {
 
     const adminSearchOptions = React.useMemo(() => [
         { label: "Products Management", path: "/admin/products" },
-        { label: "Vendor Management", path: "/admin/vendors" },
-        { label: "Active Sellers", path: "/admin/sellers/active" },
+        { label: "Suppliers", path: "/admin/suppliers" },
         { label: "Pending Sellers", path: "/admin/sellers/pending" },
         { label: "Category Hierarchy", path: "/admin/categories/hierarchy" },
         { label: "Customer Management", path: "/admin/customers" },
@@ -154,7 +152,6 @@ const Topbar = ({ onMenuClick }) => {
     const sellerSearchOptions = React.useMemo(() => [
         { label: "Products Management", path: "/seller/products" },
         { label: "Stock & Inventory", path: "/seller/inventory" },
-        { label: "Customer Orders", path: "/seller/orders" },
         { label: "Purchase Orders", path: "/seller/procurement" },
         { label: "Returns Management", path: "/seller/returns" },
         { label: "Track Shipments", path: "/seller/tracking" },
@@ -238,7 +235,7 @@ const Topbar = ({ onMenuClick }) => {
             <div className="flex items-center space-x-4">
                 <div className="relative" ref={notificationRef}>
                     <button
-                        onClick={() => setShowNotifications(!showNotifications)}
+                        onClick={handleToggleNotifications}
                         className={cn(
                             "p-2 hover:bg-primary/5 text-gray-500 hover:text-primary rounded-xl transition-all duration-300 relative group",
                             showNotifications && "bg-primary/5 text-primary"

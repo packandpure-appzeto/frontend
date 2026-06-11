@@ -60,6 +60,8 @@ export const adminApi = {
     }),
     updateVariantStock: (id, data) => axiosInstance.patch(`/products/${id}/variant-stock`, data),
     deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
+    getProductGoLivePreview: (id) => axiosInstance.get(`/products/${id}/go-live-preview`),
+    publishProductGoLive: (id, data) => axiosInstance.post(`/products/${id}/go-live`, data),
     getHubInventory: (params) => axiosInstance.get('/admin/hub-inventory', { params }),
     upsertHubInventory: (data) => axiosInstance.post('/admin/hub-inventory/upsert', data),
     adjustHubInventoryStock: (id, payload) =>
@@ -67,6 +69,8 @@ export const adminApi = {
     updateHubInventoryReorderLevel: (id, reorderLevel) =>
         axiosInstance.put(`/admin/hub-inventory/${id}/reorder-level`, { reorderLevel }),
     getPurchaseRequests: (params) => axiosInstance.get('/admin/purchase-requests', { params }),
+    getPurchaseRequestProductContext: (productId) =>
+        axiosInstance.get('/admin/purchase-requests/product-context', { params: { productId } }),
     createManualPurchaseRequest: (data) =>
         axiosInstance.post('/admin/purchase-requests', data),
     updatePurchaseRequestStatus: (id, status, payload = {}) =>

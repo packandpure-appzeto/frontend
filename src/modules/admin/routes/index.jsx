@@ -6,7 +6,6 @@ import {
   Tag,
   Box,
   Boxes,
-  Building2,
   Store,
   Truck,
   Bike,
@@ -57,6 +56,9 @@ const DeliveryPartnerProfile = React.lazy(
 );
 const ActiveSellers = React.lazy(() => import("../pages/ActiveSellers"));
 const PendingSellers = React.lazy(() => import("../pages/PendingSellers"));
+const SuppliersManagementPage = React.lazy(
+  () => import("../pages/SuppliersManagementPage"),
+);
 const SellerLocations = React.lazy(() => import("../pages/SellerLocations"));
 const ActiveDeliveryBoys = React.lazy(
   () => import("../pages/ActiveDeliveryBoys"),
@@ -165,10 +167,10 @@ const navItems = [
 
   { sectionHeader: "Vendors & Sellers" },
   {
-    label: "Vendors & Sellers",
-    icon: Building2,
-    color: "blue",
-    path: "/admin/sellers/active"
+    label: "Suppliers",
+    path: "/admin/suppliers",
+    icon: Store,
+    color: "lime",
   },
   {
     label: "Purchase Requests",
@@ -283,10 +285,13 @@ const AdminRoutes = () => {
         <Route path="/categories/hierarchy" element={<CategoryHierarchy />} />
         <Route path="/products" element={<ProductManagement />} />
         <Route path="/hub-inventory" element={<HubInventoryPage />} />
+        <Route path="/suppliers" element={<SuppliersManagementPage />} />
+        <Route path="/suppliers/:id" element={<SellerDetail />} />
+        <Route path="/vendors" element={<Navigate to="/admin/suppliers" replace />} />
         <Route path="/purchase-requests" element={<PurchaseRequestsPage />} />
         <Route path="/pickup-partners" element={<PickupPartnersPage />} />
         <Route path="/delivery-partners" element={<DeliveryPartnersPage />} />
-        <Route path="/sellers/active" element={<ActiveSellers />} />
+        <Route path="/sellers/active" element={<Navigate to="/admin/suppliers?tab=verified" replace />} />
         <Route path="/sellers/active/:id" element={<SellerDetail />} />
         <Route path="/support-tickets" element={<SupportTickets />} />
         <Route path="/moderation" element={<ReviewModeration />} />
@@ -297,7 +302,7 @@ const AdminRoutes = () => {
         <Route path="/offer-sections" element={<OfferSectionsManagement />} />
         <Route path="/shop-by-store" element={<ShopByStoreManagement />} />
         <Route path="/coupons" element={<CouponManagement />} />
-        <Route path="/sellers/pending" element={<PendingSellers />} />
+        <Route path="/sellers/pending" element={<Navigate to="/admin/suppliers?tab=pending" replace />} />
         <Route path="/seller-locations" element={<SellerLocations />} />
         <Route path="/delivery-boys/active" element={<ActiveDeliveryBoys />} />
         <Route path="/delivery-boys/:id" element={<DeliveryPartnerProfile />} />

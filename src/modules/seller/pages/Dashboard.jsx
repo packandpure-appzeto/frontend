@@ -37,7 +37,6 @@ import {
 import { cn } from "@/lib/utils";
 import { sellerApi } from "../services/sellerApi";
 import { toast } from "sonner";
-import { useSellerOrders } from "../context/SellerOrdersContext";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -171,61 +170,6 @@ const Dashboard = () => {
         return "error";
       default:
         return "secondary";
-    }
-  };
-
-  const normalizeOrderForModal = (order) => {
-    if (!order) return null;
-    const addr = order.address;
-    const addressStr = [
-      addr?.line1,
-      addr?.line2,
-      addr?.city,
-      addr?.state,
-      addr?.pincode,
-    ]
-      .filter(Boolean)
-      .join(", ");
-    const items = (order.items || []).map((item) => ({
-      name: item.name || item.productName || "Item",
-      price:
-        item.price ??
-        (item.quantity
-          ? Number(item.totalPrice ?? 0) / Number(item.quantity)
-          : 0),
-      qty: item.quantity ?? 1,
-      image: item.image || "",
-    }));
-    return {
-      id: order.orderId,
-      customer: {
-        name: order.customer?.name || "Customer",
-        phone: order.customer?.phone || "",
-      },
-      address: addressStr || "—",
-      items,
-      total: Number(order.pricing?.total ?? 0),
-      status: order.status || "pending",
-      payment:
-        order.payment?.method === "cash" || order.payment?.method === "cod"
-          ? "Cash on Delivery"
-          : "Online Paid",
-    };
-  };
-
-  const handleStatusUpdate = async (orderId, newStatus) => {
-    try {
-      await sellerApi.updateOrderStatus(orderId, {
-        status: newStatus.toLowerCase(),
-      });
-      toast.success(`Order status updated to ${newStatus}`);
-      setSelectedOrder((prev) =>
-        prev && prev.id === orderId ? { ...prev, status: newStatus } : prev
-      );
-      if (typeof refreshOrders === "function") refreshOrders();
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      toast.error("Failed to update status");
     }
   };
 

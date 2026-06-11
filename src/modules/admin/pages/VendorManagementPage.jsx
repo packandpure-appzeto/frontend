@@ -6,6 +6,8 @@ import {
   SupplyFormModal,
   SupplyInfoModal,
 } from "../components/supply/SupplyActionModals";
+import PurchaseRequestListPanel from "../components/PurchaseRequestListPanel";
+import Modal from "@shared/components/ui/Modal";
 import { adminApi } from "../services/adminApi";
 
 const emptyVendorForm = {
@@ -20,7 +22,14 @@ const emptyVendorForm = {
   status: "Active",
 };
 
-const emptyRequestForm = { productId: "", quantity: "100" };
+const emptyRequestForm = { productId: "", quantity: "100", notes: "" };
+
+function sellerProductOptionLabel(product) {
+  const stock = Number(product?.catalogStock ?? product?.stock ?? 0);
+  const supply = Number(product?.purchasePrice ?? product?.price ?? 0);
+  const kind = product?.masterProductId ? "Catalog" : "Own";
+  return `${product?.name || "Product"} · ${kind} · stock ${stock}${supply > 0 ? ` · ₹${supply}` : ""}`;
+}
 
 const VendorManagementPage = () => {
   const [rows, setRows] = useState([]);
@@ -33,11 +42,14 @@ const VendorManagementPage = () => {
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState([]);
+  const [sellerProducts, setSellerProducts] = useState([]);
+  const [sellerProductsLoading, setSellerProductsLoading] = useState(false);
+  const [productPurchaseRequests, setProductPurchaseRequests] = useState([]);
+  const [productPrLoading, setProductPrLoading] = useState(false);
+  const [prSubmitting, setPrSubmitting] = useState(false);
 
   useEffect(() => {
     fetchSellers();
-    fetchProducts();
   }, []);
 
   const toLocationText = (seller) => {
@@ -83,18 +95,25 @@ const VendorManagementPage = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchSellerProducts = async (sellerId) => {
+    if (!sellerId) {
+      setSellerProducts([]);
+      return;
+    }
+    setSellerProductsLoading(true);
     try {
       const res = await adminApi.getProducts({
         page: 1,
-        limit: 300,
-        status: "active",
+        limit: 100,
+        ownerType: "seller",
+        sellerId,
       });
       const payload = res?.data?.result || {};
-      const items = Array.isArray(payload.items) ? payload.items : [];
-      setProducts(items);
+      setSellerProducts(Array.isArray(payload.items) ? payload.items : []);
     } catch {
-      setProducts([]);
+      setSellerProducts([]);
+    } finally {
+      setSellerProductsLoading(false);
     }
   };
 
@@ -185,17 +204,46 @@ const VendorManagementPage = () => {
     }
   };
 
-  const openRequest = (row) => {
+  const fetchProductPurchaseRequests = async (productId) => {
+    if (!productId) {
+      setProductPurchaseRequests([]);
+      return;
+    }
+    setProductPrLoading(true);
+    try {
+      const res = await adminApi.getPurchaseRequests({
+        productId,
+        limit: 50,
+        page: 1,
+      });
+      const payload = res?.data?.result || {};
+      setProductPurchaseRequests(Array.isArray(payload.items) ? payload.items : []);
+    } catch {
+      setProductPurchaseRequests([]);
+    } finally {
+      setProductPrLoading(false);
+    }
+  };
+
+  const openRequest = async (row) => {
     setCurrentVendor(row);
     setRequestForm(emptyRequestForm);
+    setSellerProducts([]);
+    setProductPurchaseRequests([]);
     setRequestOpen(true);
+    await fetchSellerProducts(row.id);
   };
 
   const createPurchaseRequest = async () => {
     if (!currentVendor) return;
     const productId = String(requestForm.productId || "").trim();
     if (!productId) {
-      setInfoMessage("Please select a product.");
+      setInfoMessage("Please select a seller product.");
+      setInfoOpen(true);
+      return;
+    }
+    if (!sellerProducts.some((p) => String(p._id) === productId)) {
+      setInfoMessage("Selected product does not belong to this seller.");
       setInfoOpen(true);
       return;
     }
@@ -205,18 +253,23 @@ const VendorManagementPage = () => {
       setInfoOpen(true);
       return;
     }
+    setPrSubmitting(true);
     try {
       await adminApi.createManualPurchaseRequest({
         vendorId: currentVendor.id,
         productId,
         quantity: qty,
+        notes: requestForm.notes,
       });
-      setRequestOpen(false);
+      await fetchProductPurchaseRequests(productId);
+      setRequestForm((prev) => ({ ...emptyRequestForm, productId }));
       setInfoMessage("Purchase request created and synced to Purchase Requests module.");
       setInfoOpen(true);
     } catch (error) {
       setInfoMessage(error?.response?.data?.message || "Failed to create purchase request.");
       setInfoOpen(true);
+    } finally {
+      setPrSubmitting(false);
     }
   };
 
@@ -358,30 +411,106 @@ const VendorManagementPage = () => {
         onSubmit={saveEdit}
       />
 
-      <SupplyFormModal
+      <Modal
         isOpen={requestOpen}
-        onClose={() => setRequestOpen(false)}
-        title={`Send Purchase Request${currentVendor ? ` - ${currentVendor.vendorName}` : ""}`}
-        submitLabel="Create"
-        fields={[
-          {
-            key: "productId",
-            label: "Product",
-            type: "select",
-            options: [
-              { value: "", label: "Select Product" },
-              ...products.map((p) => ({
-                value: p._id,
-                label: p.name,
-              })),
-            ],
-          },
-          { key: "quantity", label: "Quantity", type: "number" },
-        ]}
-        values={requestForm}
-        onChange={(key, value) => setRequestForm((prev) => ({ ...prev, [key]: value }))}
-        onSubmit={createPurchaseRequest}
-      />
+        onClose={() => {
+          setRequestOpen(false);
+          setSellerProducts([]);
+          setProductPurchaseRequests([]);
+        }}
+        title={`Purchase Request${currentVendor ? ` — ${currentVendor.vendorName}` : ""}`}
+        size="xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setRequestOpen(false);
+                setSellerProducts([]);
+                setProductPurchaseRequests([]);
+              }}
+              className="px-4 py-2 text-xs font-bold text-slate-400 uppercase"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={createPurchaseRequest}
+              disabled={sellerProductsLoading || prSubmitting || !requestForm.productId}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {prSubmitting ? "Sending…" : "Send new request"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-6 py-1">
+          {requestForm.productId ? (
+            <PurchaseRequestListPanel
+              requests={productPurchaseRequests}
+              loading={productPrLoading}
+              showProductColumn={false}
+              emptyMessage="No purchase requests for this product yet."
+            />
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-sm text-slate-500 text-center">
+              Select a seller product below to view its existing purchase requests.
+            </div>
+          )}
+          <div className="pt-4 border-t border-slate-100 space-y-4">
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+              New purchase request
+            </p>
+            <label className="block">
+              <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">
+                Seller product ({sellerProducts.length} listed)
+              </span>
+              <select
+                value={requestForm.productId}
+                onChange={(e) => {
+                  const pid = e.target.value;
+                  setRequestForm((prev) => ({ ...prev, productId: pid }));
+                  fetchProductPurchaseRequests(pid);
+                }}
+                disabled={sellerProductsLoading}
+                className="mt-1 w-full h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold outline-none"
+              >
+                <option value="">Select a product from this seller</option>
+                {sellerProducts.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {sellerProductOptionLabel(p)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">Quantity</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={requestForm.quantity}
+                  onChange={(e) =>
+                    setRequestForm((prev) => ({ ...prev, quantity: e.target.value }))
+                  }
+                  className="mt-1 w-full px-4 py-3 bg-slate-100 rounded-xl text-sm font-black outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-bold text-slate-500 uppercase ml-1">Notes</span>
+                <input
+                  type="text"
+                  value={requestForm.notes}
+                  onChange={(e) =>
+                    setRequestForm((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                  className="mt-1 w-full px-4 py-3 bg-slate-100 rounded-xl text-sm outline-none"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <SupplyInfoModal
         isOpen={infoOpen}

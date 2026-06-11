@@ -21,8 +21,10 @@ import {
     HiOutlineXMark,
     HiOutlineChevronRight,
     HiOutlineEllipsisHorizontal,
-    HiOutlineArchiveBox
+    HiOutlineArchiveBox,
+    HiOutlineChevronDown
 } from 'react-icons/hi2';
+import SellerProductsExpandPanel from '../components/SellerProductsExpandPanel';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
@@ -99,6 +101,11 @@ const ActiveSellers = () => {
         minRevenue: 0,
         minRating: 0
     });
+    const [expandedSellerId, setExpandedSellerId] = useState(null);
+
+    const toggleSellerProducts = (sellerId) => {
+        setExpandedSellerId((prev) => (prev === sellerId ? null : sellerId));
+    };
 
     const [formState, setFormState] = useState({
         shopName: '',
@@ -360,6 +367,7 @@ const ActiveSellers = () => {
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="ds-table-header-cell px-6">Store Entity</th>
+                                <th className="ds-table-header-cell px-6">Products</th>
                                 <th className="ds-table-header-cell px-6">Performance</th>
                                 <th className="ds-table-header-cell px-6 text-center">Business Intel</th>
                                 <th className="ds-table-header-cell px-6">Status</th>
@@ -369,31 +377,63 @@ const ActiveSellers = () => {
                         <tbody className="divide-y divide-slate-50">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-20 text-center">
+                                    <td colSpan="6" className="px-6 py-20 text-center">
                                         <div className="flex flex-col items-center justify-center">
                                             <div className="h-12 w-12 border-4 border-slate-200 border-t-primary rounded-full animate-spin mb-4" />
                                             <p className="text-slate-500 font-bold text-sm">Fetching sellers...</p>
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredSellers.length > 0 ? filteredSellers.map((s) => (
-                                <tr key={s._id} className="hover:bg-slate-50/30 transition-colors group">
+                            ) : filteredSellers.length > 0 ? filteredSellers.map((s) => {
+                                const isExpanded = expandedSellerId === s._id;
+                                return (
+                                <React.Fragment key={s._id}>
+                                <tr
+                                    className={cn(
+                                        "transition-colors group cursor-pointer",
+                                        isExpanded ? "bg-violet-50/40" : "hover:bg-slate-50/30",
+                                    )}
+                                    onClick={() => toggleSellerProducts(s._id)}
+                                >
                                     <td className="px-6 py-4">
-                                        <div
-                                            className="flex items-center gap-4 cursor-pointer group/name"
-                                            onClick={() => navigate(`/admin/sellers/active/${s._id}`)}
-                                        >
-                                            <div className="h-12 w-12 rounded-2xl overflow-hidden bg-slate-100 ring-2 ring-slate-100 group-hover:ring-primary/20 transition-all flex items-center justify-center text-slate-300">
+                                        <div className="flex items-center gap-3 group/name">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleSellerProducts(s._id);
+                                                }}
+                                                className={cn(
+                                                    "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                                                    isExpanded ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500",
+                                                )}
+                                            >
+                                                <HiOutlineChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
+                                            </button>
+                                            <div className="h-12 w-12 rounded-2xl overflow-hidden bg-slate-100 ring-2 ring-slate-100 flex items-center justify-center text-slate-300 shrink-0">
                                                 <HiOutlineBuildingOffice2 className="h-6 w-6" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-slate-900 group-hover/name:text-primary transition-colors">{s.shopName}</p>
+                                                <p className="text-sm font-bold text-slate-900">{s.shopName}</p>
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     <span className="text-[10px] font-semibold text-slate-400">{s.name}</span>
                                                     <span className="h-1 w-1 rounded-full bg-slate-300" />
                                                     <span className="text-[10px] font-bold text-primary">{s.category || 'N/A'}</span>
                                                 </div>
+                                                <p className="text-[9px] font-bold text-violet-600 mt-0.5">
+                                                    Tap row to {isExpanded ? 'hide' : 'view'} products
+                                                </p>
                                             </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold text-slate-900">
+                                                {s.productCount ?? s.productStats?.totalProducts ?? 0} products
+                                            </span>
+                                            <span className="text-[10px] text-slate-500">
+                                                {(s.productStats?.inStockProducts ?? 0)} in stock
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -419,7 +459,7 @@ const ActiveSellers = () => {
                                             <span className="text-[9px] font-bold text-emerald-600 mt-0.5">₹{((s.revenue || 0) / 1000).toFixed(1)}k Revenue</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center gap-2">
                                             <button 
                                                 onClick={(e) => {
@@ -448,7 +488,7 @@ const ActiveSellers = () => {
                                             </span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center justify-end space-x-2">
                                             <button
                                                 onClick={() => { setViewingSeller(s); setRequestOpen(true); }}
@@ -467,9 +507,22 @@ const ActiveSellers = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            )) : (
+                                {isExpanded && (
+                                    <tr>
+                                        <td colSpan={6} className="p-0">
+                                            <SellerProductsExpandPanel
+                                                sellerId={s._id}
+                                                sellerName={s.shopName}
+                                                onClose={() => setExpandedSellerId(null)}
+                                            />
+                                        </td>
+                                    </tr>
+                                )}
+                                </React.Fragment>
+                            );
+                            }) : (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-20 text-center text-slate-400 font-bold">NO SELLERS FOUND</td>
+                                    <td colSpan="6" className="px-6 py-20 text-center text-slate-400 font-bold">NO SELLERS FOUND</td>
                                 </tr>
                             )}
                         </tbody>
