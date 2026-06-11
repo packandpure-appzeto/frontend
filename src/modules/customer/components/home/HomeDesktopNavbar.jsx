@@ -42,7 +42,7 @@ const HomeDesktopNavbar = ({
   const appName = settings?.appName || 'Pack & Pure';
   const logoUrl = brandLogo(settings);
   const primary = brandColor(settings);
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Login';
+  const firstName = user ? (user.name ? user.name.split(' ')[0] : 'User') : 'Guest';
 
   const startVoiceSearch = () => {
     const SpeechRecognition =
