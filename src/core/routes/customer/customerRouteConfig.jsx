@@ -102,6 +102,14 @@ export const customerRouteChildren = [
         ),
       },
       {
+        path: 'profile/request-product',
+        element: (
+          <ProtectedRoute>
+            <P.RequestProductPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'wallet',
         element: (
           <ProtectedRoute>

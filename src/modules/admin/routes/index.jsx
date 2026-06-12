@@ -23,6 +23,7 @@ import {
   Sparkles,
   User,
   MapPin,
+  PackageSearch,
 } from "lucide-react";
 
 const Dashboard = React.lazy(() => import("../pages/Dashboard"));
@@ -108,6 +109,7 @@ const EnvSettings = React.lazy(() => import("../pages/EnvSettings"));
 const AdminProfile = React.lazy(() => import("../pages/AdminProfile"));
 const HubSettings = React.lazy(() => import("../pages/HubSettings"));
 const Reports = React.lazy(() => import("../pages/Reports"));
+const ProductRequestsList = React.lazy(() => import("../pages/ProductRequestsList"));
 
 const navItems = [
   { sectionHeader: "Core Management" },
@@ -163,6 +165,12 @@ const navItems = [
     path: "/admin/hub-inventory",
     icon: Boxes,
     color: "teal",
+  },
+  {
+    label: "Product Requests",
+    path: "/admin/product-requests",
+    icon: PackageSearch,
+    color: "blue",
   },
 
   { sectionHeader: "Vendors & Sellers" },
@@ -288,6 +296,7 @@ const AdminRoutes = () => {
         <Route path="/suppliers" element={<SuppliersManagementPage />} />
         <Route path="/suppliers/:id" element={<SellerDetail />} />
         <Route path="/vendors" element={<Navigate to="/admin/suppliers" replace />} />
+        <Route path="/product-requests" element={<ProductRequestsList />} />
         <Route path="/purchase-requests" element={<PurchaseRequestsPage />} />
         <Route path="/pickup-partners" element={<PickupPartnersPage />} />
         <Route path="/delivery-partners" element={<DeliveryPartnersPage />} />

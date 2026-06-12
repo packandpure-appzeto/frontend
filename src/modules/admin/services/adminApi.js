@@ -167,4 +167,8 @@ export const adminApi = {
     createCoupon: (data) => axiosInstance.post('/admin/promotions', data),
     updateCoupon: (id, data) => axiosInstance.put(`/admin/promotions/${id}`, data),
     deleteCoupon: (id) => axiosInstance.delete(`/admin/promotions/${id}`),
+
+    // Product Requests
+    getProductRequests: (params) => axiosInstance.get('/product-requests', { params }),
+    updateProductRequestStatus: (id, status) => axiosInstance.put(`/product-requests/${id}/status`, { status }),
 };

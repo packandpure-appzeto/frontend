@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { X, Heart, Share2, Minus, Plus, Package, Loader2, ChevronRight, Star } from 'lucide-react';
+import { X, Heart, Share2, Minus, Plus, Package, Loader2, ChevronRight, Star, ChevronLeft } from 'lucide-react';
 import { useProductDetail } from '../../context/ProductDetailContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -53,9 +53,19 @@ function ProductImageGallery({ images, name, activeIndex, onSelect }) {
     return () => clearInterval(interval);
   }, [images, onSelect]);
 
+  const handlePrev = (e) => {
+    e.stopPropagation();
+    onSelect((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e) => {
+    e.stopPropagation();
+    onSelect((prev) => (prev + 1) % images.length);
+  };
+
   return (
-    <div className="flex h-full flex-col justify-center">
-      <div className="flex items-center justify-center p-4 sm:p-6 lg:p-10">
+    <div className="flex h-full flex-col justify-center relative group">
+      <div className="flex items-center justify-center p-4 sm:p-6 lg:p-10 relative">
         {/* Added border, shadow, and frame */}
         <div className="relative flex aspect-square w-full max-w-[320px] sm:max-w-[380px] items-center justify-center overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)] ring-1 ring-slate-900/5 transition-all">
           <AnimatePresence mode="wait">
@@ -70,8 +80,53 @@ function ProductImageGallery({ images, name, activeIndex, onSelect }) {
               className="absolute inset-0 h-full w-full object-cover mix-blend-multiply"
             />
           </AnimatePresence>
+
+          {/* Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100 z-20"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={20} className="text-slate-800" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100 z-20"
+                aria-label="Next image"
+              >
+                <ChevronRight size={20} className="text-slate-800" />
+              </button>
+            </>
+          )}
         </div>
       </div>
+      
+      {/* Dots Indicator - Between main image and thumbnails */}
+      {images.length > 1 && (
+        <div className="flex justify-center items-center gap-1.5 pb-3 sm:pb-4">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(i);
+              }}
+              className={cn(
+                "transition-all duration-300 rounded-full",
+                i === activeIndex 
+                  ? "bg-[#E23744] h-2 w-4" 
+                  : "bg-slate-300 h-2 w-2 hover:bg-slate-400"
+              )}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
       
       {/* Responsive thumbnails */}
       {images.length > 1 && (
