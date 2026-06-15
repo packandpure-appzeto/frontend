@@ -55,6 +55,11 @@ const HubInventoryPage = () => {
   const [stockRow, setStockRow] = useState(null);
   const [stockDelta, setStockDelta] = useState("10");
   const [stockVariantId, setStockVariantId] = useState("");
+  const [stockPricing, setStockPricing] = useState({
+    price: "",
+    salePrice: "",
+    purchasePrice: "",
+  });
 
   const [minOpen, setMinOpen] = useState(false);
   const [minRow, setMinRow] = useState(null);
@@ -200,6 +205,11 @@ const HubInventoryPage = () => {
     setStockRow(row);
     setStockDelta("10");
     setStockVariantId(variants[0]?.variantId || "");
+    setStockPricing({
+      price: String(row.catalogMrp || row.mrp || row.price || row.sellPrice || ""),
+      salePrice: String(row.sellPrice || ""),
+      purchasePrice: String(row.purchaseCost || row.purchasePrice || ""),
+    });
     setStockOpen(true);
   };
 
@@ -225,6 +235,11 @@ const HubInventoryPage = () => {
         } else {
           payload.variantIndex = v?.index ?? 0;
         }
+      }
+      if (stockPricing.price !== "") payload.price = Number(stockPricing.price);
+      if (stockPricing.salePrice !== "") payload.salePrice = Number(stockPricing.salePrice);
+      if (stockPricing.purchasePrice !== "") {
+        payload.purchasePrice = Number(stockPricing.purchasePrice);
       }
 
       const res = await adminApi.adjustHubInventoryStock(stockRow._id, payload);
@@ -354,6 +369,11 @@ const HubInventoryPage = () => {
       });
     }
     fields.push({ key: "stockDelta", label: "Stock Delta (+/-)", type: "number" });
+    fields.push(
+      { key: "price", label: "MRP (optional)", type: "number" },
+      { key: "salePrice", label: "Sale price (optional)", type: "number" },
+      { key: "purchasePrice", label: "Purchase price (optional)", type: "number" },
+    );
     return fields;
   }, [stockHasVariants, stockVariants]);
 
@@ -530,10 +550,16 @@ const HubInventoryPage = () => {
         values={{
           stockDelta,
           variantId: stockVariantId,
+          price: stockPricing.price,
+          salePrice: stockPricing.salePrice,
+          purchasePrice: stockPricing.purchasePrice,
         }}
         onChange={(key, value) => {
           if (key === "stockDelta") setStockDelta(value);
           if (key === "variantId") setStockVariantId(value);
+          if (key === "price" || key === "salePrice" || key === "purchasePrice") {
+            setStockPricing((prev) => ({ ...prev, [key]: value }));
+          }
         }}
         onSubmit={submitStock}
       />

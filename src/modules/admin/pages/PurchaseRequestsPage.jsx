@@ -1,86 +1,45 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { 
-  FileClock, 
-  ArrowRight, 
-  CheckCircle2, 
-  Truck, 
-  Store, 
-  PackageCheck, 
-  AlertCircle,
-  Clock
-} from "lucide-react";
+import { FileClock, CheckCircle2, Truck, Store, PackageCheck, AlertCircle } from "lucide-react";
 import SupplyModuleTable from "../components/supply/SupplyModuleTable";
 import {
   SupplyConfirmModal,
   SupplyFormModal,
   SupplyInfoModal,
-  SupplyDetailsModal,
 } from "../components/supply/SupplyActionModals";
+import PurchaseRequestDetailModal from "../components/PurchaseRequestDetailModal";
 import { adminApi } from "../services/adminApi";
-import { motion, AnimatePresence } from "framer-motion";
+import { formatInr, formatPrDate, prStatusLabel } from "@shared/utils/purchaseRequestFormat";
 
-const labelToStatus = (value) => {
-  const v = String(value || "").trim();
-  if (!v) return "created";
-  const map = {
-    Pending: "created",
-    Assigned: "pickup_assigned",
-    "In Transit": "picked",
-    Cancelled: "cancelled",
-    Verified: "verified",
-    "Received at Hub": "received_at_hub"
-  };
-  return map[v] || v.toLowerCase().replace(/\s+/g, "_");
-};
-
-const statusToLabel = (value) => {
-  const map = {
-    created: "Pending",
-    vendor_confirmed: "Vendor Confirmed",
-    pickup_assigned: "Assigned",
-    picked: "In Transit",
-    hub_delivered: "At Hub Gate",
-    received_at_hub: "Received at Hub",
-    verified: "Verified & Stocked",
-    closed: "Closed",
-    cancelled: "Cancelled",
-    exception: "Exception",
-  };
-  return map[value] || value;
-};
+const statusToLabel = (value) => prStatusLabel(value);
 
 const PurchaseRequestsPage = () => {
   const [rows, setRows] = useState([]);
   const [sellers, setSellers] = useState([]);
   const [pickupPartners, setPickupPartners] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [assignOpen, setAssignOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [currentRow, setCurrentRow] = useState(null);
+  const [detailRow, setDetailRow] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [assignForm, setAssignForm] = useState({ pickupPartnerId: "" });
   const [vendorOpen, setVendorOpen] = useState(false);
   const [vendorForm, setVendorForm] = useState({ vendorId: "" });
   const [infoOpen, setInfoOpen] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const fetchRows = async () => {
     try {
       const res = await adminApi.getPurchaseRequests({ page: 1, limit: 200 });
-      let payload = res?.data?.result || res?.data?.results || {};
-      
-      // Handle both { items: [] } and naked array formats
-      let items = [];
-      if (Array.isArray(payload)) {
-        items = payload;
-      } else if (payload && Array.isArray(payload.items)) {
-        items = payload.items;
-      }
-      
+      const payload = res?.data?.result || res?.data?.results || {};
+      const items = Array.isArray(payload) ? payload : Array.isArray(payload.items) ? payload.items : [];
       setRows(
         items.map((item) => ({
           ...item,
-          statusLabel: statusToLabel(item.status),
+          statusLabel: item.statusLabel || statusToLabel(item.status),
           rawStatus: item.status,
           quantity: Number(item.quantity || 0),
         })),
@@ -113,15 +72,41 @@ const PurchaseRequestsPage = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      fetchRows();
-    }, 15000);
+    const timer = setInterval(fetchRows, 15000);
     return () => clearInterval(timer);
   }, []);
 
+  const filteredRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((row) => {
+      if (statusFilter !== "all" && row.rawStatus !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        String(row.requestId || "").toLowerCase().includes(q) ||
+        String(row.vendorName || "").toLowerCase().includes(q) ||
+        String(row.product || "").toLowerCase().includes(q)
+      );
+    });
+  }, [rows, statusFilter, search]);
+
+  const openDetails = async (row) => {
+    setCurrentRow(row);
+    setDetailsOpen(true);
+    setDetailRow(row);
+    setDetailLoading(true);
+    try {
+      const res = await adminApi.getPurchaseRequestById(row._id);
+      const detail = res?.data?.result || res?.data;
+      if (detail) setDetailRow(detail);
+    } catch {
+      toast.error("Could not load full request history");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const openAssign = (row) => {
     setCurrentRow(row);
-    // Initialize with first partner if available
     setAssignForm({ pickupPartnerId: pickupPartners[0]?._id || "" });
     setAssignOpen(true);
   };
@@ -137,7 +122,7 @@ const PurchaseRequestsPage = () => {
       const res = await adminApi.assignPurchasePickupPartner(currentRow._id, { pickupPartnerId });
       const otp = res?.data?.result?.pickupOtp;
       setAssignOpen(false);
-      setInfoMessage(`Pickup Assigned. Share this OTP with Partner for verification: ${otp || 'N/A'}`);
+      setInfoMessage(`Pickup assigned. Share OTP with partner: ${otp || "N/A"}`);
       setInfoOpen(true);
       fetchRows();
     } catch (err) {
@@ -147,7 +132,6 @@ const PurchaseRequestsPage = () => {
 
   const openAssignVendor = (row) => {
     setCurrentRow(row);
-    // Initialize with first seller id if available
     setVendorForm({ vendorId: sellers[0]?._id || "" });
     setVendorOpen(true);
   };
@@ -161,12 +145,12 @@ const PurchaseRequestsPage = () => {
     }
     try {
       await adminApi.assignPurchaseVendor(currentRow._id, { vendorId });
-      const vendorName = sellers.find(s => s._id === vendorId)?.shopName || vendorId;
+      const vendorName = sellers.find((s) => s._id === vendorId)?.shopName || vendorId;
       setVendorOpen(false);
-      setInfoMessage(`Vendor "${vendorName}" assigned successfully. The request has been moved to procurement.`);
+      setInfoMessage(`Vendor "${vendorName}" assigned successfully.`);
       setInfoOpen(true);
       fetchRows();
-    } catch (err) {
+    } catch {
       toast.error("Vendor assignment failed");
     }
   };
@@ -174,12 +158,10 @@ const PurchaseRequestsPage = () => {
   const markReceivedAtHub = async (row) => {
     const loadingToast = toast.loading("Processing hub inward...");
     try {
-      console.log("[markReceivedAtHub] Processing ID:", row._id);
       await adminApi.receivePurchaseRequestAtHub(row._id, { items: [] });
-      toast.success(`Gate Pass Verified. Item ${row.requestId} is now inside the Hub.`, { id: loadingToast });
+      toast.success(`Received at hub · ${row.requestId}`, { id: loadingToast });
       fetchRows();
     } catch (err) {
-      console.error("[markReceivedAtHub] Error:", err.response?.data || err.message);
       toast.error(err.response?.data?.message || "Inward failed", { id: loadingToast });
     }
   };
@@ -187,67 +169,141 @@ const PurchaseRequestsPage = () => {
   const markVerified = async (row) => {
     const loadingToast = toast.loading("Verifying and updating stock...");
     try {
-      console.log("[markVerified] Processing ID:", row._id);
       await adminApi.verifyPurchaseRequestInward(row._id, { verified: true });
-      toast.success(`Verification Success. Stock for ${row.product || 'the product'} has been added to Hub Inventory.`, { id: loadingToast });
+      toast.success(`Verified & stocked · ${row.product || row.requestId}`, { id: loadingToast });
       fetchRows();
     } catch (err) {
-      console.error("[markVerified] Error:", err.response?.data || err.message);
-      toast.error(err.response?.data?.message || "Verification and stock update failed", { id: loadingToast });
+      toast.error(err.response?.data?.message || "Verification failed", { id: loadingToast });
     }
   };
 
   const stats = useMemo(() => {
-    const total = rows.length;
-    const stocked = rows.filter(r => r.rawStatus === 'verified').length;
+    const open = rows.filter((r) => !["verified", "closed", "cancelled"].includes(r.rawStatus));
     return [
-      { label: "Total Requests", value: String(total) },
-      { label: "Awaiting Action", value: String(rows.filter(r => r.rawStatus === 'created').length) },
-      { label: "In-Transit", value: String(rows.filter(r => r.rawStatus === 'picked' || r.rawStatus === 'pickup_assigned').length) },
-      { label: "Stocked", value: String(stocked) },
+      { label: "Total requests", value: String(rows.length) },
+      { label: "Awaiting vendor", value: String(rows.filter((r) => r.rawStatus === "created").length) },
+      { label: "In transit", value: String(rows.filter((r) => ["pickup_assigned", "picked", "hub_delivered"].includes(r.rawStatus)).length) },
+      { label: "Stocked", value: String(rows.filter((r) => r.rawStatus === "verified").length) },
+      { label: "Open pipeline", value: String(open.length) },
     ];
   }, [rows]);
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
-            <FileClock size={24} />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 leading-none mb-1">Inward Command Center</h1>
-            <p className="text-xs text-slate-400 font-medium">Manage end-to-end product lifecycle from Vendor to Hub Inventory</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-            <div className="h-10 w-[1px] bg-slate-100 hidden md:block" />
-            <div className="flex -space-x-2">
-                {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-8 w-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">
-                        {i + 1}
-                    </div>
-                ))}
+      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <FileClock size={22} />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden md:block">Active Pipeline Flow</p>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Purchase requests</h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Track procurement from vendor confirmation through hub stocking
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search ID, vendor, product…"
+              className="h-10 min-w-[200px] rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-indigo-400"
+            >
+              <option value="all">All statuses</option>
+              <option value="created">Pending vendor</option>
+              <option value="vendor_confirmed">Vendor confirmed</option>
+              <option value="pickup_assigned">Pickup assigned</option>
+              <option value="picked">In transit</option>
+              <option value="hub_delivered">At hub gate</option>
+              <option value="received_at_hub">Received at hub</option>
+              <option value="verified">Verified</option>
+              <option value="exception">Exception</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <SupplyModuleTable
-        title="Purchase Requests"
-        subtitle="Operational Timeline"
+        title="Operational timeline"
+        subtitle={`${filteredRows.length} request(s) · auto-refresh every 15s`}
         icon={FileClock}
         stats={stats}
+        rowKey="_id"
         columns={[
-          { key: "requestId", label: "Request ID" },
-          { key: "vendorName", label: "Vendor" },
-          { key: "product", label: "Product & Spec" },
-          { key: "quantity", label: "Qty" },
-          { key: "unitCost", label: "Cost (Base)" },
-          { key: "gstAmount", label: "GST" },
-          { key: "statusLabel", label: "Inventory Stage" },
+          {
+            key: "requestId",
+            label: "Request",
+            render: (row) => (
+              <div>
+                <p className="text-sm font-bold text-slate-900">{row.requestId}</p>
+                <p className="text-xs text-slate-500">{formatPrDate(row.createdAt)}</p>
+              </div>
+            ),
+          },
+          {
+            key: "vendorName",
+            label: "Vendor",
+            render: (row) => (
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{row.vendorName}</p>
+                {row.confirmedAt || row.dates?.confirmedAt ? (
+                  <p className="text-xs text-emerald-600">
+                    Confirmed {formatPrDate(row.confirmedAt || row.dates?.confirmedAt)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-amber-600">Awaiting confirm</p>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "product",
+            label: "Product",
+            render: (row) => (
+              <div>
+                <p className="text-sm font-medium text-slate-800">{row.product}</p>
+                <p className="text-xs text-slate-500">Qty {row.quantity}</p>
+              </div>
+            ),
+          },
+          {
+            key: "unitCost",
+            label: "Pricing",
+            render: (row) => (
+              <div className="text-sm">
+                <p className="font-semibold text-slate-800">₹{formatInr(row.unitCost)} / unit</p>
+                <p className="text-xs text-slate-500">
+                  GST ₹{formatInr(row.gstTotal ?? row.gstAmount)} · Total ₹{formatInr(row.totalCost)}
+                </p>
+              </div>
+            ),
+          },
+          {
+            key: "pickupPartnerName",
+            label: "Pickup",
+            render: (row) =>
+              row.pickupPartnerName ? (
+                <div className="text-sm">
+                  <p className="font-medium text-slate-800">{row.pickupPartnerName}</p>
+                  {row.dates?.pickupAssignedAt ? (
+                    <p className="text-xs text-slate-500">{formatPrDate(row.dates.pickupAssignedAt)}</p>
+                  ) : null}
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">—</span>
+              ),
+          },
+          { key: "statusLabel", label: "Stage" },
         ]}
-        rows={rows}
+        rows={filteredRows}
         statusColumn="statusLabel"
         renderActions={(row) => {
           const st = row.rawStatus;
@@ -258,56 +314,61 @@ const PurchaseRequestsPage = () => {
           const needsFinalVerify = st === "received_at_hub";
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {needsVendor && (
                 <button
+                  type="button"
                   onClick={() => openAssignVendor(row)}
-                  className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 shadow-lg shadow-amber-200 transition-all"
+                  className="inline-flex items-center gap-1.5 bg-amber-500 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-amber-600"
                 >
-                  <Store size={14} /> Assign Vendor
+                  <Store size={14} /> Assign vendor
                 </button>
               )}
-
               {needsPickup && (
                 <button
+                  type="button"
                   onClick={() => openAssign(row)}
-                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all"
+                  className="inline-flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700"
                 >
-                  <Truck size={14} /> Assign Pickup
+                  <Truck size={14} /> Assign pickup
                 </button>
               )}
-
               {needsReceive && (
                 <button
+                  type="button"
                   onClick={() => markReceivedAtHub(row)}
-                  className="flex items-center gap-2 bg-sky-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-sky-700 shadow-lg shadow-sky-200 transition-all"
+                  className="inline-flex items-center gap-1.5 bg-sky-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-sky-700"
                 >
-                  <PackageCheck size={14} /> Mark Received
+                  <PackageCheck size={14} /> Receive
                 </button>
               )}
-
               {needsFinalVerify && (
                 <button
+                  type="button"
                   onClick={() => markVerified(row)}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-200 animate-pulse transition-all"
+                  className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700"
                 >
-                  <CheckCircle2 size={14} /> Verify & Stock Add
+                  <CheckCircle2 size={14} /> Verify & stock
                 </button>
               )}
-
               <button
-                onClick={() => { setCurrentRow(row); setDetailsOpen(true); }}
-                className="flex items-center gap-2 border border-slate-200 text-slate-600 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                type="button"
+                onClick={() => openDetails(row)}
+                className="border border-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-slate-50"
               >
-                View Details
+                Details & history
               </button>
-
               {!isTerminal && (
                 <button
-                  onClick={() => { setCurrentRow(row); setCancelOpen(true); }}
-                  className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setCurrentRow(row);
+                    setCancelOpen(true);
+                  }}
+                  className="p-2 text-slate-400 hover:text-rose-500"
+                  title="Cancel request"
                 >
-                  <AlertCircle size={18} />
+                  <AlertCircle size={16} />
                 </button>
               )}
             </div>
@@ -315,99 +376,85 @@ const PurchaseRequestsPage = () => {
         }}
       />
 
-      {/* Modals remain mostly similar but with better styling context */}
       <SupplyFormModal
         isOpen={vendorOpen}
         onClose={() => setVendorOpen(false)}
-        title="Assign Merchant Partner"
-        submitLabel="Confirm Assignment"
+        title="Assign vendor"
+        submitLabel="Confirm"
         fields={[
           {
             key: "vendorId",
-            label: "Available Vendors",
+            label: "Vendor",
             type: "select",
             options: [
-              { value: "", label: "Select a Vendor..." },
+              { value: "", label: "Select vendor…" },
               ...sellers.map((s) => ({
                 value: s._id,
                 label: `${s.shopName || s.name} (${s.email})`,
-              }))
+              })),
             ],
           },
         ]}
         values={vendorForm}
-        onChange={(k, v) => setVendorForm(prev => ({ ...prev, [k]: v }))}
+        onChange={(k, v) => setVendorForm((prev) => ({ ...prev, [k]: v }))}
         onSubmit={submitAssignVendor}
       />
 
       <SupplyFormModal
         isOpen={assignOpen}
         onClose={() => setAssignOpen(false)}
-        title="Select Pickup Partner"
-        submitLabel="Assign Partner"
+        title="Assign pickup partner"
+        submitLabel="Assign"
         fields={[
           {
             key: "pickupPartnerId",
-            label: "Nearby Partners",
+            label: "Partner",
             type: "select",
             options: [
-              { value: "", label: "Select a Partner..." },
+              { value: "", label: "Select partner…" },
               ...pickupPartners.map((p) => ({
                 value: p._id,
-                label: `${p.partnerName || p.name} - ${p.phone}`,
-              }))
+                label: `${p.partnerName || p.name} · ${p.phone}`,
+              })),
             ],
           },
         ]}
         values={assignForm}
-        onChange={(k, v) => setAssignForm(prev => ({ ...prev, [k]: v }))}
+        onChange={(k, v) => setAssignForm((prev) => ({ ...prev, [k]: v }))}
         onSubmit={submitAssign}
       />
 
       <SupplyConfirmModal
         isOpen={cancelOpen}
         onClose={() => setCancelOpen(false)}
-        title="Request Cancellation"
-        message={`Warning: Cancelling request ${currentRow?.requestId} will stop the inward process. Continue?`}
-        confirmLabel="Yes, Cancel"
+        title="Cancel request"
+        message={`Cancel ${currentRow?.requestId}? This stops the inward pipeline.`}
+        confirmLabel="Yes, cancel"
         onConfirm={async () => {
-            await adminApi.updatePurchaseRequestStatus(currentRow._id, "cancelled");
-            setCancelOpen(false);
-            fetchRows();
+          await adminApi.updatePurchaseRequestStatus(currentRow._id, "cancelled");
+          setCancelOpen(false);
+          fetchRows();
         }}
       />
 
       <SupplyInfoModal
         isOpen={infoOpen}
         onClose={() => setInfoOpen(false)}
-        title="Operation Status"
+        title="Status"
         message={infoMessage}
       />
 
-      <SupplyDetailsModal
+      <PurchaseRequestDetailModal
         isOpen={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        title={`Request Details - ${currentRow?.requestId}`}
-        data={[
-          { label: "Request ID", value: currentRow?.requestId },
-          { label: "Created At", value: currentRow?.createdAt ? new Date(currentRow.createdAt).toLocaleString() : "N/A" },
-          { label: "Vendor / Seller", value: currentRow?.vendorName, fullWidth: true },
-          { label: "Product", value: currentRow?.product },
-          { label: "Quantity", value: `${currentRow?.quantity} Units` },
-          { label: "Unit Cost", value: `₹${currentRow?.unitCost || 0}` },
-          { label: "GST Rate", value: `${currentRow?.gstRate || 0}%` },
-          { label: "GST Amount", value: `₹${currentRow?.gstAmount || 0}` },
-          { label: "Total Cost", value: `₹${(currentRow?.unitCost || 0) * (currentRow?.quantity || 0) + (currentRow?.gstAmount || 0)}` },
-          { label: "Current Stage", value: currentRow?.statusLabel },
-          { label: "Pickup Partner", value: currentRow?.pickupPartnerName || "Unassigned" },
-          { label: "ETA", value: currentRow?.eta ? new Date(currentRow.eta).toLocaleString() : "N/A" },
-          { label: "Notes", value: currentRow?.notes || "No notes added", fullWidth: true },
-          { label: "Exception Reason", value: currentRow?.exceptionReason, fullWidth: true },
-        ]}
+        onClose={() => {
+          setDetailsOpen(false);
+          setDetailRow(null);
+        }}
+        row={detailRow}
+        loading={detailLoading}
       />
     </div>
   );
 };
 
 export default PurchaseRequestsPage;
-

@@ -45,6 +45,8 @@ import {
   variantPricesList,
   variantPriceRangeLabel,
 } from "../utils/sellerProductForm";
+import VariantGstFields, { variantGstLabel } from "@shared/components/VariantGstFields";
+import { useGstRates } from "@shared/hooks/useGstRates";
 
 import { MagicCard } from "@/components/ui/magic-card";
 import { BlurFade } from "@/components/ui/blur-fade";
@@ -57,6 +59,7 @@ const ProductManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.isVerified;
+  const gstRates = useGstRates();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const qFromUrl = searchParams.get("q") || "";
@@ -208,7 +211,7 @@ const ProductManagement = () => {
         id: Date.now() + i,
         name: v.name || "",
         unit: v.unit || master.unit || prev.unit,
-        price: v.price || "",
+        supplyPrice: v.supplyPrice ?? v.price ?? "",
         salePrice: v.salePrice || "",
         purchasePrice: v.purchasePrice || "",
         stock: "", // Seller must enter their own stock
@@ -275,6 +278,12 @@ const ProductManagement = () => {
 
   const handleSave = async () => {
     if (isSaving) return;
+    if (!isVerified) {
+      toast.error(
+        "Your profile is not approved yet. You cannot add or update products until admin verifies your account.",
+      );
+      return;
+    }
     const catalogLocked = Boolean(editingItem && isCatalogLinkedListing(editingItem));
     const missing = catalogLocked
       ? validateCatalogLinkedSellerForm(formData)
@@ -368,6 +377,12 @@ const ProductManagement = () => {
   };
 
   const openEditModal = (item = null) => {
+    if (!isVerified) {
+      toast.error(
+        "Your profile is not approved yet. You cannot add or update products until admin verifies your account.",
+      );
+      return;
+    }
     setFormData(
       item
         ? productToSellerForm(item)
@@ -384,7 +399,7 @@ const ProductManagement = () => {
   const formSummary = useMemo(() => {
     const variants = formData.variants || [];
     const totalStock = totalVariantStock(variants);
-    const prices = variants.map((v) => Number(v.price) || 0).filter((n) => n > 0);
+    const prices = variants.map((v) => Number(v.supplyPrice ?? v.price) || 0).filter((n) => n > 0);
     const minP = prices.length ? Math.min(...prices) : 0;
     const maxP = prices.length ? Math.max(...prices) : 0;
     const priceLabel =
@@ -416,12 +431,12 @@ const ProductManagement = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Inventory Management</h2>
-          <p className="text-sm font-medium text-slate-500 mt-1">Track, manage and optimize your hyperlocal stock.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">My Products</h2>
+          <p className="text-sm sm:text-base text-slate-500 mt-1">Manage supply price and stock for your listings.</p>
         </div>
         <div className="flex items-center gap-3">
           <ShimmerButton onClick={exportProducts} className="shadow-2xl" background="white" color="black">
-            <span className="whitespace-pre-wrap text-center text-xs font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
+            <span className="whitespace-pre-wrap text-center text-sm font-semibold text-slate-900 flex items-center gap-2">
               <HiOutlineArrowPath className="h-4 w-4" /> Export CSV
             </span>
           </ShimmerButton>
@@ -432,12 +447,12 @@ const ProductManagement = () => {
             background="white"
             color="black"
           >
-            <span className="whitespace-pre-wrap text-center text-xs font-bold uppercase tracking-widest text-slate-900 flex items-center gap-2">
+            <span className="whitespace-pre-wrap text-center text-sm font-semibold text-slate-900 flex items-center gap-2">
               <HiOutlineSquaresPlus className="h-4 w-4" /> Hub Catalog
             </span>
           </ShimmerButton>
           <ShimmerButton disabled={!isVerified} onClick={() => openEditModal()} className="shadow-2xl">
-            <span className="whitespace-pre-wrap text-center text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+            <span className="whitespace-pre-wrap text-center text-sm font-semibold text-white flex items-center gap-2">
               <HiOutlinePlus className="h-4 w-4" /> Add New Product
             </span>
           </ShimmerButton>
@@ -447,7 +462,9 @@ const ProductManagement = () => {
       {!isVerified && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800">
           <HiOutlineExclamationCircle className="h-5 w-5 shrink-0" />
-          <p className="text-sm font-bold">Your account is pending admin approval. You can prepare products but they won't be visible to customers until verified.</p>
+          <p className="text-sm font-bold">
+            Your profile is pending admin approval. You cannot add products or hub catalog listings until admin verifies your account.
+          </p>
         </div>
       )}
 
@@ -473,8 +490,8 @@ const ProductManagement = () => {
                     <stat.icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">{stat.label}</p>
-                    <h4 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{stat.val}</h4>
+                    <p className="text-xs sm:text-sm font-medium text-slate-500">{stat.label}</p>
+                    <h4 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{stat.val}</h4>
                   </div>
                 </div>
               </MagicCard>
@@ -499,7 +516,7 @@ const ProductManagement = () => {
             </div>
             <div className="relative flex gap-2 shrink-0 w-full lg:w-auto">
               <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
-                className="flex-1 lg:flex-none px-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer">
+                className="flex-1 lg:flex-none px-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-lg text-sm font-medium text-slate-700 outline-none appearance-none cursor-pointer">
                 <option value="all">All Categories</option>
                 {categories.map((h) => (
                   <optgroup key={h._id || h.id} label={h.name}>
@@ -511,7 +528,7 @@ const ProductManagement = () => {
                 ))}
               </select>
               <button onClick={() => setIsFilterOpen((prev) => !prev)}
-                className="flex items-center space-x-2 px-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                className="flex items-center space-x-2 px-4 py-2.5 bg-white ring-1 ring-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
                 <HiOutlineFunnel className="h-4 w-4" /> <span>Filters</span>
               </button>
             </div>
@@ -534,47 +551,67 @@ const ProductManagement = () => {
                     <div className="flex items-center gap-2 min-w-0">
                       <h4 className="text-base font-bold text-slate-900 truncate">{p.name}</h4>
                       {isCatalogLinkedListing(p) && (
-                        <Badge variant="info" className="shrink-0 text-[8px]">Hub</Badge>
+                        <Badge variant="info" className="shrink-0 text-xs">Hub</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{variantPriceRangeLabel(p)}</p>
-                    <p className="text-xs text-slate-500">{p.categoryId?.name || "N/A"}</p>
+                    <p className="text-sm text-slate-600 mt-0.5">{variantPriceRangeLabel(p)}</p>
+                    <p className="text-sm text-slate-500">{p.categoryId?.name || "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center border-t border-slate-50 pt-3 mt-1">
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-400">Supply price</span>
-                    <span className="text-sm font-black text-slate-900">{variantPriceRangeLabel(p)}</span>
+                    <span className="text-xs font-medium text-slate-500">Supply price</span>
+                    <span className="text-base font-semibold text-slate-900">{variantPriceRangeLabel(p)}</span>
                     {(p.variants?.length || 0) > 1 && (
-                      <span className="text-[9px] text-slate-500">{p.variants.length} variants</span>
+                      <span className="text-xs text-slate-500">{p.variants.length} variants</span>
                     )}
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold text-slate-400">Stock</span>
-                    <span className={cn("text-base font-black", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
+                    <span className="text-xs font-medium text-slate-500">Stock</span>
+                    <span className={cn("text-lg font-semibold", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => openEditModal(p)} className="p-2.5 hover:bg-slate-50 text-slate-600 ring-1 ring-slate-200 rounded-xl transition-all"><HiOutlinePencilSquare className="h-4 w-4" /></button>
-                    <button onClick={() => handleDeleteClick(p)} className="p-2.5 hover:bg-rose-50 hover:text-rose-600 text-slate-600 ring-1 ring-slate-200 rounded-xl transition-all"><HiOutlineTrash className="h-4 w-4" /></button>
+                    <button
+                      type="button"
+                      disabled={!isVerified}
+                      onClick={() => openEditModal(p)}
+                      className={cn(
+                        "p-2.5 hover:bg-slate-50 text-slate-600 ring-1 ring-slate-200 rounded-xl transition-all",
+                        !isVerified && "opacity-50 cursor-not-allowed",
+                      )}
+                    >
+                      <HiOutlinePencilSquare className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isVerified}
+                      onClick={() => handleDeleteClick(p)}
+                      className={cn(
+                        "p-2.5 hover:bg-rose-50 hover:text-rose-600 text-slate-600 ring-1 ring-slate-200 rounded-xl transition-all",
+                        !isVerified && "opacity-50 cursor-not-allowed",
+                      )}
+                    >
+                      <HiOutlineTrash className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
             {filteredProducts.length === 0 && (
-              <p className="py-8 text-center text-slate-500 font-medium">No products found</p>
+              <p className="py-8 text-center text-sm text-slate-500">No products found</p>
             )}
           </div>
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border border-slate-200 border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest">Product</th>
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest">Variants</th>
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest">Category</th>
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest">Supply price</th>
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest text-center">Stock</th>
-                  <th className="px-6 py-4 text-sm font-black text-slate-900 uppercase tracking-widest text-right">Actions</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Product</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Variants</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Category</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Supply price</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">Stock</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -586,9 +623,9 @@ const ProductManagement = () => {
                           <img src={p.mainImage || p.galleryImages?.[0] || "https://images.unsplash.com/photo-1550989460-0adf9ea622e2"} alt={p.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         </div>
                         <div className="flex items-center gap-2">
-                          <p className="text-base font-medium text-slate-900">{p.name}</p>
+                          <p className="text-sm sm:text-base font-semibold text-slate-900">{p.name}</p>
                           {isCatalogLinkedListing(p) && (
-                            <Badge variant="info" className="text-[8px] shrink-0">Hub</Badge>
+                            <Badge variant="info" className="text-xs shrink-0">Hub</Badge>
                           )}
                         </div>
                       </div>
@@ -598,7 +635,7 @@ const ProductManagement = () => {
                         <button
                           type="button"
                           onClick={() => { setViewingVariants(p); setIsVariantsViewModalOpen(true); }}
-                          className="text-xs font-bold text-purple-700 underline underline-offset-2 hover:text-purple-900"
+                          className="text-sm font-medium text-purple-700 underline underline-offset-2 hover:text-purple-900"
                         >
                           {p.variants.length} variant{p.variants.length > 1 ? "s" : ""}
                         </button>
@@ -606,26 +643,49 @@ const ProductManagement = () => {
                         <span className="text-xs text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm">{p.categoryId?.name || "N/A"}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">{p.categoryId?.name || "N/A"}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-0.5 max-w-[120px]">
                         {variantPricesList(p).map((row, i) => (
-                          <div key={i} className="text-[10px] font-bold text-slate-800" title={row.name}>
+                          <div key={i} className="text-sm font-medium text-slate-800" title={row.name}>
                             {(p.variants?.length || 0) > 1 && (
                               <span className="text-slate-400 block truncate">{row.name}</span>
                             )}
                             <span>₹{row.display.toLocaleString("en-IN")}</span>
+                            <span className="text-[10px] text-amber-700">
+                              {row.gstEnabled && row.gstRate ? `${row.gstRate}% GST` : "No GST"}
+                            </span>
                           </div>
                         ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className={cn("text-base font-bold", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
+                      <span className={cn("text-base font-semibold", catalogStockOf(p) === 0 ? "text-rose-600" : catalogStockOf(p) <= 10 ? "text-amber-600" : "text-emerald-600")}>{catalogStockOf(p)}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <button onClick={() => openEditModal(p)} className="p-2 hover:bg-white hover:text-primary rounded-lg transition-all text-slate-600 ring-1 ring-slate-200"><HiOutlinePencilSquare className="h-4 w-4" /></button>
-                        <button onClick={() => handleDeleteClick(p)} className="p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all text-slate-600 ring-1 ring-slate-200"><HiOutlineTrash className="h-4 w-4" /></button>
+                        <button
+                          type="button"
+                          disabled={!isVerified}
+                          onClick={() => openEditModal(p)}
+                          className={cn(
+                            "p-2 hover:bg-white hover:text-primary rounded-lg transition-all text-slate-600 ring-1 ring-slate-200",
+                            !isVerified && "opacity-50 cursor-not-allowed",
+                          )}
+                        >
+                          <HiOutlinePencilSquare className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!isVerified}
+                          onClick={() => handleDeleteClick(p)}
+                          className={cn(
+                            "p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition-all text-slate-600 ring-1 ring-slate-200",
+                            !isVerified && "opacity-50 cursor-not-allowed",
+                          )}
+                        >
+                          <HiOutlineTrash className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -701,16 +761,16 @@ const ProductManagement = () => {
               {/* Live summary — variant-wise totals */}
               <div className="px-6 py-3 bg-gradient-to-r from-slate-50 to-indigo-50/40 border-b border-slate-100 grid grid-cols-3 gap-3">
                 <div className="text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Variants</p>
-                  <p className="text-sm font-black text-slate-900">{formSummary.variantCount}</p>
+                  <p className="text-sm font-medium text-slate-500">Variants</p>
+                  <p className="text-base font-semibold text-slate-900">{formSummary.variantCount}</p>
                 </div>
                 <div className="text-center border-x border-slate-200/80">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Supply prices</p>
-                  <p className="text-sm font-black text-emerald-700">{formSummary.priceLabel}</p>
+                  <p className="text-sm font-medium text-slate-500">Supply prices</p>
+                  <p className="text-base font-semibold text-emerald-700">{formSummary.priceLabel}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total stock (S)</p>
-                  <p className="text-sm font-black text-sky-700">{formSummary.totalStock}</p>
+                  <p className="text-sm font-medium text-slate-500">Total stock</p>
+                  <p className="text-base font-semibold text-sky-700">{formSummary.totalStock}</p>
                 </div>
               </div>
 
@@ -721,7 +781,7 @@ const ProductManagement = () => {
                   onTouchMove={(e) => e.stopPropagation()}
                 >
                   {modalTabs.map((tab) => (
-                    <button key={tab.id} onClick={() => setModalTab(tab.id)} className={cn("w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left", modalTab === tab.id ? "bg-white text-primary shadow-sm ring-1 ring-slate-100" : "text-slate-600 hover:bg-slate-100")}>
+                    <button key={tab.id} onClick={() => setModalTab(tab.id)} className={cn("w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left", modalTab === tab.id ? "bg-white text-primary shadow-sm ring-1 ring-slate-100" : "text-slate-600 hover:bg-slate-100")}>
                       <tab.icon className="h-4 w-4" /> <span>{tab.label}</span>
                     </button>
                   ))}
@@ -735,7 +795,7 @@ const ProductManagement = () => {
                   {modalTab === "general" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Product title *</label>
+                        <label className="text-sm font-medium text-slate-600 ml-1">Product title *</label>
                         <input
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -755,9 +815,9 @@ const ProductManagement = () => {
                           <div className="flex items-center justify-between">
                             <h4 className="text-xs font-black text-white italic tracking-tight uppercase">Hub-First Mapping</h4>
                             {formData.masterProductId ? (
-                              <Badge variant="success" className="px-2 py-0.5 text-[8px] bg-emerald-500/20 text-emerald-400">Linked</Badge>
+                              <Badge variant="success" className="px-2 py-0.5 text-xs bg-emerald-500/20 text-emerald-400">Linked</Badge>
                             ) : (
-                              <Badge variant="warning" className="px-2 py-0.5 text-[8px] animate-pulse">Unlinked</Badge>
+                              <Badge variant="warning" className="px-2 py-0.5 text-xs animate-pulse">Unlinked</Badge>
                             )}
                           </div>
                           <div className="relative">
@@ -778,7 +838,7 @@ const ProductManagement = () => {
                                     <img src={m.mainImage} alt="" className="h-8 w-8 rounded object-cover" />
                                     <div>
                                       <p className="text-xs font-bold text-white">{m.name}</p>
-                                      <p className="text-[9px] text-slate-500 uppercase tracking-tighter">{m.categoryId?.name || 'Master'}</p>
+                                      <p className="text-xs text-slate-500 uppercase tracking-tighter">{m.categoryId?.name || 'Master'}</p>
                                     </div>
                                   </button>
                                 ))}
@@ -786,13 +846,13 @@ const ProductManagement = () => {
                             )}
                           </div>
                           {formData.masterProductId && (
-                            <button onClick={() => setFormData({ ...formData, masterProductId: null })} className="text-[9px] font-black text-slate-500 hover:text-rose-500 uppercase self-end">Clear Mapping</button>
+                            <button onClick={() => setFormData({ ...formData, masterProductId: null })} className="text-xs font-black text-slate-500 hover:text-rose-500 uppercase self-end">Clear Mapping</button>
                           )}
                         </div>
                       </div>
                       )}
 
-                      <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Description</label>
+                      <div className="space-y-1.5"><label className="text-sm font-medium text-slate-600 ml-1">Description</label>
                         <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} disabled={isCatalogLocked} className="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-semibold min-h-[120px] outline-none disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Product details..." />
                       </div>
                     </div>
@@ -803,7 +863,7 @@ const ProductManagement = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <h4 className="text-sm font-bold text-slate-900">Variants, supply price & stock</h4>
-                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          <p className="text-sm text-slate-500 font-medium mt-0.5">
                             Each row is one pack/size you sell. Set <strong>supply price</strong> (what hub pays you) and <strong>your stock</strong> per variant.
                           </p>
                         </div>
@@ -817,13 +877,14 @@ const ProductManagement = () => {
                                 id: Date.now(),
                                 name: "",
                                 unit: formData.unit || DEFAULT_PRODUCT_UNIT,
-                                price: "",
-                                salePrice: "",
+                                supplyPrice: "",
                                 stock: "",
+                                gstEnabled: false,
+                                gstRate: 0,
                               },
                             ])
                           }
-                          className="shrink-0 flex items-center gap-1 px-3 py-2 bg-primary/10 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/20"
+                          className="shrink-0 flex items-center gap-1 px-3 py-2 bg-primary/10 text-primary rounded-xl text-sm font-semibold hover:bg-primary/20"
                         >
                           <HiOutlinePlus className="h-3.5 w-3.5" /> Add variant
                         </button>
@@ -837,7 +898,7 @@ const ProductManagement = () => {
                             className="p-4 bg-slate-50 rounded-2xl border border-slate-100 grid grid-cols-12 gap-3 items-end"
                           >
                             <div className="col-span-12 sm:col-span-4 space-y-1">
-                              <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Name *</label>
+                              <label className="text-sm font-medium text-slate-500 ml-1">Name *</label>
                               <input
                                 value={variant.name}
                                 onChange={(e) => {
@@ -847,11 +908,11 @@ const ProductManagement = () => {
                                 }}
                                 disabled={isCatalogLocked}
                                 placeholder="e.g. 1 kg pack"
-                                className="w-full px-3 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-semibold outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-sm font-medium outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             </div>
                             <div className="col-span-6 sm:col-span-2 space-y-1">
-                              <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">Unit</label>
+                              <label className="text-sm font-medium text-slate-500 ml-1">Unit</label>
                               <select
                                 value={variant.unit || formData.unit}
                                 onChange={(e) => {
@@ -860,7 +921,7 @@ const ProductManagement = () => {
                                   updateVariants(next);
                                 }}
                                 disabled={isCatalogLocked}
-                                className="w-full px-2 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-xs font-bold outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="w-full px-2 py-2 bg-white ring-1 ring-slate-200 rounded-xl text-sm font-medium outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                               >
                                 {PRODUCT_UNITS.map((u) => (
                                   <option key={u.value} value={u.value}>{u.label}</option>
@@ -868,22 +929,22 @@ const ProductManagement = () => {
                               </select>
                             </div>
                             <div className="col-span-6 sm:col-span-3 space-y-1">
-                              <label className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Supply price (₹) *</label>
+                              <label className="text-sm font-medium text-emerald-700 ml-1">Supply price (₹) *</label>
                               <input
                                 type="number"
                                 min="0"
-                                value={variant.price}
+                                value={variant.supplyPrice ?? variant.price ?? ""}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   const next = [...formData.variants];
-                                  next[idx] = { ...next[idx], price: val, salePrice: val };
+                                  next[idx] = { ...next[idx], supplyPrice: val };
                                   updateVariants(next);
                                 }}
-                                className="w-full px-3 py-2 bg-white ring-1 ring-emerald-100 rounded-xl text-xs font-black outline-none"
+                                className="w-full px-3 py-2 bg-white ring-1 ring-emerald-100 rounded-xl text-sm font-medium outline-none"
                               />
                             </div>
                             <div className="col-span-6 sm:col-span-2 space-y-1">
-                              <label className="text-[8px] font-bold text-sky-600 uppercase tracking-widest ml-1">Stock *</label>
+                              <label className="text-sm font-medium text-sky-700 ml-1">Stock *</label>
                               <input
                                 type="number"
                                 min="0"
@@ -893,7 +954,7 @@ const ProductManagement = () => {
                                   next[idx] = { ...next[idx], stock: e.target.value };
                                   updateVariants(next);
                                 }}
-                                className="w-full px-3 py-2 bg-white ring-1 ring-sky-100 rounded-xl text-xs font-black outline-none"
+                                className="w-full px-3 py-2 bg-white ring-1 ring-sky-100 rounded-xl text-sm font-medium outline-none"
                               />
                             </div>
                             <div className="col-span-6 sm:col-span-1 flex justify-end">
@@ -908,6 +969,20 @@ const ProductManagement = () => {
                                 </button>
                               )}
                             </div>
+                            <div className="col-span-12">
+                              <VariantGstFields
+                                variant={variant}
+                                gstRates={gstRates}
+                                taxablePrice={Number(variant.supplyPrice ?? variant.price) || 0}
+                                compact
+                                disabled={isCatalogLocked}
+                                onChange={(patch) => {
+                                  const next = [...formData.variants];
+                                  next[idx] = { ...next[idx], ...patch };
+                                  updateVariants(next);
+                                }}
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -915,7 +990,7 @@ const ProductManagement = () => {
                       {!isCatalogLocked && (
                       <div className="grid grid-cols-2 gap-4 p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
                         <div>
-                          <p className="text-[9px] font-bold text-amber-700 uppercase tracking-widest">Default unit (product)</p>
+                          <p className="text-sm font-medium text-amber-800">Default unit (product)</p>
                           <select
                             value={formData.unit}
                             onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -927,7 +1002,7 @@ const ProductManagement = () => {
                           </select>
                         </div>
                         <div>
-                          <p className="text-[9px] font-bold text-rose-600 uppercase tracking-widest">Low stock alert</p>
+                          <p className="text-sm font-medium text-rose-700">Low stock alert</p>
                           <input
                             type="number"
                             min="0"
@@ -945,16 +1020,16 @@ const ProductManagement = () => {
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Brand</label>
+                          <label className="text-sm font-medium text-slate-600 ml-1">Brand</label>
                           <input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-semibold outline-none" placeholder="e.g. India Gate" />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Weight / pack info</label>
+                          <label className="text-sm font-medium text-slate-600 ml-1">Weight / pack info</label>
                           <input value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-semibold outline-none" placeholder="e.g. 5kg" />
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Tags (comma separated)</label>
+                        <label className="text-sm font-medium text-slate-600 ml-1">Tags (comma separated)</label>
                         <input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className="w-full px-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-semibold outline-none" placeholder="organic, basmati" />
                       </div>
                     </div>
@@ -963,7 +1038,7 @@ const ProductManagement = () => {
                   {modalTab === "category" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Parent category</label>
+                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-600 ml-1">Parent category</label>
                           <SearchableCategorySelect
                             value={formData.category}
                             onChange={id => setFormData({ ...formData, category: id, subcategory: "" })}
@@ -973,7 +1048,7 @@ const ProductManagement = () => {
                             emptyLabel="No parent category matches"
                           />
                         </div>
-                        <div className="space-y-1.5"><label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Subcategory</label>
+                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-600 ml-1">Subcategory</label>
                           <SearchableCategorySelect
                             value={formData.subcategory}
                             onChange={id => setFormData({ ...formData, subcategory: id })}
@@ -991,7 +1066,7 @@ const ProductManagement = () => {
                   {modalTab === "media" && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-2">
                       <div className="space-y-3">
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">Cover Photo</label>
+                        <label className="text-sm font-medium text-slate-600 ml-1">Cover Photo</label>
                         <div className="w-48 aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center cursor-pointer overflow-hidden relative group hover:border-primary">
                           <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={e => handleImageUpload(e, "main")} />
                           {formData.mainImage ? (
@@ -1018,10 +1093,10 @@ const ProductManagement = () => {
 
                       <div className="space-y-3">
                         <div className="flex items-end justify-between gap-3">
-                          <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">
+                          <label className="text-sm font-medium text-slate-600 ml-1">
                             Gallery Images <span className="text-slate-400 normal-case tracking-normal font-semibold">({(formData.galleryItems || []).length}/5)</span>
                           </label>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Select multiple</div>
+                          <div className="text-sm font-medium text-slate-500">Select multiple</div>
                         </div>
 
                         <div className={cn(
@@ -1070,15 +1145,15 @@ const ProductManagement = () => {
               </div>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-                <button onClick={() => setIsProductModalOpen(false)} className="px-6 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 uppercase tracking-widest">Cancel</button>
+                <button onClick={() => setIsProductModalOpen(false)} className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
                 {isCatalogLocked || modalTab === "details" ? (
-                  <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : isCatalogLocked ? "Save price & stock" : "Save Changes"}</button>
+                  <button onClick={handleSave} disabled={isSaving} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-sm font-semibold shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{isSaving ? "Saving..." : isCatalogLocked ? "Save price & stock" : "Save Changes"}</button>
                 ) : (
                   <button onClick={() => {
                     const tabIds = modalTabs.map((t) => t.id);
                     const currentIdx = tabIds.indexOf(modalTab);
                     if (currentIdx < tabIds.length - 1) setModalTab(tabIds[currentIdx + 1]);
-                  }} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-xs font-bold shadow-xl hover:-translate-y-0.5 transition-all uppercase tracking-widest">
+                  }} className="bg-slate-900 text-white px-10 py-2.5 rounded-xl text-sm font-semibold shadow-xl hover:-translate-y-0.5 transition-all">
                     Next
                   </button>
                 )}
@@ -1106,8 +1181,8 @@ const ProductManagement = () => {
         <div className="py-2 space-y-4">
           <div className="flex flex-wrap items-center gap-2 px-1">
             <span className="text-sm font-bold text-slate-900">{viewingVariants?.name}</span>
-            <Badge variant="primary" className="text-[9px]">{variantPriceRangeLabel(viewingVariants)}</Badge>
-            <span className="text-[10px] font-bold text-slate-400">
+            <Badge variant="primary" className="text-xs">{variantPriceRangeLabel(viewingVariants)}</Badge>
+            <span className="text-sm font-bold text-slate-400">
               Total stock: {totalVariantStock(viewingVariants?.variants || [])}
             </span>
           </div>
@@ -1115,29 +1190,29 @@ const ProductManagement = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Variant</th>
-                  <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Supply price</th>
-                  <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Stock</th>
-                  <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unit</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Variant</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">Supply price</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">Stock</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">Unit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {viewingVariants?.variants?.map((v, idx) => (
                   <tr key={v._id || idx} className="hover:bg-slate-50/30">
                     <td className="px-6 py-3">
-                      <span className="text-xs font-black text-slate-800">{v.name}</span>
+                      <span className="text-sm font-medium text-slate-800">{v.name}</span>
                     </td>
                     <td className="px-6 py-3 text-center">
-                      <span className="text-xs font-black text-emerald-700">
-                        ₹{(Number(v.price) || 0).toLocaleString("en-IN")}
+                      <span className="text-sm font-semibold text-emerald-700">
+                        ₹{(Number(v.supplyPrice ?? v.purchasePrice ?? v.price) || 0).toLocaleString("en-IN")}
                       </span>
                     </td>
                     <td className="px-6 py-3 text-center">
-                      <Badge variant={v.stock === 0 ? "rose" : v.stock <= 10 ? "amber" : "emerald"} className="text-[10px] font-black">
+                      <Badge variant={v.stock === 0 ? "rose" : v.stock <= 10 ? "amber" : "emerald"} className="text-sm font-semibold">
                         {v.stock} units
                       </Badge>
                     </td>
-                    <td className="px-6 py-3 text-right text-[10px] font-bold text-slate-600 uppercase">
+                    <td className="px-6 py-3 text-right text-sm font-bold text-slate-600 uppercase">
                       {v.unit || viewingVariants?.unit || "—"}
                     </td>
                   </tr>

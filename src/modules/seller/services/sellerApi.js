@@ -59,6 +59,7 @@ export const sellerApi = {
 
     // Procurement requests (seller-side SOP flow)
     getPurchaseRequests: (params) => axiosInstance.get('/seller/purchase-requests', { params }),
+    getPurchaseRequestById: (id) => axiosInstance.get(`/seller/purchase-requests/${id}`),
     respondPurchaseRequest: (id, data) => axiosInstance.post(`/seller/purchase-requests/${id}/respond`, data),
     markPurchaseRequestReady: (id, data) => axiosInstance.post(`/seller/purchase-requests/${id}/ready`, data),
     confirmPurchaseHandover: (id, data) => axiosInstance.post(`/seller/purchase-requests/${id}/handover`, data),

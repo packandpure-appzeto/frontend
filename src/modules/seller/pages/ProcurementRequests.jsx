@@ -6,6 +6,8 @@ import Input from "@shared/components/ui/Input";
 import { sellerApi } from "../services/sellerApi";
 import { useToast } from "@shared/components/ui/Toast";
 import { useAuth } from "@/core/context/AuthContext";
+import PurchaseRequestTimeline from "@shared/components/PurchaseRequestTimeline";
+import { formatPrDate } from "@shared/utils/purchaseRequestFormat";
 
 const STATUS_OPTIONS = [
   { label: "All", value: "all" },
@@ -265,10 +267,20 @@ const ProcurementRequests = () => {
                       <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] uppercase tracking-tighter">PR Task</span>
                       {row.requestId}
                     </p>
-                    <p className="mt-1 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                      Destination: <span className="text-indigo-600 font-black">{row.hubId}</span> · Issued:{" "}
-                      {row.createdAt ? new Date(row.createdAt).toLocaleDateString("en-IN") : "-"}
+                    <p className="mt-1 text-xs text-slate-500">
+                      Hub: <span className="font-semibold text-indigo-600">{row.hubId}</span>
+                      {" · "}Requested {formatPrDate(row.createdAt)}
+                      {(row.confirmedAt || row.dates?.confirmedAt) && (
+                        <>
+                          {" · "}Confirmed {formatPrDate(row.confirmedAt || row.dates?.confirmedAt)}
+                        </>
+                      )}
                     </p>
+                    {row.pricing?.grandTotal != null && (
+                      <p className="text-xs font-semibold text-emerald-700 mt-1">
+                        Order value ₹{Number(row.pricing.grandTotal).toLocaleString("en-IN")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={statusVariant(row.status)} className="font-black text-[10px] uppercase">{row.status.replace('_', ' ')}</Badge>
@@ -399,12 +411,18 @@ const ProcurementRequests = () => {
                   </div>
                 </div>
 
-                {row.pickupPartnerName || row.pickupPartnerPhone ? (
+                {row.pickupPartner?.name || row.pickupPartner?.phone ? (
                   <p className="mt-2 text-xs font-semibold text-slate-600">
-                    Pickup Partner: {row.pickupPartnerName || "N/A"}{" "}
-                    {row.pickupPartnerPhone ? `(${row.pickupPartnerPhone})` : ""}
+                    Pickup Partner: {row.pickupPartner?.name || "N/A"}{" "}
+                    {row.pickupPartner?.phone ? `(${row.pickupPartner.phone})` : ""}
                   </p>
                 ) : null}
+                {row.timeline?.length > 0 && (
+                  <div className="mt-4 rounded-xl bg-slate-50 p-3 border border-slate-100">
+                    <p className="text-xs font-bold text-slate-500 uppercase mb-2">Request history</p>
+                    <PurchaseRequestTimeline timeline={row.timeline} compact />
+                  </div>
+                )}
                 {row.status === "pickup_assigned" && row.pickupOtp ? (
                   <p className="mt-2 text-xs font-semibold text-slate-600">
                     Current Pickup OTP: {row.pickupOtp}

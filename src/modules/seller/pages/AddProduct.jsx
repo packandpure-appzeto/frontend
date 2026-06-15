@@ -18,13 +18,19 @@ import {
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/core/context/AuthContext";
 import { PRODUCT_UNITS, DEFAULT_PRODUCT_UNIT } from "@shared/constants/productUnits";
 import axiosInstance from "@core/api/axios";
 import { sellerApi } from "../services/sellerApi";
+import { HiOutlineExclamationCircle } from "react-icons/hi2";
+import VariantGstFields from "@shared/components/VariantGstFields";
+import { useGstRates } from "@shared/hooks/useGstRates";
 
 
 const AddProduct = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isVerified = user?.isVerified;
   const [modalTab, setModalTab] = useState("general");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,14 +59,15 @@ const AddProduct = () => {
         id: Date.now(),
         name: "Default",
         unit: DEFAULT_PRODUCT_UNIT,
-        price: "",
-        salePrice: "",
+        supplyPrice: "",
         stock: "",
+        gstEnabled: false,
+        gstRate: 0,
       },
     ],
   });
 
-  const [gstRates, setGstRates] = useState([0, 5, 12, 18, 28]);
+  const gstRates = useGstRates();
 
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -97,22 +104,16 @@ const AddProduct = () => {
       }
     };
     fetchCats();
-    const fetchGstRates = async () => {
-      try {
-        const res = await sellerApi.getSettings();
-        const data = res.data?.result ?? res.data;
-        if (data?.gstRates) setGstRates(data.gstRates);
-      } catch (err) {
-        console.error("Failed to fetch GST rates", err);
-      }
-    };
-    fetchGstRates();
   }, []);
 
   const categories = dbCategories;
 
   const handleSave = async () => {
     if (isSaving) return;
+    if (!isVerified) {
+      toast.error("Your profile is not approved yet. You cannot add products until admin verifies your account.");
+      return;
+    }
     // Validate required fields
     if (!formData.name) {
       toast.error("Please fill in the Product Title");
@@ -126,8 +127,9 @@ const AddProduct = () => {
     }
 
     const firstVariant = formData.variants[0] || {};
-    if (!firstVariant.price || !firstVariant.stock) {
-      toast.error("Main variant must have price and stock");
+    const firstSupply = Number(firstVariant.supplyPrice ?? firstVariant.price);
+    if (!Number.isFinite(firstSupply) || firstSupply <= 0 || !firstVariant.stock) {
+      toast.error("Main variant must have supply price and stock");
       return;
     }
 
@@ -135,26 +137,17 @@ const AddProduct = () => {
     try {
       const data = new FormData();
 
-      // Backend requires root-level `price` and `stock`. In this UI, sellers primarily edit the main variant.
-      // Sync root values from the first variant to avoid server-side validation errors.
-      const resolvedPrice =
+      const resolvedSupply =
         formData.price !== undefined && formData.price !== null && String(formData.price).trim() !== ""
           ? Number(formData.price)
-          : Number(firstVariant.price);
-      const resolvedSalePrice =
-        formData.salePrice !== undefined && formData.salePrice !== null && String(formData.salePrice).trim() !== ""
-          ? Number(formData.salePrice)
-          : firstVariant.salePrice !== undefined && firstVariant.salePrice !== null && String(firstVariant.salePrice).trim() !== ""
-            ? Number(firstVariant.salePrice)
-            : 0;
+          : firstSupply;
       const resolvedStock = (formData.variants || []).reduce(
         (sum, v) => sum + (Number(v.stock) || 0),
         0,
       );
 
       const fields = [
-        'name', 'description', 'price', 'salePrice',
-        'stock', 'lowStockAlert', 'unit', 'tags', 'weight',
+        'name', 'description', 'stock', 'lowStockAlert', 'unit', 'tags', 'weight',
         'brand', 'shelfLife', 'countryOfOrigin', 'fssaiLicense',
         'customerCare', 'masterProductId', 'status',
       ];
@@ -165,23 +158,28 @@ const AddProduct = () => {
         }
       });
 
-      // SYNC: Map seller's price to purchasePrice (SOP)
-      data.set("price", Number.isFinite(resolvedPrice) ? resolvedPrice : 0);
-      data.set("salePrice", Number.isFinite(resolvedSalePrice) ? resolvedSalePrice : 0);
+      data.set("supplyPrice", Number.isFinite(resolvedSupply) ? resolvedSupply : 0);
+      data.set("purchasePrice", Number.isFinite(resolvedSupply) ? resolvedSupply : 0);
+      data.set("price", Number.isFinite(resolvedSupply) ? resolvedSupply : 0);
       data.set("stock", Number.isFinite(resolvedStock) ? resolvedStock : 0);
-      data.set("purchasePrice", Number.isFinite(resolvedPrice) ? resolvedPrice : 0);
 
       data.append("categoryId", formData.category);
       data.append("subcategoryId", formData.subcategory);
       
-      // JSON strings - Ensure variants have purchasePrice
-      const syncedVariants = (formData.variants || []).map((v) => ({
-        name: v.name || 'Default',
-        unit: v.unit || formData.unit || DEFAULT_PRODUCT_UNIT,
-        price: Number(v.price) || resolvedPrice,
-        salePrice: Number(v.salePrice || v.price) || resolvedSalePrice,
-        stock: Number(v.stock) || 0,
-      }));
+      const syncedVariants = (formData.variants || []).map((v) => {
+        const supply = Number(v.supplyPrice ?? v.price) || resolvedSupply;
+        const gstEnabled = Boolean(v.gstEnabled);
+        return {
+          name: v.name || 'Default',
+          unit: v.unit || formData.unit || DEFAULT_PRODUCT_UNIT,
+          supplyPrice: supply,
+          purchasePrice: supply,
+          price: supply,
+          stock: Number(v.stock) || 0,
+          gstEnabled,
+          gstRate: gstEnabled ? Math.max(0, Number(v.gstRate) || 0) : 0,
+        };
+      });
       data.append("variants", JSON.stringify(syncedVariants));
 
       if (formData.mainImageFile) {
@@ -296,6 +294,19 @@ const AddProduct = () => {
   };
 
   const selectSuggestion = (prod) => {
+    const masterVariants =
+      Array.isArray(prod.variants) && prod.variants.length > 0
+        ? prod.variants.map((mv, i) => ({
+            id: Date.now() + i,
+            name: mv.name || "Default",
+            unit: mv.unit || prod.unit || DEFAULT_PRODUCT_UNIT,
+            supplyPrice: "",
+            stock: "",
+            gstEnabled: Boolean(mv.gstEnabled),
+            gstRate: Number(mv.gstRate) || 0,
+          }))
+        : null;
+
     setFormData(prev => ({
       ...prev,
       name: prod.name,
@@ -308,7 +319,8 @@ const AddProduct = () => {
       weight: prod.weight || '',
       unit: prod.unit || 'Pieces',
       tags: Array.isArray(prod.tags) ? prod.tags.join(", ") : (prod.tags || ''),
-      mainImage: prod.mainImage || null
+      mainImage: prod.mainImage || null,
+      variants: masterVariants || prev.variants,
     }));
     setShowSuggestions(false);
   };
@@ -330,7 +342,7 @@ const AddProduct = () => {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !isVerified}
             className="min-w-[140px]">
             {isSaving ? (
               <>
@@ -343,6 +355,15 @@ const AddProduct = () => {
           </Button>
         </div>
       </div>
+
+      {!isVerified && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800">
+          <HiOutlineExclamationCircle className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-bold">
+            Your profile is pending admin approval. You cannot add products until your account is verified.
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-slate-100">
         {/* Sidebar Tabs */}
@@ -603,9 +624,10 @@ const AddProduct = () => {
                           id: Date.now(),
                           name: "",
                           unit: formData.unit || DEFAULT_PRODUCT_UNIT,
-                          price: "",
-                          salePrice: "",
+                          supplyPrice: "",
                           stock: "",
+                          gstEnabled: false,
+                          gstRate: 0,
                         },
                       ],
                     })
@@ -642,11 +664,10 @@ const AddProduct = () => {
                       </label>
                       <input
                         type="number"
-                        value={variant.price}
+                        value={variant.supplyPrice ?? variant.price ?? ""}
                         onChange={(e) => {
                           const newVariants = [...formData.variants];
-                          newVariants[index].price = e.target.value;
-                          newVariants[index].salePrice = e.target.value;
+                          newVariants[index].supplyPrice = e.target.value;
                           setFormData({ ...formData, variants: newVariants });
                         }}
                         placeholder="500"
@@ -670,18 +691,6 @@ const AddProduct = () => {
                           <option key={u.value} value={u.value}>{u.label}</option>
                         ))}
                       </select>
-                    </div>
-                    <div className="col-span-6 md:col-span-2 space-y-1">
-                      <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                        Sale (auto)
-                      </label>
-                      <input
-                        type="number"
-                        value={variant.salePrice}
-                        readOnly
-                        placeholder="450"
-                        className="w-full px-3 py-2 bg-slate-50 ring-1 ring-slate-100 border-none rounded-xl text-xs font-bold text-slate-500 outline-none cursor-not-allowed"
-                      />
                     </div>
                     <div className="col-span-6 md:col-span-2 space-y-1">
                       <label className="text-xs font-bold text-slate-600 uppercase tracking-widest ml-1">
@@ -712,6 +721,19 @@ const AddProduct = () => {
                         className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
                         <HiOutlineTrash className="h-4 w-4" />
                       </button>
+                    </div>
+                    <div className="col-span-12">
+                      <VariantGstFields
+                        variant={variant}
+                        gstRates={gstRates}
+                        taxablePrice={Number(variant.supplyPrice ?? variant.price) || 0}
+                        compact
+                        onChange={(patch) => {
+                          const newVariants = [...formData.variants];
+                          newVariants[index] = { ...newVariants[index], ...patch };
+                          setFormData({ ...formData, variants: newVariants });
+                        }}
+                      />
                     </div>
                   </div>
                 ))}

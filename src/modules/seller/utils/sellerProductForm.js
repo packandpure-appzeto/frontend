@@ -29,9 +29,10 @@ export const EMPTY_SELLER_PRODUCT_FORM = {
       id: Date.now(),
       name: 'Default',
       unit: DEFAULT_PRODUCT_UNIT,
-      price: '',
-      salePrice: '',
+      supplyPrice: '',
       stock: '',
+      gstEnabled: false,
+      gstRate: 0,
     },
   ],
 };
@@ -40,15 +41,23 @@ export function totalVariantStock(variants = []) {
   return (variants || []).reduce((sum, v) => sum + (Number(v?.stock) || 0), 0);
 }
 
+export function resolveSupplyPrice(value) {
+  return (
+    Number(value?.supplyPrice ?? value?.purchasePrice ?? value?.price) || 0
+  );
+}
+
 export function variantPricesList(item) {
   const variants = Array.isArray(item?.variants) ? item.variants : [];
   if (!variants.length) {
-    const price = Number(item?.salePrice ?? item?.price) || 0;
+    const price = resolveSupplyPrice(item);
     return [{ name: 'Default', display: price }];
   }
   return variants.map((v, i) => ({
     name: String(v?.name || '').trim() || `Variant ${i + 1}`,
-    display: Number(v?.salePrice ?? v?.price) || 0,
+    display: resolveSupplyPrice(v),
+    gstEnabled: Boolean(v?.gstEnabled),
+    gstRate: Number(v?.gstRate) || 0,
   }));
 }
 
@@ -79,17 +88,19 @@ export function productToSellerForm(item) {
           id: v._id || `v-${i}-${Date.now()}`,
           name: v.name || '',
           unit: v.unit || item.unit || DEFAULT_PRODUCT_UNIT,
-          price: v.price ?? '',
-          salePrice: v.salePrice ?? v.price ?? '',
+          supplyPrice:
+            v.supplyPrice ?? v.purchasePrice ?? v.price ?? '',
           stock: Number.isFinite(Number(v.stock)) ? Number(v.stock) : '',
+          gstEnabled: Boolean(v.gstEnabled),
+          gstRate: Number(v.gstRate) || 0,
         }))
       : [
           {
             id: Date.now(),
             name: 'Default',
             unit: item.unit || DEFAULT_PRODUCT_UNIT,
-            price: item.price ?? '',
-            salePrice: item.salePrice ?? item.price ?? '',
+            supplyPrice:
+              item.supplyPrice ?? item.purchasePrice ?? item.price ?? '',
             stock: item.stock ?? '',
           },
         ];
@@ -99,8 +110,8 @@ export function productToSellerForm(item) {
   return {
     name: item.name || '',
     description: item.description || '',
-    price: variants[0]?.price ?? item.price ?? '',
-    salePrice: variants[0]?.salePrice ?? item.salePrice ?? '',
+    price: resolveSupplyPrice(variants[0]) || resolveSupplyPrice(item) || '',
+    salePrice: '',
     stock: totalStock,
     lowStockAlert: item.lowStockAlert ?? 5,
     unit: item.unit || DEFAULT_PRODUCT_UNIT,
@@ -139,7 +150,7 @@ export function validateSellerProductForm(formData) {
     variants.forEach((v, i) => {
       const label = variants.length > 1 ? `Variant ${i + 1}` : 'Variant';
       if (!String(v.name || '').trim()) missing.push(`${label} name`);
-      const price = Number(v.price);
+      const price = Number(v.supplyPrice ?? v.price);
       if (!Number.isFinite(price) || price <= 0) missing.push(`${label} supply price`);
       const stock = Number(v.stock);
       if (!Number.isFinite(stock) || stock < 0) missing.push(`${label} stock`);
@@ -173,14 +184,20 @@ export function buildCatalogLinkedSellerUpdateData(formData, editingItem) {
 
   const cleanVariants = formVariants.map((v, index) => {
     const existing = existingVariants[index] || {};
-    const price = Number(v.price) || 0;
+    const supply = Number(v.supplyPrice ?? v.price) || 0;
     return {
       ...(existing._id ? { _id: existing._id } : {}),
       name: String(existing.name || v.name || '').trim() || `Variant ${index + 1}`,
       unit: existing.unit || v.unit || editingItem?.unit || DEFAULT_PRODUCT_UNIT,
-      price,
-      salePrice: Number(v.salePrice ?? v.price) || price,
+      supplyPrice: supply,
+      purchasePrice: supply,
+      price: supply,
       stock: Number(v.stock) || 0,
+      gstEnabled: Boolean(v.gstEnabled ?? existing.gstEnabled),
+      gstRate:
+        (v.gstEnabled ?? existing.gstEnabled)
+          ? Math.max(0, Number(v.gstRate ?? existing.gstRate) || 0)
+          : 0,
     };
   });
 
@@ -189,9 +206,11 @@ export function buildCatalogLinkedSellerUpdateData(formData, editingItem) {
   const resolvedPrice = Number(first.price) || 0;
 
   const data = new FormData();
-  data.append('price', String(resolvedPrice));
-  data.append('salePrice', String(resolvedPrice));
+  data.append('supplyPrice', String(resolvedPrice));
   data.append('purchasePrice', String(resolvedPrice));
+  data.append('supplyPrice', String(resolvedPrice));
+  data.append('purchasePrice', String(resolvedPrice));
+  data.append('price', String(resolvedPrice));
   data.append('stock', String(totalStock));
   data.append('variants', JSON.stringify(cleanVariants));
 
@@ -203,24 +222,29 @@ export function buildSellerProductFormData(formData, { editingItem } = {}) {
   const variants = formData.variants || [];
   const totalStock = totalVariantStock(variants);
   const first = variants[0] || {};
-  const resolvedPrice = Number(first.price) || 0;
-  const resolvedSale = Number(first.salePrice ?? first.price) || resolvedPrice;
+  const resolvedPrice = Number(first.supplyPrice ?? first.price) || 0;
 
-  const cleanVariants = variants.map((v, index) => ({
-    name: String(v.name || '').trim() || `Variant ${index + 1}`,
-    unit: v.unit || formData.unit || DEFAULT_PRODUCT_UNIT,
-    price: Number(v.price) || resolvedPrice,
-    salePrice: Number(v.salePrice ?? v.price) || resolvedPrice,
-    stock: Number(v.stock) || 0,
-  }));
+  const cleanVariants = variants.map((v, index) => {
+    const supply = Number(v.supplyPrice ?? v.price) || resolvedPrice;
+    return {
+      name: String(v.name || '').trim() || `Variant ${index + 1}`,
+      unit: v.unit || formData.unit || DEFAULT_PRODUCT_UNIT,
+      supplyPrice: supply,
+      purchasePrice: supply,
+      price: supply,
+      stock: Number(v.stock) || 0,
+      gstEnabled: Boolean(v.gstEnabled),
+      gstRate: v.gstEnabled ? Math.max(0, Number(v.gstRate) || 0) : 0,
+    };
+  });
 
   const fields = {
     name: String(formData.name || '').trim(),
     description: String(formData.description || '').trim(),
-    price: resolvedPrice,
-    salePrice: resolvedSale,
-    stock: totalStock,
+    supplyPrice: resolvedPrice,
     purchasePrice: resolvedPrice,
+    price: resolvedPrice,
+    stock: totalStock,
     lowStockAlert: Number(formData.lowStockAlert) || 5,
     unit: formData.unit || DEFAULT_PRODUCT_UNIT,
     tags: String(formData.tags || '').trim(),
@@ -272,9 +296,11 @@ export function catalogVariantRowsFromMaster(master, existingListing = null) {
       return {
         name: String(mv?.name || '').trim() || `Variant ${index + 1}`,
         unit: mv?.unit || master?.unit || DEFAULT_PRODUCT_UNIT,
-        price:
-          match?.price ?? match?.salePrice ?? match?.purchasePrice ?? '',
+        supplyPrice:
+          match?.supplyPrice ?? match?.purchasePrice ?? match?.price ?? '',
         stock: Number.isFinite(Number(match?.stock)) ? Number(match.stock) : '',
+        gstEnabled: Boolean(match?.gstEnabled ?? mv?.gstEnabled),
+        gstRate: Number(match?.gstRate ?? mv?.gstRate) || 0,
       };
     });
   }
@@ -283,10 +309,10 @@ export function catalogVariantRowsFromMaster(master, existingListing = null) {
     {
       name: 'Default',
       unit: master?.unit || DEFAULT_PRODUCT_UNIT,
-      price:
+      supplyPrice:
+        existingListing?.supplyPrice ??
         existingListing?.purchasePrice ??
         existingListing?.price ??
-        existingListing?.salePrice ??
         '',
       stock: Number.isFinite(Number(existingListing?.stock))
         ? Number(existingListing.stock)
@@ -295,20 +321,54 @@ export function catalogVariantRowsFromMaster(master, existingListing = null) {
   ];
 }
 
+function catalogRowLabel(row, index, multi) {
+  if (row?.name) return String(row.name).trim();
+  return multi ? `Variant ${index + 1}` : 'Variant';
+}
+
+function catalogRowHasAnyInput(row) {
+  const priceRaw = row?.supplyPrice ?? row?.price;
+  const stockRaw = row?.stock;
+  const hasPrice =
+    priceRaw !== '' && priceRaw !== null && priceRaw !== undefined;
+  const hasStock =
+    stockRaw !== '' && stockRaw !== null && stockRaw !== undefined;
+  return hasPrice || hasStock;
+}
+
+/** Row is offered when supply price > 0 and stock is a valid number (0 allowed). */
+export function isCatalogVariantRowComplete(row) {
+  const price = Number(row?.supplyPrice ?? row?.price);
+  if (!Number.isFinite(price) || price <= 0) return false;
+  const stock = Number(row?.stock);
+  return Number.isFinite(stock) && stock >= 0;
+}
+
 export function validateCatalogListingRows(rows = []) {
   const missing = [];
+  const multi = rows.length > 1;
   if (!rows.length) missing.push('At least one variant');
+
+  const completeRows = rows.filter(isCatalogVariantRowComplete);
+  if (completeRows.length === 0) {
+    missing.push('At least one variant with supply price and stock');
+  }
+
   rows.forEach((row, index) => {
-    const label = rows.length > 1 ? `Variant ${index + 1}` : 'Variant';
-    const price = Number(row.price);
-    if (!Number.isFinite(price) || price <= 0) {
-      missing.push(`${label} supply price`);
-    }
-    const stock = Number(row.stock);
-    if (!Number.isFinite(stock) || stock < 0) {
-      missing.push(`${label} stock`);
+    if (!catalogRowHasAnyInput(row)) return;
+    const label = catalogRowLabel(row, index, multi);
+    if (!isCatalogVariantRowComplete(row)) {
+      const price = Number(row.supplyPrice ?? row.price);
+      if (!Number.isFinite(price) || price <= 0) {
+        missing.push(`${label} supply price`);
+      }
+      const stock = Number(row.stock);
+      if (!Number.isFinite(stock) || stock < 0) {
+        missing.push(`${label} stock`);
+      }
     }
   });
+
   return missing;
 }
 
@@ -317,17 +377,27 @@ export function buildCatalogListingFormData(master, variantRows, { existingListi
   const data = new FormData();
   const categoryId = master?.categoryId?._id || master?.categoryId || '';
   const subcategoryId = master?.subcategoryId?._id || master?.subcategoryId || '';
-  const totalStock = totalVariantStock(variantRows);
-  const first = variantRows[0] || {};
-  const resolvedPrice = Number(first.price) || 0;
 
-  const cleanVariants = variantRows.map((v, index) => ({
-    name: String(v.name || '').trim() || `Variant ${index + 1}`,
-    unit: v.unit || master?.unit || DEFAULT_PRODUCT_UNIT,
-    price: Number(v.price) || resolvedPrice,
-    salePrice: Number(v.price) || resolvedPrice,
-    stock: Number(v.stock) || 0,
-  }));
+  const offeredRows = variantRows.filter(isCatalogVariantRowComplete);
+  const totalStock = totalVariantStock(offeredRows);
+  const first = offeredRows[0] || {};
+  const resolvedPrice = Number(first.supplyPrice ?? first.price) || 0;
+
+  const cleanVariants = offeredRows.map((v, index) => {
+    const supply = Number(v.supplyPrice ?? v.price) || resolvedPrice;
+    const row = {
+      name: String(v.name || '').trim() || `Variant ${index + 1}`,
+      unit: v.unit || master?.unit || DEFAULT_PRODUCT_UNIT,
+      supplyPrice: supply,
+      purchasePrice: supply,
+      price: supply,
+      stock: Math.max(0, Number(v.stock) || 0),
+      gstEnabled: Boolean(v.gstEnabled),
+      gstRate: v.gstEnabled ? Math.max(0, Number(v.gstRate) || 0) : 0,
+    };
+    if (v._id || v.id) row._id = v._id || v.id;
+    return row;
+  });
 
   data.append('name', String(master?.name || '').trim());
   data.append('description', String(master?.description || '').trim());
@@ -337,9 +407,9 @@ export function buildCatalogListingFormData(master, variantRows, { existingListi
   data.append('unit', master?.unit || DEFAULT_PRODUCT_UNIT);
   data.append('brand', String(master?.brand || '').trim());
   data.append('weight', String(master?.weight || '').trim());
-  data.append('price', String(resolvedPrice));
-  data.append('salePrice', String(resolvedPrice));
+  data.append('supplyPrice', String(resolvedPrice));
   data.append('purchasePrice', String(resolvedPrice));
+  data.append('price', String(resolvedPrice));
   data.append('stock', String(totalStock));
   data.append('lowStockAlert', '5');
   data.append('variants', JSON.stringify(cleanVariants));

@@ -5,7 +5,9 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineTruck,
   HiOutlineClock,
+  HiOutlineCheckCircle,
 } from "react-icons/hi2";
+import { formatPrDate, formatInr } from "@shared/utils/purchaseRequestFormat";
 
 const phaseBadgeVariant = (phase) => {
   if (phase === "in_delivery") return "info";
@@ -14,21 +16,6 @@ const phaseBadgeVariant = (phase) => {
   if (phase === "exception") return "error";
   if (phase === "completed") return "success";
   return "gray";
-};
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
 };
 
 const PurchaseRequestListPanel = ({
@@ -72,8 +59,14 @@ const PurchaseRequestListPanel = ({
         <p className="text-xs font-black text-slate-900">{pr.requestId}</p>
         <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
           <HiOutlineClock className="h-3 w-3" />
-          {formatDate(pr.createdAt)}
+          Requested {formatPrDate(pr.createdAt)}
         </p>
+        {(pr.confirmedAt || pr.dates?.confirmedAt) && (
+          <p className="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
+            <HiOutlineCheckCircle className="h-3 w-3" />
+            Confirmed {formatPrDate(pr.confirmedAt || pr.dates?.confirmedAt)}
+          </p>
+        )}
       </td>
       {showProductColumn && (
         <td className="px-3 py-3 align-top">
@@ -97,8 +90,13 @@ const PurchaseRequestListPanel = ({
       <td className="px-3 py-3 align-top text-xs text-slate-700">
         ₹{Number(pr.unitCost || 0).toLocaleString("en-IN")}
       </td>
-      <td className="px-3 py-3 align-top text-xs font-black text-emerald-700">
-        ₹{Number(pr.totalCost || (pr.unitCost || 0) * (pr.quantity || 0)).toLocaleString("en-IN")}
+      <td className="px-3 py-3 align-top">
+        <p className="text-xs font-bold text-emerald-700">
+          ₹{formatInr(pr.totalCost || (pr.unitCost || 0) * (pr.quantity || 0))}
+        </p>
+        {(pr.gstTotal ?? pr.gstAmount) > 0 && (
+          <p className="text-[10px] text-slate-400">incl. GST ₹{formatInr(pr.gstTotal ?? pr.gstAmount)}</p>
+        )}
       </td>
       <td className="px-3 py-3 align-top">
         {pr.phase === "in_delivery" && (pr.pickupPartner?.name || pr.pickupPartnerName) ? (

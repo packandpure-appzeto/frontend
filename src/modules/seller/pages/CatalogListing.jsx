@@ -28,6 +28,8 @@ import {
   HiOutlineSquaresPlus,
   HiOutlineExclamationCircle,
 } from "react-icons/hi2";
+import VariantGstFields from "@shared/components/VariantGstFields";
+import { useGstRates } from "@shared/hooks/useGstRates";
 
 const resolveId = (value) => {
   if (!value) return "";
@@ -39,6 +41,7 @@ const CatalogListing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isVerified = user?.isVerified;
+  const gstRates = useGstRates();
 
   const [catalog, setCatalog] = useState([]);
   const [myListings, setMyListings] = useState([]);
@@ -142,8 +145,20 @@ const CatalogListing = () => {
     );
   };
 
+  const patchVariantRow = (index, patch) => {
+    setVariantRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+  };
+
   const handleSaveListing = async () => {
     if (!selectedMaster || isSaving) return;
+    if (!isVerified) {
+      toast.error(
+        "Your profile is not approved yet. You cannot add catalog listings until admin verifies your account.",
+      );
+      return;
+    }
     const missing = validateCatalogListingRows(variantRows);
     if (missing.length) {
       toast.error(`Please enter: ${missing.join(", ")}`);
@@ -223,8 +238,8 @@ const CatalogListing = () => {
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800">
           <HiOutlineExclamationCircle className="h-5 w-5 shrink-0" />
           <p className="text-sm font-bold">
-            Your account is pending approval. You can prepare listings but they
-            won&apos;t be live until verified.
+            Your profile is pending admin approval. You can browse the hub catalog,
+            but you cannot add or update store listings until verified.
           </p>
         </div>
       )}
@@ -417,7 +432,7 @@ const CatalogListing = () => {
               Cancel
             </button>
             <ShimmerButton
-              disabled={isSaving}
+              disabled={isSaving || !isVerified}
               onClick={handleSaveListing}
               className="shadow-lg min-w-[140px]"
             >
@@ -446,7 +461,9 @@ const CatalogListing = () => {
                 <p className="text-sm text-slate-600">
                   Enter your <strong>supply price</strong> (what you sell to the
                   hub at) and <strong>available stock</strong>
-                  {hasMultipleVariants ? " for each variant" : ""}.
+                  {hasMultipleVariants
+                    ? " for the variant(s) you supply. Other sizes are optional — leave blank to skip."
+                    : "."}
                 </p>
                 {selectedMaster.unit && (
                   <p className="text-xs text-slate-400 mt-1">
@@ -463,7 +480,7 @@ const CatalogListing = () => {
                   className="p-4 rounded-xl border border-slate-200 bg-white space-y-3"
                 >
                   {hasMultipleVariants && (
-                    <p className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-800 flex items-center gap-2 flex-wrap">
                       <HiOutlineSwatch className="h-4 w-4 text-violet-500" />
                       {row.name}
                       {row.unit ? (
@@ -471,6 +488,9 @@ const CatalogListing = () => {
                           ({row.unit})
                         </span>
                       ) : null}
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        optional
+                      </span>
                     </p>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -483,9 +503,9 @@ const CatalogListing = () => {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={row.price}
+                        value={row.supplyPrice ?? row.price ?? ""}
                         onChange={(e) =>
-                          updateVariantRow(index, "price", e.target.value)
+                          updateVariantRow(index, "supplyPrice", e.target.value)
                         }
                         placeholder="e.g. 150"
                         className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-semibold focus:ring-2 focus:ring-indigo-500/30 focus:outline-none"
@@ -509,6 +529,13 @@ const CatalogListing = () => {
                       />
                     </label>
                   </div>
+                  <VariantGstFields
+                    variant={row}
+                    gstRates={gstRates}
+                    taxablePrice={Number(row.supplyPrice ?? row.price) || 0}
+                    compact
+                    onChange={(patch) => patchVariantRow(index, patch)}
+                  />
                 </div>
               ))}
             </div>

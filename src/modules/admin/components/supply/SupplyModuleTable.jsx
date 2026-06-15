@@ -36,6 +36,7 @@ const SupplyModuleTable = ({
   stats = [],
   columns = [],
   rows = [],
+  rowKey = "id",
   statusColumn,
   renderActions,
 }) => {
@@ -48,8 +49,8 @@ const SupplyModuleTable = ({
               {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
               Quick Commerce Control
             </div>
-            <h1 className="mt-3 text-2xl font-black tracking-tight">{title}</h1>
-            <p className="mt-1 text-sm text-slate-200">{subtitle}</p>
+            <h1 className="mt-3 text-xl font-bold tracking-tight">{title}</h1>
+            <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {topActions.map((action) => (
@@ -66,11 +67,11 @@ const SupplyModuleTable = ({
       </div>
 
       {stats.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{stat.label}</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{stat.value}</p>
+            <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500">{stat.label}</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -85,12 +86,12 @@ const SupplyModuleTable = ({
                   <th
                     key={column.key}
                     scope="col"
-                    className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-black uppercase tracking-wide text-slate-600">
+                    className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                     {column.label}
                   </th>
                 ))}
                 {renderActions ? (
-                  <th className="px-4 py-3 text-right text-[11px] font-black uppercase tracking-wide text-slate-600">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Actions
                   </th>
                 ) : null}
@@ -107,11 +108,11 @@ const SupplyModuleTable = ({
                 </tr>
               ) : (
                 rows.map((row, idx) => (
-                  <tr key={row.id || idx} className="hover:bg-slate-50/70 transition">
+                  <tr key={row[rowKey] || row.id || idx} className="hover:bg-slate-50/70 transition align-top">
                     {columns.map((column) => {
                       const value = row[column.key];
                       return (
-                        <td key={column.key} className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">
+                        <td key={column.key} className="px-4 py-3.5 text-sm text-slate-700 align-top">
                           {column.render ? column.render(row) : (statusColumn === column.key ? <StatusPill value={value} /> : value)}
                         </td>
                       );

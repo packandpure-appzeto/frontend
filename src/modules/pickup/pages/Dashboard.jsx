@@ -16,6 +16,8 @@ import {
   KeyRound
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PurchaseRequestTimeline from "@shared/components/PurchaseRequestTimeline";
+import { formatPrDate } from "@shared/utils/purchaseRequestFormat";
 
 const getCurrentPosition = () =>
   new Promise((resolve, reject) => {
@@ -271,11 +273,20 @@ const Dashboard = () => {
                           <ChevronRight size={14} className="text-slate-300" />
                         </h3>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assigned At</p>
-                        <p className="text-xs font-bold text-slate-700">
-                          {new Date(row.updatedAt || row.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="text-right text-xs text-slate-600 space-y-0.5">
+                        <p>
+                          <span className="text-slate-400">Requested </span>
+                          {formatPrDate(row.createdAt)}
                         </p>
+                        {row.dates?.pickupAssignedAt && (
+                          <p>
+                            <span className="text-slate-400">Assigned </span>
+                            {formatPrDate(row.dates.pickupAssignedAt)}
+                          </p>
+                        )}
+                        {row.eta && (
+                          <p className="text-indigo-600 font-semibold">ETA {formatPrDate(row.eta)}</p>
+                        )}
                       </div>
                     </div>
 
@@ -505,6 +516,13 @@ const Dashboard = () => {
                         </div>
                       )}
                     </div>
+
+                    {row.timeline?.length > 0 && (
+                      <div className="border-t border-slate-100 pt-4">
+                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Trip history</p>
+                        <PurchaseRequestTimeline timeline={row.timeline} compact />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))

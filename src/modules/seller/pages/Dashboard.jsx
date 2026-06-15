@@ -38,6 +38,22 @@ import { cn } from "@/lib/utils";
 import { sellerApi } from "../services/sellerApi";
 import { toast } from "sonner";
 
+const prTotalAmount = (pr) => {
+  if (pr?.pricing?.grandTotal != null) return Number(pr.pricing.grandTotal);
+  if (pr?.totalCost != null) return Number(pr.totalCost);
+  const items = Array.isArray(pr?.items) ? pr.items : [];
+  return items.reduce(
+    (sum, it) =>
+      sum +
+      Number(
+        it.totalCost ||
+          Number(it.unitCost || 0) * Number(it.shortageQty || it.requiredQty || 0) +
+            Number(it.gstAmount || 0),
+      ),
+    0,
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -347,7 +363,7 @@ const Dashboard = () => {
               </div>
               <div className="flex justify-between items-center border-t border-slate-50 pt-2 mt-1">
                 <span className="text-xs font-bold text-slate-400">Total Amount</span>
-                <span className="text-sm font-black text-slate-900">₹{Number(pr.unitCost * pr.quantity).toFixed(2)}</span>
+                <span className="text-sm font-black text-slate-900">₹{prTotalAmount(pr).toFixed(2)}</span>
               </div>
             </div>
           ))}
@@ -404,7 +420,7 @@ const Dashboard = () => {
                     </span>
                   </td>
                   <td className="py-4 px-4 align-middle">
-                    <span className="text-sm font-semibold text-slate-900">₹{(pr.unitCost * pr.quantity).toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-slate-900">₹{prTotalAmount(pr).toFixed(2)}</span>
                   </td>
                   <td className="py-4 px-4 align-middle">
                     <Badge variant={getStatusColor(pr.status)} className="capitalize">

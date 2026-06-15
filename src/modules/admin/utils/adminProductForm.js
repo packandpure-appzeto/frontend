@@ -119,6 +119,8 @@ export function variantsForEditForm(item, activeTab = 'master') {
           price: v.price ?? v.salePrice ?? '',
           salePrice: v.salePrice ?? v.price ?? '',
           purchasePrice: Number(v.purchasePrice ?? item.purchasePrice) || 0,
+          gstEnabled: Boolean(v.gstEnabled),
+          gstRate: Number(v.gstRate) || 0,
         }))
       : [
           {
@@ -129,6 +131,8 @@ export function variantsForEditForm(item, activeTab = 'master') {
             salePrice: item.salePrice ?? item.price ?? '',
             purchasePrice: Number(item.purchasePrice) || 0,
             stock: 0,
+            gstEnabled: Boolean(item.gstRate),
+            gstRate: Number(item.gstRate) || 0,
           },
         ];
 
@@ -224,6 +228,8 @@ export function buildAdminProductFormData(formData, { editingItem, activeTab }) 
       salePrice: rowSale,
       purchasePrice: Number(v.purchasePrice ?? purchasePrice) || 0,
       stock: Number(v.stock) || 0,
+      gstEnabled: Boolean(v.gstEnabled),
+      gstRate: v.gstEnabled ? Math.max(0, Number(v.gstRate) || 0) : 0,
     };
     const variantId = v._id || v.id;
     if (variantId && String(variantId).length === 24) {
@@ -261,6 +267,62 @@ export function variantPricesList(item) {
   return variants.map((v, i) => ({
     name: String(v?.name || '').trim() || `Variant ${i + 1}`,
     ...variantPriceDisplay(v),
+    gstEnabled: Boolean(v?.gstEnabled),
+    gstRate: Number(v?.gstRate) || 0,
+  }));
+}
+
+export function variantGstBadgeLabel(variant) {
+  if (!variant?.gstEnabled || !Number(variant?.gstRate)) return null;
+  return `${variant.gstRate}% GST`;
+}
+
+/**
+ * Hub margin from admin pricing only (salePrice − purchasePrice).
+ * Seller supply quotes must not affect this.
+ */
+export function variantHubProfitRow(variant, itemFallback = null) {
+  const sell =
+    Number(variant?.salePrice ?? variant?.price) ||
+    Number(itemFallback?.salePrice ?? itemFallback?.price) ||
+    0;
+  const cost = Number(variant?.purchasePrice ?? itemFallback?.purchasePrice);
+  const hasHubCost = Number.isFinite(cost) && cost > 0;
+  if (!sell || !hasHubCost) {
+    return {
+      sell,
+      cost: hasHubCost ? cost : 0,
+      profit: null,
+      marginPct: null,
+      ready: false,
+    };
+  }
+  const profit = sell - cost;
+  const marginPct = (profit / cost) * 100;
+  return { sell, cost, profit, marginPct, ready: true };
+}
+
+/** Per-variant hub profit rows for admin master catalog table. */
+export function adminHubProfitList(item) {
+  const variants = Array.isArray(item?.variants) ? item.variants : [];
+  if (!variants.length) {
+    return [
+      {
+        name: item?.name || 'Default',
+        ...variantHubProfitRow(
+          {
+            salePrice: item?.salePrice,
+            price: item?.price,
+            purchasePrice: item?.purchasePrice,
+          },
+          item,
+        ),
+      },
+    ];
+  }
+  return variants.map((v, i) => ({
+    name: String(v?.name || '').trim() || `Variant ${i + 1}`,
+    ...variantHubProfitRow(v, item),
   }));
 }
 
@@ -305,6 +367,8 @@ export const EMPTY_PRODUCT_FORM = {
       salePrice: '',
       purchasePrice: '',
       stock: '',
+      gstEnabled: false,
+      gstRate: 0,
     },
   ],
 };

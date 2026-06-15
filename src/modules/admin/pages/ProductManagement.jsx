@@ -27,6 +27,9 @@ import {
     HiOutlineArrowTopRightOnSquare,
     HiOutlineTruck,
     HiOutlineClipboardDocumentList,
+    HiOutlinePhone,
+    HiOutlineEnvelope,
+    HiOutlineArrowLeft,
 } from 'react-icons/hi2';
 import Modal from '@shared/components/ui/Modal';
 import Pagination from '@shared/components/ui/Pagination';
@@ -48,8 +51,12 @@ import {
     variantPriceDisplay,
     variantPricesList,
     variantPriceRangeLabel,
+    adminHubProfitList,
+    variantGstBadgeLabel,
     EMPTY_PRODUCT_FORM,
 } from '../utils/adminProductForm';
+import VariantGstFields from '@shared/components/VariantGstFields';
+import { useGstRates } from '@shared/hooks/useGstRates';
 
 const ProductManagement = () => {
     const navigate = useNavigate();
@@ -62,11 +69,13 @@ const ProductManagement = () => {
     const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const gstRates = useGstRates();
 
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearchTerm = useDebouncedValue(searchTerm, DEBOUNCE_MS.search);
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [filterSellerReview, setFilterSellerReview] = useState(false);
     const [activeTab, setActiveTab] = useState('master'); // Default to Master Catalog
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -81,6 +90,8 @@ const ProductManagement = () => {
         productName: '',
         quantity: 10,
         notes: '',
+        variantId: '',
+        variantName: '',
     });
     const [itemToDelete, setItemToDelete] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
@@ -103,6 +114,7 @@ const ProductManagement = () => {
     const [isVariantsViewModalOpen, setIsVariantsViewModalOpen] = useState(false);
     const [viewingSellerSupply, setViewingSellerSupply] = useState(null);
     const [isSellerSupplyModalOpen, setIsSellerSupplyModalOpen] = useState(false);
+    const [selectedSupplySupplier, setSelectedSupplySupplier] = useState(null);
 
     const [imageFiles, setImageFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
@@ -198,6 +210,7 @@ const ProductManagement = () => {
             if (filterStatus !== 'all') params.status = filterStatus;
             params.ownerType = activeTab === 'master' ? 'admin' : 'seller';
             if (filterSellerId && activeTab === 'seller') params.sellerId = filterSellerId;
+            if (filterSellerReview && activeTab === 'seller') params.sellerReviewPending = 'true';
 
             const response = await adminApi.getProducts(params);
             const { items, total: apiTotal, page: apiPage, stats } = parseAdminProductListResponse(response);
@@ -273,7 +286,7 @@ const ProductManagement = () => {
 
     useEffect(() => {
         fetchProducts(1);
-    }, [debouncedSearchTerm, filterCategory, filterStatus, pageSize, activeTab, filterSellerId]);
+    }, [debouncedSearchTerm, filterCategory, filterStatus, filterSellerReview, pageSize, activeTab, filterSellerId]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -378,13 +391,16 @@ const ProductManagement = () => {
         }));
     };
 
-    const openPurchaseRequestModal = async (product) => {
+    const openPurchaseRequestModal = async (product, opts = {}) => {
+        const { variantId = '', variantName = '' } = opts;
         setRequestData({
             productId: product._id,
             vendorId: product.sellerId?._id || product.sellerId,
             productName: product.name,
             quantity: 10,
-            notes: '',
+            notes: variantName ? `Variant: ${variantName}` : '',
+            variantId,
+            variantName,
         });
         setPrContext(null);
         setProductPrRequests([]);
@@ -392,7 +408,7 @@ const ProductManagement = () => {
         setPrLoading(true);
         try {
             const [ctxRes, prRes] = await Promise.all([
-                adminApi.getPurchaseRequestProductContext(product._id),
+                adminApi.getPurchaseRequestProductContext(product._id, variantId || undefined),
                 adminApi.getPurchaseRequests({ productId: product._id, limit: 50, page: 1 }),
             ]);
             const ctx = ctxRes.data?.result || ctxRes.data;
@@ -411,6 +427,20 @@ const ProductManagement = () => {
         } finally {
             setPrLoading(false);
         }
+    };
+
+    const openSupplierVariantPurchaseRequest = async (row, variant) => {
+        setIsSellerSupplyModalOpen(false);
+        await openPurchaseRequestModal(
+            { _id: row.productId, sellerId: row.sellerId, name: row.productName },
+            { variantId: variant?.variantId || '', variantName: variant?.name || '' },
+        );
+    };
+
+    const openSellerSupplyModal = (product) => {
+        setViewingSellerSupply(product);
+        setSelectedSupplySupplier(null);
+        setIsSellerSupplyModalOpen(true);
     };
 
     const handleRequestStock = async () => {
@@ -434,10 +464,15 @@ const ProductManagement = () => {
                 productId: requestData.productId,
                 quantity: Number(requestData.quantity),
                 notes: requestData.notes,
+                ...(requestData.variantId ? { variantId: requestData.variantId } : {}),
+                ...(requestData.variantName ? { variantName: requestData.variantName } : {}),
             });
             toast.success(`Purchase request sent to ${prContext?.vendor?.shopName || 'vendor'}`);
             const [ctxRes, prRes] = await Promise.all([
-                adminApi.getPurchaseRequestProductContext(requestData.productId),
+                adminApi.getPurchaseRequestProductContext(
+                    requestData.productId,
+                    requestData.variantId || undefined,
+                ),
                 adminApi.getPurchaseRequests({
                     productId: requestData.productId,
                     limit: 50,
@@ -503,18 +538,49 @@ const ProductManagement = () => {
 
     const initGoLivePrices = (preview) => {
         const sp = preview?.sellerProduct;
-        const supply = Number(sp?.supplyPrice ?? sp?.purchasePrice ?? sp?.price ?? 0);
-        const rows =
+        const master = preview?.linkedMaster;
+        const rootSupply = Number(sp?.supplyPrice ?? sp?.purchasePrice ?? sp?.price ?? 0);
+        const sellerRows =
             sp?.variants?.length > 0
                 ? sp.variants
-                : [{ name: 'Default', price: supply }];
+                : [{ name: 'Default', price: rootSupply, purchasePrice: rootSupply }];
+        const masterRows = master?.variants?.length > 0 ? master.variants : [];
+
         setVariantSellPrices(
-            rows.map((v) => ({
-                name: v.name || 'Default',
-                salePrice: String(
-                    v.salePrice || v.price || (supply > 0 ? Math.ceil(supply * 1.15) : ''),
-                ),
-            })),
+            sellerRows.map((v, idx) => {
+                const variantSupply = Number(
+                    v.purchasePrice ?? v.supplyPrice ?? v.price ?? rootSupply,
+                );
+                const masterMatch =
+                    masterRows.find(
+                        (m) =>
+                            String(m?.name || '').trim().toLowerCase() ===
+                            String(v?.name || '').trim().toLowerCase(),
+                    ) || masterRows[idx];
+                const suggestedSale =
+                    variantSupply > 0 ? Math.ceil(variantSupply * 1.15) : '';
+                const sale =
+                    masterMatch?.salePrice ??
+                    masterMatch?.price ??
+                    (suggestedSale || '');
+                const mrp = masterMatch?.price ?? sale ?? suggestedSale ?? '';
+                const purchase =
+                    masterMatch?.purchasePrice ?? variantSupply ?? rootSupply ?? '';
+
+                const gstEnabled = Boolean(
+                    masterMatch?.gstEnabled ?? v?.gstEnabled,
+                );
+                const gstRate = Number(masterMatch?.gstRate ?? v?.gstRate) || 0;
+
+                return {
+                    name: v.name || 'Default',
+                    price: String(mrp),
+                    salePrice: String(sale),
+                    purchasePrice: String(purchase),
+                    gstEnabled,
+                    gstRate,
+                };
+            }),
         );
     };
 
@@ -547,9 +613,15 @@ const ProductManagement = () => {
         }
     };
 
-    const updateVariantSellPrice = (index, value) => {
+    const updateGoLiveVariantField = (index, field, value) => {
         setVariantSellPrices((prev) =>
-            prev.map((row, i) => (i === index ? { ...row, salePrice: value } : row)),
+            prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+        );
+    };
+
+    const patchGoLiveVariant = (index, patch) => {
+        setVariantSellPrices((prev) =>
+            prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
         );
     };
 
@@ -560,6 +632,14 @@ const ProductManagement = () => {
             const payload = {
                 action: goLiveAction,
                 variantSellPrices,
+                variantPricing: variantSellPrices.map((row) => ({
+                    name: row.name,
+                    price: Number(row.price) || Number(row.salePrice) || 0,
+                    salePrice: Number(row.salePrice) || 0,
+                    purchasePrice: Number(row.purchasePrice) || 0,
+                    gstEnabled: Boolean(row.gstEnabled),
+                    gstRate: row.gstEnabled ? Math.max(0, Number(row.gstRate) || 0) : 0,
+                })),
                 defaultSellPrice: Number(variantSellPrices[0]?.salePrice) || 0,
                 forceCreate,
             };
@@ -589,6 +669,21 @@ const ProductManagement = () => {
         activeTab === 'seller' &&
         p.ownerType === 'seller' &&
         (p.status === 'pending_approval' || !p.masterProductId);
+
+    const sellerNeedsPricingReview = (p) => {
+        if (activeTab !== 'seller' || p.ownerType !== 'seller') return false;
+        const pending = p.needsAdminReview || p.adminReview?.pending;
+        const types = p.sellerUpdateTypes || p.adminReview?.types || [];
+        return pending && types.includes('supply_price') && Boolean(p.masterProductId);
+    };
+
+    const sellerUpdateReviewLabel = (p) => {
+        const types = p.sellerUpdateTypes || p.adminReview?.types || [];
+        if (types.includes('supply_price') && types.includes('stock')) return 'Price & stock updated';
+        if (types.includes('supply_price')) return 'Price updated';
+        if (types.includes('stock')) return 'Stock updated';
+        return 'Product updated';
+    };
 
     const editFormSummary = useMemo(() => {
         const variants = formData.variants || [];
@@ -627,6 +722,14 @@ const ProductManagement = () => {
         if (ownerType === 'admin') {
             if (status === 'active') return <Badge variant="success" className="text-[10px] px-1.5 py-0">Active</Badge>;
             return <Badge variant="gray" className="text-[10px] px-1.5 py-0">Inactive</Badge>;
+        }
+
+        if (item.needsAdminReview || item.adminReview?.pending) {
+            return (
+                <Badge variant="warning" className="text-[10px] px-1.5 py-0 font-black">
+                    {sellerUpdateReviewLabel(item)}
+                </Badge>
+            );
         }
 
         if (stock === 0) return <Badge variant="error" className="text-[10px] px-1.5 py-0">Out of Stock</Badge>;
@@ -674,7 +777,7 @@ const ProductManagement = () => {
             {/* Tab Navigation */}
             <div className="flex items-center gap-1 p-1 bg-slate-100/80 backdrop-blur rounded-2xl w-full lg:w-fit mt-2">
                 <button
-                    onClick={() => { setActiveTab('master'); setFilterSellerId(''); }}
+                    onClick={() => { setActiveTab('master'); setFilterSellerId(''); setFilterSellerReview(false); }}
                     className={cn(
                         "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
                         activeTab === 'master' 
@@ -792,6 +895,20 @@ const ProductManagement = () => {
                                         'SHOW ALL'}
                             </span>
                         </button>
+                        {activeTab === 'seller' && (
+                            <button
+                                type="button"
+                                onClick={() => setFilterSellerReview((v) => !v)}
+                                className={cn(
+                                    'flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap',
+                                    filterSellerReview
+                                        ? 'bg-amber-500 text-white shadow-md shadow-amber-100'
+                                        : 'bg-white ring-1 ring-slate-200 text-slate-600 hover:bg-slate-50',
+                                )}
+                            >
+                                <span>SELLER UPDATED</span>
+                            </button>
+                        )}
                     </div>
                 </div>
             </Card>
@@ -806,9 +923,12 @@ const ProductManagement = () => {
                                 <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Seller</th>
                                 <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Variant</th>
                                 <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                                <th className="px-6 py-3 text-left text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Subcategory</th>
-                                <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                                <th className="px-6 py-3 text-center text-[10px] font-black text-emerald-500 uppercase tracking-widest">Profit</th>
+                                <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
+                                    {activeTab === 'master' ? 'Customer price' : 'Supply price'}
+                                </th>
+                                <th className="px-6 py-3 text-center text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                                    {activeTab === 'master' ? 'Hub margin' : 'Margin'}
+                                </th>
                                 <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
                                 <th className="px-6 py-3 text-center text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-right text-[10px] font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -817,7 +937,7 @@ const ProductManagement = () => {
                         <tbody className="divide-y divide-slate-50">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan="10" className="px-6 py-20 text-center">
+                                    <td colSpan="9" className="px-6 py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <HiOutlineArrowPath className="h-8 w-8 text-primary animate-spin" />
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Products...</p>
@@ -829,7 +949,13 @@ const ProductManagement = () => {
                                     <td colSpan="9" className="px-6 py-20 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">No products found</td>
                                 </tr>
                             ) : productsList.map((p) => (
-                                <tr key={p._id} className="hover:bg-slate-50/30 transition-colors group">
+                                <tr
+                                    key={p._id}
+                                    className={cn(
+                                        'hover:bg-slate-50/30 transition-colors group',
+                                        (p.needsAdminReview || p.adminReview?.pending) && 'bg-amber-50/40',
+                                    )}
+                                >
                                     {/* Product Column */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -839,6 +965,12 @@ const ProductManagement = () => {
                                             <div>
                                                 <p className="text-xs font-bold text-slate-900">{p.name}</p>
                                                 <p className="text-[9px] font-semibold text-slate-400">{p.unit}</p>
+                                                {(p.needsAdminReview || p.adminReview?.pending) && (
+                                                    <p className="text-[9px] font-bold text-amber-700 mt-0.5">
+                                                        {p.sellerUpdateSummary || sellerUpdateReviewLabel(p)}
+                                                        {p.sellerId?.shopName ? ` · ${p.sellerId.shopName}` : ''}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -856,14 +988,19 @@ const ProductManagement = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setViewingSellerSupply(p);
-                                                        setIsSellerSupplyModalOpen(true);
+                                                        openSellerSupplyModal(p);
                                                     }}
                                                     className="text-[9px] font-bold text-violet-600 hover:text-violet-800 text-left pl-4 underline underline-offset-2"
                                                 >
                                                     {p.linkedSellerCount ?? p.sellerSupplyBreakdown?.length ?? 0} supplier
                                                     {(p.linkedSellerCount ?? p.sellerSupplyBreakdown?.length ?? 0) !== 1 ? 's' : ''}
                                                     {typeof p.activeSellerCount === 'number' ? ` · ${p.activeSellerCount} active` : ''}
+                                                    {p.pendingSellerReviewCount > 0 ? (
+                                                        <span className="text-amber-600 no-underline">
+                                                            {' '}
+                                                            · {p.pendingSellerReviewCount} updated
+                                                        </span>
+                                                    ) : null}
                                                 </button>
                                             )}
                                         </div>
@@ -899,21 +1036,36 @@ const ProductManagement = () => {
 
                                     {/* Category Column */}
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">{p.categoryId?.name || 'N/A'}</span>
-                                    </td>
-
-                                    {/* Subcategory Column */}
-                                    <td className="px-6 py-4">
-                                        <span className="text-xs font-bold text-slate-600">{p.subcategoryId?.name || 'N/A'}</span>
+                                        <div className="flex flex-col gap-0.5 max-w-[140px]">
+                                            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg truncate">
+                                                {p.categoryId?.name || 'N/A'}
+                                            </span>
+                                            {p.subcategoryId?.name ? (
+                                                <span className="text-[10px] font-semibold text-slate-500 pl-0.5 truncate">
+                                                    {p.subcategoryId.name}
+                                                </span>
+                                            ) : null}
+                                        </div>
                                     </td>
 
                                     {/* Price Column */}
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex flex-col items-center">
                                             {activeTab === 'seller' ? (
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-slate-900">₹{p.purchasePrice || p.price}</span>
-                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Vendor Cost</span>
+                                                <div className="flex flex-col items-center gap-1 max-w-[140px]">
+                                                    {(p.variants?.length ? p.variants : [{ name: p.unit || 'Default', purchasePrice: p.purchasePrice || p.price }]).map((v, i) => (
+                                                        <div key={`${p._id}-supply-${i}`} className="flex flex-col items-center w-full">
+                                                            {(p.variants?.length || 0) > 1 && (
+                                                                <span className="text-[8px] font-bold text-slate-400 truncate max-w-full px-1">
+                                                                    {v.name}
+                                                                </span>
+                                                            )}
+                                                            <span className="text-xs font-black text-slate-900">
+                                                                ₹{Number(v.purchasePrice ?? v.price ?? p.purchasePrice ?? p.price ?? 0).toLocaleString('en-IN')}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Vendor supply</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-1 max-w-[140px]">
@@ -942,6 +1094,13 @@ const ProductManagement = () => {
                                                                     ₹{row.display.toLocaleString('en-IN')}
                                                                 </span>
                                                             )}
+                                                            {variantGstBadgeLabel(row) ? (
+                                                                <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                                    {variantGstBadgeLabel(row)}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-[9px] text-slate-400">No GST</span>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -949,27 +1108,75 @@ const ProductManagement = () => {
                                         </div>
                                     </td>
 
-                                    {/* Profit Column */}
+                                    {/* Hub margin — admin sale vs admin hub cost only (master tab) */}
                                     <td className="px-6 py-4 text-center">
-                                        <div className="inline-flex flex-col items-center px-2 py-0.5 bg-emerald-50 rounded-lg border border-emerald-100">
-                                            {(() => {
-                                                const sellPrice = Number(p.price || p.salePrice || 0);
-                                                const costPrice = Number(p.purchasePrice || (p.ownerType === 'seller' ? (p.salePrice || p.price) : 0) || 0);
-                                                const profit = sellPrice - costPrice;
-                                                const profitPercentage = costPrice > 0 ? ((profit / costPrice) * 100).toFixed(0) : 0;
-                                                
-                                                return (
-                                                    <div className="flex flex-col">
-                                                        <span className={cn("text-[11px] font-black", profit > 0 ? "text-emerald-600" : profit === 0 ? "text-slate-400" : "text-rose-600")}>
-                                                            ₹{profit.toLocaleString()}
-                                                        </span>
-                                                        <span className={cn("text-[8px] font-bold opacity-60", profit > 0 ? "text-emerald-500" : profit === 0 ? "text-slate-300" : "text-rose-500")}>
-                                                            {profitPercentage}% {profit >= 0 ? 'Margin' : 'Loss'}
-                                                        </span>
+                                        {activeTab === 'master' ? (
+                                            <div className="flex flex-col items-center gap-1 max-w-[140px] mx-auto">
+                                                {adminHubProfitList(p).map((row, i) => (
+                                                    <div
+                                                        key={`${p._id}-margin-${i}`}
+                                                        className={cn(
+                                                            'inline-flex flex-col items-center px-2 py-0.5 rounded-lg border w-full',
+                                                            !row.ready
+                                                                ? 'bg-slate-50 border-slate-100'
+                                                                : row.profit > 0
+                                                                  ? 'bg-emerald-50 border-emerald-100'
+                                                                  : row.profit === 0
+                                                                    ? 'bg-slate-50 border-slate-100'
+                                                                    : 'bg-rose-50 border-rose-100',
+                                                        )}
+                                                        title={
+                                                            row.ready
+                                                                ? `Sale ₹${row.sell} − Hub cost ₹${row.cost}`
+                                                                : 'Set hub purchase price in product edit or Go Live'
+                                                        }
+                                                    >
+                                                        {(p.variants?.length || 0) > 1 && (
+                                                            <span className="text-[8px] font-bold text-slate-400 truncate max-w-full px-1">
+                                                                {row.name}
+                                                            </span>
+                                                        )}
+                                                        {!row.ready ? (
+                                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                                Set hub cost
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <span
+                                                                    className={cn(
+                                                                        'text-[11px] font-black',
+                                                                        row.profit > 0
+                                                                            ? 'text-emerald-600'
+                                                                            : row.profit === 0
+                                                                              ? 'text-slate-500'
+                                                                              : 'text-rose-600',
+                                                                    )}
+                                                                >
+                                                                    ₹{row.profit.toLocaleString('en-IN')}
+                                                                </span>
+                                                                <span
+                                                                    className={cn(
+                                                                        'text-[8px] font-bold',
+                                                                        row.profit > 0
+                                                                            ? 'text-emerald-500'
+                                                                            : row.profit === 0
+                                                                              ? 'text-slate-400'
+                                                                              : 'text-rose-500',
+                                                                    )}
+                                                                >
+                                                                    {row.marginPct.toFixed(0)}%{' '}
+                                                                    {row.profit >= 0 ? 'margin' : 'loss'}
+                                                                </span>
+                                                            </>
+                                                        )}
                                                     </div>
-                                                );
-                                            })()}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                Vendor listing
+                                            </span>
+                                        )}
                                     </td>
 
                                     {/* Stock — H = hub warehouse, S = seller supply */}
@@ -994,8 +1201,7 @@ const ProductManagement = () => {
                                                         disabled={activeTab !== 'master' || seller <= 0}
                                                         onClick={() => {
                                                             if (activeTab === 'master' && (p.sellerSupplyBreakdown?.length || seller > 0)) {
-                                                                setViewingSellerSupply(p);
-                                                                setIsSellerSupplyModalOpen(true);
+                                                                openSellerSupplyModal(p);
                                                             }
                                                         }}
                                                         className={cn(
@@ -1048,6 +1254,15 @@ const ProductManagement = () => {
                                                     title="Review and publish to live catalog"
                                                 >
                                                     Go Live
+                                                </button>
+                                            )}
+                                            {sellerNeedsPricingReview(p) && (
+                                                <button
+                                                    onClick={() => openGoLiveModal(p)}
+                                                    className="px-2 py-1.5 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-sm"
+                                                    title="Seller changed supply price — update customer catalog pricing"
+                                                >
+                                                    Update Price
                                                 </button>
                                             )}
                                             <button
@@ -1178,13 +1393,28 @@ const ProductManagement = () => {
                             </div>
                         </div>
 
-                        {prContext.product?.variants?.length > 0 && (
+                        {prContext.product?.selectedVariant && (
+                            <div className="p-4 rounded-2xl border border-indigo-200 bg-indigo-50/50">
+                                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Procuring variant</p>
+                                <p className="text-sm font-black text-indigo-900">
+                                    {prContext.product.selectedVariant.name}
+                                    {prContext.product.selectedVariant.unit
+                                        ? ` · ${prContext.product.selectedVariant.unit}`
+                                        : ''}
+                                </p>
+                                <p className="text-[10px] text-indigo-700/80 mt-1">
+                                    {prContext.product.selectedVariant.stock} in stock @ ₹{prContext.product.selectedVariant.price}
+                                </p>
+                            </div>
+                        )}
+
+                        {prContext.product?.variants?.length > 0 && !prContext.product?.selectedVariant && (
                             <div className="p-4 rounded-2xl border border-slate-100 bg-white">
                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Variant stock at vendor</p>
                                 <div className="flex flex-wrap gap-2">
                                     {prContext.product.variants.map((v, i) => (
                                         <span
-                                            key={i}
+                                            key={v._id || i}
                                             className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-slate-100 text-slate-700"
                                         >
                                             {v.name}: {v.stock} @ ₹{v.price}
@@ -1739,7 +1969,7 @@ const ProductManagement = () => {
                                                 </div>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setFormData({ ...formData, variants: [...formData.variants, { id: Date.now(), name: '', unit: formData.unit || DEFAULT_PRODUCT_UNIT, price: '', salePrice: '', purchasePrice: '', stock: '' }] })}
+                                                    onClick={() => setFormData({ ...formData, variants: [...formData.variants, { id: Date.now(), name: '', unit: formData.unit || DEFAULT_PRODUCT_UNIT, price: '', salePrice: '', purchasePrice: '', stock: '', gstEnabled: false, gstRate: 0 }] })}
                                                     className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all"
                                                 >
                                                     + Add New Variant
@@ -1898,6 +2128,19 @@ const ProductManagement = () => {
                                                                     <HiOutlineTrash className="h-4 w-4" />
                                                                 </button>
                                                             </div>
+                                                            <div className="col-span-12">
+                                                                <VariantGstFields
+                                                                    variant={variant}
+                                                                    gstRates={gstRates}
+                                                                    taxablePrice={Number(variant.salePrice ?? variant.price) || 0}
+                                                                    compact
+                                                                    onChange={(patch) => {
+                                                                        const newVariants = [...formData.variants];
+                                                                        newVariants[idx] = { ...newVariants[idx], ...patch };
+                                                                        setFormData({ ...formData, variants: newVariants });
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1912,7 +2155,7 @@ const ProductManagement = () => {
                                                         type="button"
                                                         onClick={() => setFormData({
                                                             ...formData,
-                                                            variants: [{ id: Date.now(), name: 'Default', unit: formData.unit || DEFAULT_PRODUCT_UNIT, price: '', salePrice: '', stock: '' }]
+                                                            variants: [{ id: Date.now(), name: 'Default', unit: formData.unit || DEFAULT_PRODUCT_UNIT, price: '', salePrice: '', stock: '', gstEnabled: false, gstRate: 0 }]
                                                         })}
                                                         className="mt-6 px-6 py-2.5 bg-white ring-1 ring-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
                                                     >
@@ -2018,6 +2261,7 @@ const ProductManagement = () => {
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Variant Specification</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Unit Price</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">GST</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Available Stock</th>
                                     <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unit</th>
                                 </tr>
@@ -2051,6 +2295,13 @@ const ProductManagement = () => {
                                             })()}
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            {v.gstEnabled && Number(v.gstRate) > 0 ? (
+                                                <span className="text-xs font-bold text-amber-700">{v.gstRate}%</span>
+                                            ) : (
+                                                <span className="text-xs text-slate-400">—</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
                                             <Badge variant={v.stock === 0 ? "rose" : v.stock <= 10 ? "amber" : "emerald"} className="text-[10px] font-black uppercase tracking-widest px-2 shadow-sm">
                                                 {v.stock === 0 ? 'OUT OF STOCK' : `${v.stock} UNITS`}
                                             </Badge>
@@ -2080,9 +2331,12 @@ const ProductManagement = () => {
             {/* Seller supply breakdown (master catalog) */}
             <Modal
                 isOpen={isSellerSupplyModalOpen}
-                onClose={() => setIsSellerSupplyModalOpen(false)}
+                onClose={() => {
+                    setIsSellerSupplyModalOpen(false);
+                    setSelectedSupplySupplier(null);
+                }}
                 title="Supplier stock breakdown"
-                size="md"
+                size="xl"
             >
                 <div className="space-y-4 py-1">
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -2098,50 +2352,185 @@ const ProductManagement = () => {
                         <p className="text-center text-xs font-bold text-slate-400 py-8 uppercase tracking-widest">
                             No suppliers linked to this product yet
                         </p>
-                    ) : (
-                        <div className="overflow-x-auto rounded-xl border border-slate-100">
-                            <table className="w-full text-left text-xs">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
-                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">Supplier</th>
-                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">Listing</th>
-                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Stock (S)</th>
-                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Cost</th>
-                                        <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                    {viewingSellerSupply.sellerSupplyBreakdown.map((row) => (
-                                        <tr key={String(row.productId || row.sellerId)} className="hover:bg-slate-50/50">
-                                            <td className="px-4 py-3">
-                                                <p className="font-bold text-slate-900">{row.shopName}</p>
-                                                {row.sellerName ? (
-                                                    <p className="text-[10px] text-slate-400">{row.sellerName}</p>
-                                                ) : null}
-                                            </td>
-                                            <td className="px-4 py-3 text-slate-600">{row.productName || '—'}</td>
-                                            <td className="px-4 py-3 text-center font-black text-violet-700">{row.stock}</td>
-                                            <td className="px-4 py-3 text-center font-bold text-slate-700">
-                                                ₹{Number(row.purchasePrice || 0).toLocaleString('en-IN')}
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <Badge
-                                                    variant={
-                                                        row.status === 'active'
-                                                            ? 'success'
-                                                            : row.status === 'pending_approval'
-                                                              ? 'warning'
-                                                              : 'secondary'
-                                                    }
-                                                    className="text-[8px] uppercase"
-                                                >
-                                                    {row.status?.replace('_', ' ') || '—'}
-                                                </Badge>
-                                            </td>
+                    ) : selectedSupplySupplier ? (
+                        <div className="space-y-4">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedSupplySupplier(null)}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider hover:text-slate-800"
+                            >
+                                <HiOutlineArrowLeft className="h-3.5 w-3.5" />
+                                Back to suppliers
+                            </button>
+
+                            <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/40 space-y-3">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-base font-black text-slate-900">{selectedSupplySupplier.shopName}</p>
+                                        {selectedSupplySupplier.sellerName ? (
+                                            <p className="text-xs text-slate-500 mt-0.5">Owner: {selectedSupplySupplier.sellerName}</p>
+                                        ) : null}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Badge
+                                            variant={selectedSupplySupplier.sellerVerified ? 'success' : 'warning'}
+                                            className="text-[8px] uppercase"
+                                        >
+                                            {selectedSupplySupplier.sellerVerified ? 'Verified' : 'Unverified'}
+                                        </Badge>
+                                        <Badge
+                                            variant={
+                                                selectedSupplySupplier.status === 'active'
+                                                    ? 'success'
+                                                    : selectedSupplySupplier.status === 'pending_approval'
+                                                      ? 'warning'
+                                                      : 'secondary'
+                                            }
+                                            className="text-[8px] uppercase"
+                                        >
+                                            {selectedSupplySupplier.status?.replace('_', ' ') || '—'}
+                                        </Badge>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                    {selectedSupplySupplier.sellerPhone ? (
+                                        <p className="flex items-center gap-2 text-slate-600">
+                                            <HiOutlinePhone className="h-4 w-4 text-slate-400 shrink-0" />
+                                            {selectedSupplySupplier.sellerPhone}
+                                        </p>
+                                    ) : null}
+                                    {selectedSupplySupplier.sellerEmail ? (
+                                        <p className="flex items-center gap-2 text-slate-600 truncate">
+                                            <HiOutlineEnvelope className="h-4 w-4 text-slate-400 shrink-0" />
+                                            {selectedSupplySupplier.sellerEmail}
+                                        </p>
+                                    ) : null}
+                                </div>
+
+                                <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-slate-500">
+                                    <span>Listing: {selectedSupplySupplier.productName || '—'}</span>
+                                    <span>Variants: {selectedSupplySupplier.variantCount || selectedSupplySupplier.variants?.length || 0}</span>
+                                    <span>Total stock (S): {selectedSupplySupplier.stock}</span>
+                                    {selectedSupplySupplier.needsAdminReview ? (
+                                        <Badge variant="warning" className="text-[8px] uppercase">
+                                            Seller updated — review needed
+                                        </Badge>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <div className="overflow-x-auto rounded-xl border border-slate-100">
+                                <table className="w-full text-left text-xs">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                            <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider">Variant</th>
+                                            <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Stock (S)</th>
+                                            <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-center">Supply cost</th>
+                                            <th className="px-4 py-2 font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {(selectedSupplySupplier.variants || []).map((variant, idx) => (
+                                            <tr key={variant.variantId || `${variant.name}-${idx}`}>
+                                                <td className="px-4 py-3">
+                                                    <p className="font-bold text-slate-900">{variant.name}</p>
+                                                    {variant.unit ? (
+                                                        <p className="text-[10px] text-slate-400">{variant.unit}</p>
+                                                    ) : null}
+                                                </td>
+                                                <td className="px-4 py-3 text-center font-black text-violet-700">
+                                                    {variant.stock}
+                                                </td>
+                                                <td className="px-4 py-3 text-center font-bold text-slate-700">
+                                                    ₹{Number(variant.purchasePrice || 0).toLocaleString('en-IN')}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openSupplierVariantPurchaseRequest(selectedSupplySupplier, variant)}
+                                                        disabled={Number(variant.stock) <= 0}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        <HiOutlineClipboardDocumentList className="h-3.5 w-3.5" />
+                                                        Request PR
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                Select a supplier to view variants & request PR
+                            </p>
+                            {viewingSellerSupply.sellerSupplyBreakdown.map((row) => (
+                                <button
+                                    key={String(row.productId || row.sellerId)}
+                                    type="button"
+                                    onClick={() => setSelectedSupplySupplier(row)}
+                                    className="w-full text-left p-4 rounded-2xl border border-slate-100 bg-white hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors"
+                                >
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="font-black text-slate-900">{row.shopName}</p>
+                                            {row.sellerName ? (
+                                                <p className="text-[10px] text-slate-400 mt-0.5">Owner: {row.sellerName}</p>
+                                            ) : null}
+                                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-slate-500">
+                                                {row.sellerPhone ? (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <HiOutlinePhone className="h-3 w-3" />
+                                                        {row.sellerPhone}
+                                                    </span>
+                                                ) : null}
+                                                {row.sellerEmail ? (
+                                                    <span className="inline-flex items-center gap-1 truncate max-w-[180px]">
+                                                        <HiOutlineEnvelope className="h-3 w-3 shrink-0" />
+                                                        {row.sellerEmail}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                        <HiOutlineChevronRight className="h-5 w-5 text-slate-300 shrink-0 mt-1" />
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                                        <Badge
+                                            variant={row.sellerVerified ? 'success' : 'secondary'}
+                                            className="text-[8px] uppercase"
+                                        >
+                                            {row.sellerVerified ? 'Verified' : 'Unverified'}
+                                        </Badge>
+                                        <span className="text-[10px] font-bold text-violet-700">
+                                            Stock: {row.stock}
+                                        </span>
+                                        <span className="text-[10px] text-slate-500">
+                                            {row.variantCount || row.variants?.length || 1} variant{(row.variantCount || row.variants?.length || 1) !== 1 ? 's' : ''}
+                                        </span>
+                                        {row.needsAdminReview ? (
+                                            <Badge variant="warning" className="text-[8px] uppercase">
+                                                Updated
+                                            </Badge>
+                                        ) : (
+                                            <Badge
+                                                variant={
+                                                    row.status === 'active'
+                                                        ? 'success'
+                                                        : row.status === 'pending_approval'
+                                                          ? 'warning'
+                                                          : 'secondary'
+                                                }
+                                                className="text-[8px] uppercase"
+                                            >
+                                                {row.status?.replace('_', ' ') || '—'}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -2336,51 +2725,123 @@ const ProductManagement = () => {
 
                         <div className="space-y-3">
                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                                Customer selling prices (per variant)
+                                Catalog pricing (per variant) — set before go live
                             </p>
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
                                 {variantSellPrices.map((row, idx) => {
-                                    const supply = Number(goLivePreview.sellerProduct?.supplyPrice) || 0;
+                                    const rootSupply =
+                                        Number(goLivePreview.sellerProduct?.supplyPrice) || 0;
+                                    const purchase = Number(row.purchasePrice) || 0;
                                     const sell = Number(row.salePrice) || 0;
+                                    const mrp = Number(row.price) || sell;
                                     const sellerVariant = goLivePreview.sellerProduct?.variants?.[idx];
+                                    const variantSupply = Number(
+                                        sellerVariant?.purchasePrice ??
+                                            sellerVariant?.price ??
+                                            rootSupply,
+                                    );
                                     return (
                                         <div
                                             key={`${row.name}-${idx}`}
-                                            className="grid grid-cols-12 gap-2 items-center p-3 bg-slate-50 rounded-xl"
+                                            className="p-3 bg-slate-50 rounded-xl space-y-2"
                                         >
-                                            <div className="col-span-5">
+                                            <div className="flex items-center justify-between gap-2">
                                                 <p className="text-xs font-bold text-slate-800">{row.name}</p>
                                                 {sellerVariant && (
                                                     <p className="text-[9px] text-slate-400">
-                                                        Supply ₹{sellerVariant.price ?? supply} · Stock {sellerVariant.stock ?? 0}
+                                                        Seller supply ₹{variantSupply} · Stock{' '}
+                                                        {sellerVariant.stock ?? 0}
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className="col-span-4">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={row.salePrice}
-                                                    onChange={(e) => updateVariantSellPrice(idx, e.target.value)}
-                                                    className="w-full px-3 py-2 bg-white rounded-lg text-sm font-black outline-none ring-1 ring-slate-200"
-                                                    placeholder="Sell price"
-                                                />
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-slate-500 uppercase">
+                                                        MRP
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={row.price}
+                                                        onChange={(e) =>
+                                                            updateGoLiveVariantField(idx, 'price', e.target.value)
+                                                        }
+                                                        className="w-full mt-1 px-2 py-2 bg-white rounded-lg text-sm font-black outline-none ring-1 ring-slate-200"
+                                                        placeholder="MRP"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-emerald-600 uppercase">
+                                                        Sale price
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={row.salePrice}
+                                                        onChange={(e) =>
+                                                            updateGoLiveVariantField(
+                                                                idx,
+                                                                'salePrice',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full mt-1 px-2 py-2 bg-white rounded-lg text-sm font-black outline-none ring-1 ring-emerald-200"
+                                                        placeholder="Customer price"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-bold text-violet-600 uppercase">
+                                                        Purchase
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={row.purchasePrice}
+                                                        onChange={(e) =>
+                                                            updateGoLiveVariantField(
+                                                                idx,
+                                                                'purchasePrice',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className="w-full mt-1 px-2 py-2 bg-white rounded-lg text-sm font-black outline-none ring-1 ring-violet-200"
+                                                        placeholder="Hub cost"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="col-span-3 text-right">
-                                                <p className="text-[9px] text-slate-400 uppercase">Margin</p>
-                                                <p className={cn(
-                                                    'text-xs font-black',
-                                                    sell - supply >= 0 ? 'text-emerald-600' : 'text-rose-600',
-                                                )}>
-                                                    ₹{(sell - supply).toLocaleString('en-IN')}
-                                                </p>
+                                            <div className="flex justify-between text-[9px] text-slate-500">
+                                                <span>
+                                                    Margin:{' '}
+                                                    <span
+                                                        className={cn(
+                                                            'font-black',
+                                                            sell - purchase >= 0
+                                                                ? 'text-emerald-600'
+                                                                : 'text-rose-600',
+                                                        )}
+                                                    >
+                                                        ₹{(sell - purchase).toLocaleString('en-IN')}
+                                                    </span>
+                                                </span>
+                                                {mrp > 0 && sell > 0 && mrp > sell && (
+                                                    <span>Discount: {Math.round(((mrp - sell) / mrp) * 100)}%</span>
+                                                )}
                                             </div>
+                                            <VariantGstFields
+                                                variant={row}
+                                                gstRates={gstRates}
+                                                taxablePrice={sell}
+                                                compact
+                                                onChange={(patch) => patchGoLiveVariant(idx, patch)}
+                                            />
                                         </div>
                                     );
                                 })}
                             </div>
                             <p className="text-[10px] text-slate-400">
-                                Hub stock for a new master copy starts at 0. Seller supply stock is unchanged.
+                                Purchase defaults from seller supply. Hub stock for a new master starts at 0; seller
+                                supply stock is unchanged. You can update MRP, sale, and purchase again when adjusting
+                                hub stock.
                             </p>
                         </div>
                     </div>
