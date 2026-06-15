@@ -173,7 +173,7 @@ function VariantPicker({ variants, selectedKey, onSelect, variantCartMap }) {
       <div
         className={cn(
           multi
-            ? 'flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1'
+            ? 'flex gap-2 overflow-x-auto py-1 scrollbar-hide -mx-1 px-1'
             : 'grid grid-cols-1',
         )}
       >

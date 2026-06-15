@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { BRAND_COLOR } from '../constants/brandTheme';
 import { useLocation } from '../context/LocationContext';
@@ -12,6 +12,7 @@ import HomeFeaturedSection from '../components/home/HomeFeaturedSection';
 import HomePlatformSections from '../components/home/HomePlatformSections';
 import LocationDrawer from '../components/shared/LocationDrawer';
 import { HOME_SECTION } from '../components/home/homeLayout';
+import SectionRenderer from '../components/experience/SectionRenderer';
 
 /**
  * Customer landing (/) — mobile-first Blinkit-style home; desktop adds full-width
@@ -49,7 +50,16 @@ const Home = () => {
         isCatalogLoading,
         isCommerceLoading,
         error,
+        experienceSections,
+        categoryMap,
+        subcategoryMap,
     } = useHomePage(currentLocation);
+
+    const productsById = useMemo(() => {
+        const map = {};
+        products?.forEach(p => { map[p._id || p.id] = p; });
+        return map;
+    }, [products]);
 
     const openLocation = () => setLocationOpen(true);
     const scrollToTop = () => {
@@ -85,7 +95,19 @@ const Home = () => {
                     Loading categories…
                 </div>
             ) : (
-                <HomeCategorySections sections={categorySections} />
+                <>
+                    <HomeCategorySections sections={categorySections} />
+                    {experienceSections?.length > 0 && (
+                        <div className="mt-8 mb-6">
+                            <SectionRenderer
+                                sections={experienceSections}
+                                productsById={productsById}
+                                categoriesById={categoryMap}
+                                subcategoriesById={subcategoryMap}
+                            />
+                        </div>
+                    )}
+                </>
             )}
 
             <HomePromoBelowCategories promo={promoBelowCategories} />

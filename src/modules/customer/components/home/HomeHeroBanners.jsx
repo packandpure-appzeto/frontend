@@ -77,11 +77,15 @@ const HomeHeroBanners = ({ slides = [] }) => {
                   }
                   className={cn('relative block w-full', SLIDE_H)}
                 >
-                  <img
-                    src={slide.image}
-                    alt={slide.alt || ''}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
+                  <picture>
+                    <source media="(max-width: 767px)" srcSet={slide.mobileImage || slide.image} />
+                    <source media="(min-width: 768px)" srcSet={slide.image} />
+                    <img
+                      src={slide.image}
+                      alt={slide.alt || ''}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  </picture>
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-900/50 via-brand-900/10 to-transparent" />
                 </button>
               ) : (

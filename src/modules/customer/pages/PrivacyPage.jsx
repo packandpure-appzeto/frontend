@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@core/context/SettingsContext';
+import { customerApi } from '../services/customerApi';
 
 const PrivacyPage = () => {
     const navigate = useNavigate();
     const { settings } = useSettings();
     const appName = settings?.appName || 'App';
+    const [pageContent, setPageContent] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        customerApi.getDynamicPage('privacy').then(res => {
+            setPageContent(res.data.result || res.data);
+            setIsLoading(false);
+        }).catch(err => {
+            console.error(err);
+            setIsLoading(false);
+        });
+    }, []);
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-10">
             {/* Header */}
@@ -33,34 +46,17 @@ const PrivacyPage = () => {
                     </div>
 
                     <div className="prose prose-slate prose-sm max-w-none text-slate-600 space-y-4">
-                        <p>
-                            At {appName}, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your personal information.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">1. Information We Collect</h3>
-                        <p>
-                            We collect information you provide directly, such as your name, address, phone number, and payment details. We also collect usage data automatically.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">2. How We Use Information</h3>
-                        <p>
-                            We use your data to process orders, improve our services, and communicate with you about promotions and updates.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">3. Data Security</h3>
-                        <p>
-                            We implement industry-standard security measures to protect your data. However, no method of transmission is 100% secure.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">4. Sharing of Information</h3>
-                        <p>
-                            We do not sell your personal data. We may share data with service providers (e.g., delivery partners) as necessary to fulfill your orders.
-                        </p>
-
-                        <h3 className="text-slate-800 font-bold text-base mt-6">5. Your Rights</h3>
-                        <p>
-                            You have the right to access, correct, or delete your personal data. Contact our support team for assistance.
-                        </p>
+                        {isLoading ? (
+                            <div className="animate-pulse space-y-3">
+                                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                                <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                                <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+                            </div>
+                        ) : pageContent ? (
+                            <div dangerouslySetInnerHTML={{ __html: pageContent.content }} />
+                        ) : (
+                            <p>Privacy policy content is not available yet.</p>
+                        )}
                     </div>
                 </div>
             </div>

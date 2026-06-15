@@ -98,12 +98,6 @@ const NotificationComposer = React.lazy(
 const OffersManagement = React.lazy(
   () => import("../pages/OffersManagement"),
 );
-const OfferSectionsManagement = React.lazy(
-  () => import("../pages/OfferSectionsManagement"),
-);
-const ShopByStoreManagement = React.lazy(
-  () => import("../pages/ShopByStoreManagement"),
-);
 const AdminSettings = React.lazy(() => import("../pages/AdminSettings"));
 const EnvSettings = React.lazy(() => import("../pages/EnvSettings"));
 const AdminProfile = React.lazy(() => import("../pages/AdminProfile"));
@@ -153,8 +147,6 @@ const navItems = [
       { label: "Hero & categories per page", path: "/admin/hero-categories" },
       { label: "Send Notifications", path: "/admin/notifications" },
       { label: "Coupons & Promos", path: "/admin/coupons" },
-      { label: "Offer Sections", path: "/admin/offer-sections" },
-      { label: "Shop by Store", path: "/admin/shop-by-store" },
     ],
   },
 
@@ -308,8 +300,6 @@ const AdminRoutes = () => {
         <Route path="/hero-categories" element={<HeroCategoriesPerPage />} />
         <Route path="/notifications" element={<NotificationComposer />} />
         <Route path="/offers" element={<OffersManagement />} />
-        <Route path="/offer-sections" element={<OfferSectionsManagement />} />
-        <Route path="/shop-by-store" element={<ShopByStoreManagement />} />
         <Route path="/coupons" element={<CouponManagement />} />
         <Route path="/sellers/pending" element={<Navigate to="/admin/suppliers?tab=pending" replace />} />
         <Route path="/seller-locations" element={<SellerLocations />} />
