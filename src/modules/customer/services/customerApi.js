@@ -97,12 +97,17 @@ export const customerApi = {
   getHeroConfig: (params) =>
     getWithDedupe("/experience/hero", params, { ttl: 60 * 1000 }),
 
+  // Dynamic Pages
+  getDynamicPage: (slug) => getWithDedupe(`/dynamic-pages/public/${slug}`),
+
   // Public offers
   getOffers: () => getWithDedupe("/offers"),
-  // Offer sections (category → products, banner + side image)
-  getOfferSections: (params) => getWithDedupe("/offer-sections", params),
 
   // Promotions
   validatePromotion: (data) => axiosInstance.post("/promotions/validate", data),
   getActivePromotions: (params, options) => getWithDedupe("/promotions/available", params, options),
+
+  // Product Requests
+  createProductRequest: (data) => axiosInstance.post("/product-requests", data),
+  getMyProductRequests: () => getWithDedupe("/product-requests/my-requests"),
 };

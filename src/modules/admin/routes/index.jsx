@@ -23,6 +23,7 @@ import {
   Sparkles,
   User,
   MapPin,
+  PackageSearch,
 } from "lucide-react";
 
 const Dashboard = React.lazy(() => import("../pages/Dashboard"));
@@ -97,17 +98,12 @@ const NotificationComposer = React.lazy(
 const OffersManagement = React.lazy(
   () => import("../pages/OffersManagement"),
 );
-const OfferSectionsManagement = React.lazy(
-  () => import("../pages/OfferSectionsManagement"),
-);
-const ShopByStoreManagement = React.lazy(
-  () => import("../pages/ShopByStoreManagement"),
-);
 const AdminSettings = React.lazy(() => import("../pages/AdminSettings"));
 const EnvSettings = React.lazy(() => import("../pages/EnvSettings"));
 const AdminProfile = React.lazy(() => import("../pages/AdminProfile"));
 const HubSettings = React.lazy(() => import("../pages/HubSettings"));
 const Reports = React.lazy(() => import("../pages/Reports"));
+const ProductRequestsList = React.lazy(() => import("../pages/ProductRequestsList"));
 
 const navItems = [
   { sectionHeader: "Core Management" },
@@ -151,8 +147,6 @@ const navItems = [
       { label: "Hero & categories per page", path: "/admin/hero-categories" },
       { label: "Send Notifications", path: "/admin/notifications" },
       { label: "Coupons & Promos", path: "/admin/coupons" },
-      { label: "Offer Sections", path: "/admin/offer-sections" },
-      { label: "Shop by Store", path: "/admin/shop-by-store" },
     ],
   },
 
@@ -163,6 +157,12 @@ const navItems = [
     path: "/admin/hub-inventory",
     icon: Boxes,
     color: "teal",
+  },
+  {
+    label: "Product Requests",
+    path: "/admin/product-requests",
+    icon: PackageSearch,
+    color: "blue",
   },
 
   { sectionHeader: "Vendors & Sellers" },
@@ -288,6 +288,7 @@ const AdminRoutes = () => {
         <Route path="/suppliers" element={<SuppliersManagementPage />} />
         <Route path="/suppliers/:id" element={<SellerDetail />} />
         <Route path="/vendors" element={<Navigate to="/admin/suppliers" replace />} />
+        <Route path="/product-requests" element={<ProductRequestsList />} />
         <Route path="/purchase-requests" element={<PurchaseRequestsPage />} />
         <Route path="/pickup-partners" element={<PickupPartnersPage />} />
         <Route path="/delivery-partners" element={<DeliveryPartnersPage />} />
@@ -299,8 +300,6 @@ const AdminRoutes = () => {
         <Route path="/hero-categories" element={<HeroCategoriesPerPage />} />
         <Route path="/notifications" element={<NotificationComposer />} />
         <Route path="/offers" element={<OffersManagement />} />
-        <Route path="/offer-sections" element={<OfferSectionsManagement />} />
-        <Route path="/shop-by-store" element={<ShopByStoreManagement />} />
         <Route path="/coupons" element={<CouponManagement />} />
         <Route path="/sellers/pending" element={<Navigate to="/admin/suppliers?tab=pending" replace />} />
         <Route path="/seller-locations" element={<SellerLocations />} />

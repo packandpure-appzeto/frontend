@@ -23,6 +23,7 @@ import { useSettings } from '@core/context/SettingsContext';
 import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandTheme';
 import CategoryProductRow from '../components/category/CategoryProductRow';
 import { PAGE_CONTAINER } from '../components/home/homeLayout';
+import SectionRenderer from '../components/experience/SectionRenderer';
 
 const DEFAULT_SUB_ICON =
   'https://cdn-icons-png.flaticon.com/128/2321/2321831.png';
@@ -131,6 +132,10 @@ const CategoryProductsPage = () => {
   const [ratedOnly, setRatedOnly] = useState(false);
   const [brandFilter, setBrandFilter] = useState('all');
 
+  const [experienceSections, setExperienceSections] = useState([]);
+  const [categoryMap, setCategoryMap] = useState({});
+  const [subcategoryMap, setSubcategoryMap] = useState({});
+
   const hasValidLocation =
     Number.isFinite(currentLocation?.latitude) &&
     Number.isFinite(currentLocation?.longitude);
@@ -157,6 +162,17 @@ const CategoryProductsPage = () => {
           ...subs,
         ]);
       }
+      
+      const cMap = {};
+      const sMap = {};
+      tree.forEach((root) => {
+        cMap[root._id] = root;
+        if (root.children) {
+            root.children.forEach(sub => sMap[sub._id] = sub);
+        }
+      });
+      setCategoryMap(cMap);
+      setSubcategoryMap(sMap);
     } catch (e) {
       console.error('[CategoryProductsPage] categories', e);
     }
@@ -229,6 +245,20 @@ const CategoryProductsPage = () => {
   }, [loadProducts]);
 
   useEffect(() => {
+    const loadExp = async () => {
+      try {
+        const res = await customerApi.getExperienceSections({ pageType: 'header', headerId: catId });
+        if (res.data?.success) {
+          setExperienceSections(res.data.results || res.data.result || []);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (catId) loadExp();
+  }, [catId]);
+
+  useEffect(() => {
     setSelectedSubCategory(location.state?.activeSubcategoryId || 'all');
   }, [location.state?.activeSubcategoryId]);
 
@@ -238,6 +268,12 @@ const CategoryProductsPage = () => {
       if (p.brand) set.add(p.brand);
     });
     return ['all', ...Array.from(set).sort()];
+  }, [products]);
+
+  const productsById = useMemo(() => {
+    const map = {};
+    products.forEach(p => { map[p._id || p.id] = p; });
+    return map;
   }, [products]);
 
   const displayProducts = useMemo(() => {
@@ -515,6 +551,16 @@ const CategoryProductsPage = () => {
         </aside>
 
         <main className="min-w-0 flex-1 bg-white">
+          {experienceSections.length > 0 && (
+              <div className="pt-8 pb-4">
+                 <SectionRenderer 
+                    sections={experienceSections} 
+                    productsById={productsById} 
+                    categoriesById={categoryMap} 
+                    subcategoriesById={subcategoryMap} 
+                 />
+              </div>
+          )}
           <div className="sticky top-[72px] z-40 border-b border-slate-50 bg-white px-2 py-2">
             {filterBar}
           </div>
@@ -568,6 +614,16 @@ const CategoryProductsPage = () => {
         </aside>
 
         <main className="min-w-0 flex-1">
+          {experienceSections.length > 0 && (
+              <div className="mb-6">
+                 <SectionRenderer 
+                    sections={experienceSections} 
+                    productsById={productsById} 
+                    categoriesById={categoryMap} 
+                    subcategoriesById={subcategoryMap} 
+                 />
+              </div>
+          )}
           <div className="mb-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
             {filterBar}
           </div>

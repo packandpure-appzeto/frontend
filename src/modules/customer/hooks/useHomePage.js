@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STATIC_HOME_REVIEW } from '../constants/homeStaticData';
 import { homeService } from '../services/homeService';
-import { getSideImageByKey } from '@/shared/constants/offerSectionOptions';
 import { BRAND_COLOR_LIGHT } from '../constants/brandTheme';
 import { buildHomeCategorySections } from '../utils/categoryTree';
 import { normalizeCustomerProducts } from '@shared/utils/productDisplay';
@@ -19,7 +18,6 @@ const emptyApiState = {
   heroConfig: { banners: { items: [] }, categoryIds: [] },
   products: STATIC_HOME_REVIEW.featuredProducts,
   experienceSections: [],
-  offerSections: [],
   categoryMap: {},
   subcategoryMap: {},
 };
@@ -28,33 +26,19 @@ function normalizeHeroSlidesFromApi(heroResult) {
   const items = heroResult?.banners?.items;
   if (!Array.isArray(items) || !items.length) return null;
   const active = items.filter(
-    (b) => b?.imageUrl && (b.status || 'active') === 'active',
+    (b) => (b?.imageUrl || b?.mobileImageUrl) && (b.status || 'active') === 'active',
   );
   if (!active.length) return null;
   return active.map((b, i) => ({
     id: `api-hero-${i}`,
     layout: 'fullBleed',
-    image: b.imageUrl,
+    image: b.imageUrl || b.mobileImageUrl,
+    mobileImage: b.mobileImageUrl || b.imageUrl,
     alt: b.title || 'Promotion',
     linkType: b.linkType || 'none',
     linkValue: b.linkValue || '',
   }));
 }
-
-function promoFromFirstOfferSection(section) {
-  if (!section?.title) return null;
-  return {
-    id: `offer-${section._id || 'promo'}`,
-    eyebrow: 'Near you',
-    title: section.title,
-    subtitle: 'Offers from stores in your delivery zone.',
-    cta: 'View offers',
-    image: getSideImageByKey(section.sideImageKey),
-    gradientFrom: BRAND_COLOR_LIGHT,
-    gradientTo: '#ffffff',
-  };
-}
-
 function buildCategoryMaps(dbCats = []) {
   const categoryMap = {};
   const subcategoryMap = {};
@@ -136,7 +120,6 @@ export function useHomePage(currentLocation) {
         ...prev,
         products: STATIC_HOME_REVIEW.featuredProducts,
         experienceSections: [],
-        offerSections: [],
       }));
       setIsCommerceLoading(false);
       return;
@@ -151,17 +134,11 @@ export function useHomePage(currentLocation) {
         productParams.lng = currentLocation.longitude;
       }
 
-      const [prodRes, expRes, offerRes] = await Promise.all([
+      const [prodRes, expRes] = await Promise.all([
         homeService.getProducts(productParams),
         ENABLE_HOME_API
           ? homeService.getExperienceSections({ pageType: 'home' })
           : Promise.resolve(null),
-        hasLocation
-          ? homeService.getOfferSections({
-              lat: currentLocation.latitude,
-              lng: currentLocation.longitude,
-            })
-          : Promise.resolve({ data: {} }),
       ]);
 
       const items =
@@ -171,12 +148,6 @@ export function useHomePage(currentLocation) {
         [];
 
       const normalized = normalizeProducts(Array.isArray(items) ? items : []);
-
-      const offerSectionsRaw =
-        offerRes?.data?.results ||
-        (Array.isArray(offerRes?.data?.result) ? offerRes.data.result : []) ||
-        offerRes?.data?.result?.items ||
-        [];
 
       setApiState((prev) => ({
         ...prev,
@@ -189,73 +160,65 @@ export function useHomePage(currentLocation) {
         experienceSections: ENABLE_HOME_API
           ? expRes?.data?.results || expRes?.data?.result || []
           : [],
-        offerSections: Array.isArray(offerSectionsRaw) ? offerSectionsRaw : [],
       }));
     } catch (err) {
-      console.error('[useHomePage] commerce', err);
-      setError(err?.response?.data?.message || 'Failed to load products');
-      setApiState((prev) => ({
-        ...prev,
-        products: STATIC_HOME_REVIEW.featuredProducts,
-      }));
-    } finally {
-      setIsCommerceLoading(false);
-    }
+  console.error('[useHomePage] commerce', err);
+  setError(err?.response?.data?.message || 'Failed to load products');
+  setApiState((prev) => ({
+    ...prev,
+    products: STATIC_HOME_REVIEW.featuredProducts,
+  }));
+} finally {
+  setIsCommerceLoading(false);
+}
   }, [currentLocation?.latitude, currentLocation?.longitude]);
 
-  useEffect(() => {
-    fetchCatalog();
-  }, [fetchCatalog]);
+useEffect(() => {
+  fetchCatalog();
+}, [fetchCatalog]);
 
-  useEffect(() => {
-    fetchCommerce();
-  }, [fetchCommerce]);
+useEffect(() => {
+  fetchCommerce();
+}, [fetchCommerce]);
 
-  const refetch = useCallback(async () => {
-    await fetchCatalog();
-    await fetchCommerce();
-  }, [fetchCatalog, fetchCommerce]);
+const refetch = useCallback(async () => {
+  await fetchCatalog();
+  await fetchCommerce();
+}, [fetchCatalog, fetchCommerce]);
 
-  const data = useMemo(() => {
-    const apiHeroSlides = normalizeHeroSlidesFromApi(apiState.heroConfig);
-    const heroSlides =
-      apiHeroSlides && apiHeroSlides.length > 0
-        ? apiHeroSlides
-        : STATIC_HOME_REVIEW.heroSlides;
+const data = useMemo(() => {
+  const apiHeroSlides = normalizeHeroSlidesFromApi(apiState.heroConfig);
+  const heroSlides =
+    apiHeroSlides && apiHeroSlides.length > 0
+      ? apiHeroSlides
+      : STATIC_HOME_REVIEW.heroSlides;
 
-    const firstOffer =
-      Array.isArray(apiState.offerSections) && apiState.offerSections.length > 0
-        ? apiState.offerSections[0]
-        : null;
-    const promoFromApi = firstOffer ? promoFromFirstOfferSection(firstOffer) : null;
-    const promoBelowCategories =
-      promoFromApi || STATIC_HOME_REVIEW.promoBelowCategories;
+  const promoBelowCategories = STATIC_HOME_REVIEW.promoBelowCategories;
 
-    const isStaticPreview = STATIC_CATALOG;
-
-    return {
-      ...STATIC_HOME_REVIEW,
-      isStaticPreview,
-      categorySections: apiState.categorySections,
-      products: apiState.products,
-      experienceSections: apiState.experienceSections,
-      offerSections: apiState.offerSections,
-      heroConfig: apiState.heroConfig,
-      heroSlides,
-      promoBelowCategories,
-      categoryMap: apiState.categoryMap,
-      subcategoryMap: apiState.subcategoryMap,
-      isCatalogLoading,
-      isCommerceLoading,
-      error,
-    };
-  }, [apiState, isCatalogLoading, isCommerceLoading, error]);
+  const isStaticPreview = STATIC_CATALOG;
 
   return {
-    ...data,
-    refetch,
-    enableApi: ENABLE_HOME_API,
-    /** @deprecated use isCatalogLoading / isCommerceLoading */
-    isLoading: isCatalogLoading || isCommerceLoading,
+    ...STATIC_HOME_REVIEW,
+    isStaticPreview,
+    categorySections: apiState.categorySections,
+    products: apiState.products,
+    experienceSections: apiState.experienceSections,
+    heroConfig: apiState.heroConfig,
+    heroSlides,
+    promoBelowCategories,
+    categoryMap: apiState.categoryMap,
+    subcategoryMap: apiState.subcategoryMap,
+    isCatalogLoading,
+    isCommerceLoading,
+    error,
   };
+}, [apiState, isCatalogLoading, isCommerceLoading, error]);
+
+return {
+  ...data,
+  refetch,
+  enableApi: ENABLE_HOME_API,
+  /** @deprecated use isCatalogLoading / isCommerceLoading */
+  isLoading: isCatalogLoading || isCommerceLoading,
+};
 }

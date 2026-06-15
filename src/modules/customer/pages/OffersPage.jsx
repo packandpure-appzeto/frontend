@@ -17,54 +17,7 @@ import { brandColor, brandLogo, NAVBAR_LOGO_CLASS } from '../constants/brandThem
 import { useLocation as useAppLocation } from '../context/LocationContext';
 import { useToast } from '@shared/components/ui/Toast';
 import { PAGE_CONTAINER } from '../components/home/homeLayout';
-import {
-  getSideImageByKey,
-  getBackgroundColorByValue,
-} from '@/shared/constants/offerSectionOptions';
 
-const ICONS = {
-  tag: Tag,
-  clock: Clock,
-  sparkles: Sparkles,
-};
-
-function OfferSectionCard({ section, onClick }) {
-  const imageUrl = getSideImageByKey(section.sideImageKey);
-  const accent = getBackgroundColorByValue(section.backgroundColor);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group flex w-full overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md md:rounded-2xl"
-    >
-      <div className="flex min-h-[88px] flex-1 flex-col justify-center gap-1 px-4 py-3 md:min-h-[100px] md:px-5">
-        <span
-          className="inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
-          style={{ backgroundColor: accent }}
-        >
-          Near you
-        </span>
-        <h3 className="text-sm font-bold leading-tight text-slate-900 md:text-base">
-          {section.title}
-        </h3>
-        <span className="mt-1 inline-flex items-center gap-0.5 text-xs font-semibold text-brand-600 md:text-sm">
-          Shop deal
-          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </span>
-      </div>
-      <div className="relative hidden w-[30%] shrink-0 sm:block md:w-[34%]">
-        <img
-          src={imageUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent" />
-      </div>
-    </button>
-  );
-}
 
 function CouponCard({ offer, onCopy }) {
   const Icon = ICONS[offer.icon] || Sparkles;
@@ -117,7 +70,6 @@ const OffersPage = () => {
   const appName = settings?.appName || 'App';
 
   const [coupons, setCoupons] = useState([]);
-  const [offerSections, setOfferSections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -141,30 +93,11 @@ const OffersPage = () => {
         }
       };
 
-      const offersPromise = fetchCoupons();
-      const sectionsPromise = hasValidLocation
-        ? customerApi.getOfferSections({
-            lat: currentLocation.latitude,
-            lng: currentLocation.longitude,
-          })
-        : Promise.resolve({ data: {} });
-
-      const [_, sectionsRes] = await Promise.all([
-        offersPromise,
-        sectionsPromise,
-      ]);
-
-      const sectionsRaw =
-        sectionsRes.data?.results ||
-        (Array.isArray(sectionsRes.data?.result) ? sectionsRes.data.result : []) ||
-        sectionsRes.data?.result?.items ||
-        [];
-      setOfferSections(Array.isArray(sectionsRaw) ? sectionsRaw : []);
+      const offersRes = await fetchCoupons();
     } catch (e) {
       console.error('[OffersPage]', e);
       setError('Could not load offers');
       setCoupons([]);
-      setOfferSections([]);
     } finally {
       setIsLoading(false);
     }
@@ -184,14 +117,6 @@ const OffersPage = () => {
     [coupons],
   );
 
-  const activeSections = useMemo(
-    () =>
-      [...offerSections]
-        .filter((s) => s.status === 'active')
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [offerSections],
-  );
-
   const handleCopyCoupon = async (offer) => {
     const code = offer.code || '';
     if (code) {
@@ -205,29 +130,7 @@ const OffersPage = () => {
     navigate('/checkout');
   };
 
-  const handleSectionClick = (section) => {
-    const categoryId =
-      section.categoryIds?.[0]?._id ||
-      section.categoryIds?.[0] ||
-      section.categoryId?._id ||
-      section.categoryId;
-
-    if (categoryId) {
-      navigate(`/category/${categoryId}`);
-      return;
-    }
-
-    const product = section.productIds?.[0];
-    const productId = product?._id || product;
-    if (productId) {
-      navigate(`/product/${productId}`);
-      return;
-    }
-
-    navigate('/categories');
-  };
-
-  const hasContent = activeCoupons.length > 0 || activeSections.length > 0;
+  const hasContent = activeCoupons.length > 0;
 
   return (
     <div className="min-h-screen bg-white font-sans md:bg-slate-50">
@@ -282,23 +185,6 @@ const OffersPage = () => {
           </div>
         ) : (
           <>
-            {activeSections.length > 0 && (
-              <section className="mb-8 md:mb-10">
-                <h2 className="mb-3 text-sm font-bold text-slate-900 md:mb-4 md:text-base">
-                  Deals near you
-                </h2>
-                <div className="flex flex-col gap-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4">
-                  {activeSections.map((section) => (
-                    <OfferSectionCard
-                      key={section._id}
-                      section={section}
-                      onClick={() => handleSectionClick(section)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {activeCoupons.length > 0 && (
               <section>
                 <h2 className="mb-3 text-sm font-bold text-slate-900 md:mb-4 md:text-base">

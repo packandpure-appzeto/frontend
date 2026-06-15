@@ -16,6 +16,7 @@ import ScrollToTop from '@modules/customer/components/shared/ScrollToTop';
 import CustomerLayout from '@modules/customer/components/layout/CustomerLayout';
 import SetNameModal from '@modules/customer/components/auth/SetNameModal';
 import Loader from '@shared/components/ui/Loader';
+import { isCustomerProfileComplete } from '@core/utils/profile';
 
 /**
  * Customer storefront shell — forces brand CSS vars; API primaryColor is not used here.
@@ -24,8 +25,6 @@ const CustomerLayoutWrapper = () => {
   const { settings } = useSettings();
   const { user, isLoading: authLoading, patchUser } = useAuth();
   const [showSetName, setShowSetName] = useState(false);
-  // Persist skip state across navigation — customerLoginForm sets this flag too
-  const skippedRef = useRef(sessionStorage.getItem('name_prompt_skipped') === '1');
 
   useEffect(() => {
     applyCustomerThemeVariables();
@@ -34,25 +33,24 @@ const CustomerLayoutWrapper = () => {
 
   /**
    * Once the auth profile is loaded, if the user is authenticated but
-   * has no name, show the name-prompt modal.
+   * has an incomplete profile, show the profile modal.
    * We guard with authLoading so we don't flash it during the initial fetch.
    */
   useEffect(() => {
-    if (!authLoading && user && !user.name && !skippedRef.current) {
+    if (!authLoading && user && !isCustomerProfileComplete(user)) {
       setShowSetName(true);
+    } else {
+      setShowSetName(false);
     }
   }, [authLoading, user]);
 
-  const handleNameSaved = (savedName) => {
-    // Update the local user state so header/profile reflect the new name immediately
-    patchUser({ name: savedName });
-    sessionStorage.removeItem('name_prompt_skipped'); // name is set — clear the flag
-    setShowSetName(false);
-  };
-
-  const handleNameSkip = () => {
-    skippedRef.current = true;
-    sessionStorage.setItem('name_prompt_skipped', '1'); // persist across remounts
+  const handleNameSaved = (savedName, updatedCustomerData) => {
+    // Update the local user state so header/profile reflect the new data immediately
+    if (updatedCustomerData) {
+        patchUser(updatedCustomerData);
+    } else {
+        patchUser({ name: savedName });
+    }
     setShowSetName(false);
   };
 
@@ -73,7 +71,6 @@ const CustomerLayoutWrapper = () => {
                 <SetNameModal
                   open={showSetName}
                   onSuccess={handleNameSaved}
-                  onSkip={handleNameSkip}
                 />
               </ProductDetailProvider>
             </CartAnimationProvider>
