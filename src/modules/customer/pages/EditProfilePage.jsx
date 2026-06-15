@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, User, Phone, Mail, Camera, Save, MapPin, Building2, FileText, Shield, Leaf } from 'lucide-react';
+import { ChevronLeft, User, Phone, Mail, Camera, Save, MapPin, Building2, FileText, Shield, Leaf, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuth } from '@core/context/AuthContext';
@@ -9,22 +9,52 @@ import { customerApi } from '../services/customerApi';
 
 const AVATAR_FOLDER = 'customers';
 
+const businessTypeOptions = [
+    "Restaurant", "Cafe", "Cloud Kitchen", "QSR", "Bakery", "Sweet Shop", 
+    "Bar", "Pub", "Food Court Stall", "Dhaba", "Catering Service", "Tiffin Service", 
+    "Grocery Store", "Supermarket", "Pharmacy", "Dark Store", "Warehouse", 
+    "Wholesale Store", "Supplier", "Manufacturer", "Other"
+];
+
+const loadBusinessType = (type) => {
+    if (!type) return { businessType: '', customBusinessType: '' };
+    if (businessTypeOptions.includes(type)) {
+        return { businessType: type, customBusinessType: '' };
+    } else {
+        return { businessType: 'Other', customBusinessType: type };
+    }
+};
+
 const EditProfilePage = () => {
     const navigate = useNavigate();
     const { user, refreshUser } = useAuth();
     const fileInputRef = useRef(null);
     const previewBlobRef = useRef(null);
+    const dropdownRef = useRef(null);
 
     const [isLoading, setIsLoading] = useState(false);
     const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState('');
     const [savedAvatarUrl, setSavedAvatarUrl] = useState('');
+    const [showBusinessTypeDropdown, setShowBusinessTypeDropdown] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowBusinessTypeDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
         email: '',
         businessName: '',
         businessAddress: '',
+        businessType: '',
+        customBusinessType: '',
         panNo: '',
         gstNo: '',
         fssaiNumber: '',
@@ -44,12 +74,15 @@ const EditProfilePage = () => {
                 const res = await customerApi.getProfile();
                 const profile = res.data?.result ?? res.data?.data ?? user;
                 if (cancelled || !profile) return;
+                const bt = loadBusinessType(profile.businessType);
                 setFormData({
                     name: profile.name ?? '',
                     phone: profile.phone ?? '',
                     email: profile.email ?? '',
                     businessName: profile.businessName ?? '',
                     businessAddress: profile.businessAddress ?? '',
+                    businessType: bt.businessType,
+                    customBusinessType: bt.customBusinessType,
                     panNo: profile.panNo ?? '',
                     gstNo: profile.gstNo ?? '',
                     fssaiNumber: profile.fssaiNumber ?? '',
@@ -59,12 +92,15 @@ const EditProfilePage = () => {
                 setAvatarPreview(url);
             } catch {
                 if (!cancelled && user) {
+                    const bt = loadBusinessType(user.businessType);
                     setFormData({
                         name: user.name ?? '',
                         phone: user.phone ?? '',
                         email: user.email ?? '',
                         businessName: user.businessName ?? '',
                         businessAddress: user.businessAddress ?? '',
+                        businessType: bt.businessType,
+                        customBusinessType: bt.customBusinessType,
                         panNo: user.panNo ?? '',
                         gstNo: user.gstNo ?? '',
                         fssaiNumber: user.fssaiNumber ?? '',
@@ -129,12 +165,14 @@ const EditProfilePage = () => {
                 avatarUrl = uploaded.url;
             }
 
+            const finalBusinessType = formData.businessType === 'Other' ? formData.customBusinessType.trim() : formData.businessType;
             await customerApi.updateProfile({
                 name: formData.name.trim(),
                 email: formData.email?.trim() || undefined,
                 avatar: avatarUrl || undefined,
                 businessName: formData.businessName?.trim() || undefined,
                 businessAddress: formData.businessAddress?.trim() || undefined,
+                businessType: finalBusinessType || undefined,
                 panNo: formData.panNo?.trim() || undefined,
                 gstNo: formData.gstNo?.trim() || undefined,
                 fssaiNumber: formData.fssaiNumber?.trim() || undefined,
@@ -162,11 +200,13 @@ const EditProfilePage = () => {
     const hasPendingPhoto = Boolean(pendingAvatarFile);
 
     const handleBack = () => {
+        const finalBusinessType = formData.businessType === 'Other' ? formData.customBusinessType.trim() : formData.businessType;
         const hasChanges =
             formData.name !== (user?.name ?? '') ||
             (formData.email || '') !== (user?.email || '') ||
             (formData.businessName || '') !== (user?.businessName || '') ||
             (formData.businessAddress || '') !== (user?.businessAddress || '') ||
+            (finalBusinessType || '') !== (user?.businessType || '') ||
             (formData.panNo || '') !== (user?.panNo || '') ||
             (formData.gstNo || '') !== (user?.gstNo || '') ||
             (formData.fssaiNumber || '') !== (user?.fssaiNumber || '') ||
@@ -290,7 +330,6 @@ const EditProfilePage = () => {
                         <div className="flex items-center gap-2 mb-1">
                             <Building2 size={16} className="text-[#E23744]" />
                             <p className="text-sm font-black text-slate-700">Business Info</p>
-                            <span className="text-[10px] text-slate-400 font-medium">(optional)</span>
                         </div>
 
                         <div>
@@ -322,6 +361,60 @@ const EditProfilePage = () => {
                                 />
                             </div>
                         </div>
+
+                        <div className="relative" ref={dropdownRef}>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Business Type</label>
+                            <button
+                                type="button"
+                                onClick={() => !isLoading && setShowBusinessTypeDropdown(!showBusinessTypeDropdown)}
+                                className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all w-full text-left"
+                            >
+                                <Building2 size={20} className="text-slate-400" />
+                                <span className={`flex-1 font-bold ${formData.businessType ? 'text-slate-800' : 'text-slate-400'}`}>
+                                    {formData.businessType || 'Select Business Type'}
+                                </span>
+                                <ChevronDown size={20} className={`text-slate-400 transition-transform duration-200 ${showBusinessTypeDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showBusinessTypeDropdown && (
+                                <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
+                                    {businessTypeOptions.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData(prev => ({ ...prev, businessType: opt }));
+                                                setShowBusinessTypeDropdown(false);
+                                            }}
+                                            className="w-full rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#E23744] transition-colors flex items-center justify-between"
+                                        >
+                                            {opt}
+                                            {formData.businessType === opt && (
+                                                <span className="h-2 w-2 rounded-full bg-[#E23744] shrink-0" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {formData.businessType === 'Other' && (
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Custom Business Type</label>
+                                <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 focus-within:border-[#E23744] focus-within:ring-4 focus-within:ring-[#E23744]/10 transition-all">
+                                    <Building2 size={20} className="text-slate-400" />
+                                    <input
+                                        type="text"
+                                        name="customBusinessType"
+                                        value={formData.customBusinessType}
+                                        onChange={handleChange}
+                                        className="bg-transparent w-full text-slate-800 font-bold outline-none placeholder:font-medium"
+                                        placeholder="Specify business type"
+                                        maxLength={50}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">PAN Number</label>

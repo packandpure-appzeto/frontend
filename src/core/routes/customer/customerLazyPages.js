@@ -10,7 +10,6 @@ export const CustomerPages = {
   CategoryProductsPage: lazy(() => import('@modules/customer/pages/CategoryProductsPage')),
   WishlistPage: lazy(() => import('@modules/customer/pages/WishlistPage')),
   OffersPage: lazy(() => import('@modules/customer/pages/OffersPage')),
-  ShopByStorePage: lazy(() => import('@modules/customer/pages/ShopByStorePage')),
   ProfilePage: lazy(() => import('@modules/customer/pages/ProfilePage')),
   OrdersPage: lazy(() => import('@modules/customer/pages/OrdersPage')),
   OrderTransactionsPage: lazy(() => import('@modules/customer/pages/OrderTransactionsPage')),
@@ -28,4 +27,5 @@ export const CustomerPages = {
   CartPage: lazy(() => import('@modules/customer/pages/CartPage')),
   SearchPage: lazy(() => import('@modules/customer/pages/SearchPage')),
   WalletPage: lazy(() => import('@modules/customer/pages/WalletPage')),
+  RequestProductPage: lazy(() => import('@modules/customer/pages/RequestProductPage')),
 };

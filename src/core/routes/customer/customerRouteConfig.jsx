@@ -17,7 +17,6 @@ export const customerRouteChildren = [
       { path: 'privacy', element: <P.PrivacyPage /> },
       { path: 'about', element: <P.AboutPage /> },
       { path: 'offers', element: <P.OffersPage /> },
-      { path: 'shop-by-store', element: <P.ShopByStorePage /> },
       { path: 'search', element: <P.SearchPage /> },
       {
         path: 'wishlist',
@@ -98,6 +97,14 @@ export const customerRouteChildren = [
         element: (
           <ProtectedRoute>
             <P.EditProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'profile/request-product',
+        element: (
+          <ProtectedRoute>
+            <P.RequestProductPage />
           </ProtectedRoute>
         ),
       },

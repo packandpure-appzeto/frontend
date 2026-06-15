@@ -1,29 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Sparkles, ChevronRight, Loader2, Mail, MapPin, Building2, FileText, Shield, Leaf } from 'lucide-react';
+import { User, Sparkles, ChevronRight, Loader2, Mail, MapPin, Building2, FileText, Shield, Leaf, Briefcase, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { customerApi } from '../../services/customerApi';
 import { BRAND_COLOR, BRAND_COLOR_DARK, BRAND_COLOR_LIGHT } from '../../constants/brandTheme';
+
+const businessTypes = [
+    "Restaurant", "Cafe", "Cloud Kitchen", "QSR", "Bakery", "Sweet Shop", 
+    "Bar", "Pub", "Food Court Stall", "Dhaba", "Catering Service", "Tiffin Service", 
+    "Grocery Store", "Supermarket", "Pharmacy", "Dark Store", "Warehouse", 
+    "Wholesale Store", "Supplier", "Manufacturer", "Other"
+];
 
 /**
  * SetNameModal
  *
  * A slide-up bottom-sheet style modal that prompts the user to complete their profile.
  * Shown when:
- *   1. A new user just verified their OTP (isNewUser === true)
- *   2. An existing user has no name set (user.name is empty/null)
+ *   - The user has not filled all their profile details (checked via API).
  *
  * Props:
  *   open       — boolean: whether to show the modal
  *   onSuccess  — (name: string) => void: called after profile is saved to DB
- *   onSkip     — () => void: called when user taps "Skip for now" (kept for API compat)
  */
-const SetNameModal = ({ open, onSuccess, onSkip }) => {
+const SetNameModal = ({ open, onSuccess }) => {
     const [form, setForm] = useState({
         name: '',
         address: '',
+        landmark: '',
         email: '',
         businessName: '',
         businessAddress: '',
+        businessType: '',
+        customBusinessType: '',
         panNo: '',
         gstNo: '',
         fssaiNumber: '',
@@ -31,22 +39,51 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [visible, setVisible] = useState(false);
     const [animIn, setAnimIn] = useState(false);
+    const [showBusinessTypeDropdown, setShowBusinessTypeDropdown] = useState(false);
     const inputRef = useRef(null);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowBusinessTypeDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     /* ── Mount / unmount animation ── */
     useEffect(() => {
         if (open) {
+            document.body.style.overflow = 'hidden';
             setVisible(true);
             const t = setTimeout(() => {
                 setAnimIn(true);
                 setTimeout(() => inputRef.current?.focus(), 300);
             }, 30);
-            return () => clearTimeout(t);
+            return () => {
+                clearTimeout(t);
+                document.body.style.overflow = 'unset';
+            };
         } else {
+            document.body.style.overflow = 'unset';
             setAnimIn(false);
             const t = setTimeout(() => {
                 setVisible(false);
-                setForm({ name: '', address: '', email: '', businessName: '', businessAddress: '', panNo: '', gstNo: '', fssaiNumber: '' });
+                setForm({
+                    name: '',
+                    address: '',
+                    landmark: '',
+                    email: '',
+                    businessName: '',
+                    businessAddress: '',
+                    businessType: '',
+                    customBusinessType: '',
+                    panNo: '',
+                    gstNo: '',
+                    fssaiNumber: '',
+                });
             }, 350);
             return () => clearTimeout(t);
         }
@@ -59,16 +96,29 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
     const isEmailValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const isNameValid = (name) => name.trim().length >= 2 && /[a-zA-Z]/.test(name);
     const isAddressValid = (address) => address.trim().length >= 5;
-    const isPanValid = (pan) => !pan || /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(pan);
-    const isGstValid = (gst) => !gst || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[A-Z]{1}[0-9A-Z]{1}$/i.test(gst);
-    const isFssaiValid = (fssai) => !fssai || /^[0-9]{14}$/.test(fssai);
+    const isLandmarkValid = (landmark) => landmark.trim().length >= 3;
+    const isPanValid = (pan) => /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i.test(pan.trim());
+    const isGstValid = (gst) => /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[A-Z]{1}[0-9A-Z]{1}$/i.test(gst.trim());
+    const isFssaiValid = (fssai) => /^[0-9]{14}$/.test(fssai.trim());
+    const isBusinessTypeValid = (type, customType) => {
+        if (!type) return false;
+        if (type === 'Other') return customType.trim().length >= 2;
+        return true;
+    };
 
     /* ── Save handler ── */
     const handleSave = async (e) => {
         e?.preventDefault();
         const trimmedName = form.name.trim();
         const trimmedAddress = form.address.trim();
+        const trimmedLandmark = form.landmark.trim();
         const trimmedEmail = form.email.trim();
+        const trimmedBusinessName = form.businessName.trim();
+        const trimmedBusinessAddress = form.businessAddress.trim();
+        const finalBusinessType = form.businessType === 'Other' ? form.customBusinessType.trim() : form.businessType;
+        const trimmedPanNo = form.panNo.trim().toUpperCase();
+        const trimmedGstNo = form.gstNo.trim().toUpperCase();
+        const trimmedFssai = form.fssaiNumber.trim();
 
         if (!isNameValid(trimmedName)) {
             toast.error('Please enter a valid name with letters (min 2 chars)');
@@ -79,36 +129,60 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
             toast.error('Please enter a complete address (min 5 chars)');
             return;
         }
+        if (!isLandmarkValid(trimmedLandmark)) {
+            toast.error('Please enter a landmark (min 3 chars)');
+            return;
+        }
         if (!isEmailValid(trimmedEmail)) {
             toast.error('Please enter a valid email address');
             return;
         }
-        if (!isPanValid(form.panNo.trim())) {
+        if (!trimmedBusinessName) {
+            toast.error('Business name is required');
+            return;
+        }
+        if (!trimmedBusinessAddress) {
+            toast.error('Business address is required');
+            return;
+        }
+        if (!finalBusinessType) {
+            toast.error('Please select or specify a business type');
+            return;
+        }
+        if (!isPanValid(trimmedPanNo)) {
             toast.error('Invalid PAN Number format');
             return;
         }
-        if (!isGstValid(form.gstNo.trim())) {
+        if (!isGstValid(trimmedGstNo)) {
             toast.error('Invalid GST Number format');
             return;
         }
-        if (!isFssaiValid(form.fssaiNumber.trim())) {
+        if (!isFssaiValid(trimmedFssai)) {
             toast.error('FSSAI Number must be exactly 14 digits');
             return;
         }
 
         setIsLoading(true);
         try {
-            await customerApi.updateProfile({
+            const response = await customerApi.updateProfile({
                 name: trimmedName,
-                email: form.email.trim() || undefined,
-                businessName: form.businessName.trim() || undefined,
-                businessAddress: form.businessAddress.trim() || undefined,
-                panNo: form.panNo.trim() || undefined,
-                gstNo: form.gstNo.trim() || undefined,
-                fssaiNumber: form.fssaiNumber.trim() || undefined,
+                email: trimmedEmail,
+                businessName: trimmedBusinessName,
+                businessAddress: trimmedBusinessAddress,
+                businessType: finalBusinessType,
+                panNo: trimmedPanNo,
+                gstNo: trimmedGstNo,
+                fssaiNumber: trimmedFssai,
+                addresses: [
+                    {
+                        label: 'home',
+                        fullAddress: trimmedAddress,
+                        landmark: trimmedLandmark,
+                    }
+                ]
             });
             toast.success(`Welcome, ${trimmedName}! 🎉`);
-            onSuccess?.(trimmedName);
+            onSuccess?.(trimmedName, response.data.result);
         } catch (err) {
             const msg = err.response?.data?.message || 'Failed to save profile. Please try again.';
             toast.error(msg);
@@ -127,13 +201,17 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
     const fieldClass = 'flex items-center gap-3 rounded-2xl border px-4 py-3 bg-slate-50 transition-all';
     const inputInnerClass = 'flex-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400 disabled:opacity-60';
 
-    const isFormValid = 
-        isNameValid(form.name) && 
-        isAddressValid(form.address) && 
+    const isFormValid =
+        isNameValid(form.name) &&
+        isAddressValid(form.address) &&
+        isLandmarkValid(form.landmark) &&
         isEmailValid(form.email) &&
-        isPanValid(form.panNo.trim()) &&
-        isGstValid(form.gstNo.trim()) &&
-        isFssaiValid(form.fssaiNumber.trim());
+        form.businessName.trim().length >= 2 &&
+        form.businessAddress.trim().length >= 5 &&
+        isBusinessTypeValid(form.businessType, form.customBusinessType) &&
+        isPanValid(form.panNo) &&
+        isGstValid(form.gstNo) &&
+        isFssaiValid(form.fssaiNumber);
 
     return (
         <>
@@ -195,7 +273,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                         </h2>
                         <p className="mt-1 text-center text-sm text-slate-500 leading-snug">
                             Let us personalise your experience.<br />
-                            You can always update this later in your profile.
+                            Please fill all the mandatory fields below to continue.
                         </p>
                     </div>
 
@@ -204,7 +282,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                         <form onSubmit={handleSave} className="space-y-4 pt-2" noValidate>
 
                             {/* ── Personal Info Section ── */}
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Personal Info</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Personal Info *</p>
 
                             {/* Name */}
                             <div className={fieldClass} style={inputClass(form.name.length > 0)}>
@@ -241,6 +319,20 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                 />
                             </div>
 
+                            {/* Landmark */}
+                            <div className={fieldClass} style={inputClass(form.landmark.length > 0)}>
+                                <MapPin size={18} className="shrink-0 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={form.landmark}
+                                    onChange={handleChange('landmark')}
+                                    placeholder="Landmark near address *"
+                                    maxLength={100}
+                                    disabled={isLoading}
+                                    className={inputInnerClass}
+                                />
+                            </div>
+
                             {/* Email */}
                             <div className={fieldClass} style={inputClass(form.email.length > 0)}>
                                 <Mail size={18} className="shrink-0 text-slate-400" />
@@ -257,7 +349,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                             </div>
 
                             {/* ── Business Info Section ── */}
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 pt-2">Business Info <span className="normal-case font-medium text-slate-300">(optional)</span></p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 pt-2">Business Info *</p>
 
                             {/* Business Name */}
                             <div className={fieldClass} style={inputClass(form.businessName.length > 0)}>
@@ -266,7 +358,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                     type="text"
                                     value={form.businessName}
                                     onChange={handleChange('businessName')}
-                                    placeholder="Business name"
+                                    placeholder="Business name *"
                                     maxLength={100}
                                     disabled={isLoading}
                                     className={inputInnerClass}
@@ -280,12 +372,65 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                     type="text"
                                     value={form.businessAddress}
                                     onChange={handleChange('businessAddress')}
-                                    placeholder="Business address"
+                                    placeholder="Business address *"
                                     maxLength={200}
                                     disabled={isLoading}
                                     className={inputInnerClass}
                                 />
                             </div>
+
+                            {/* Business Type Dropdown */}
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => !isLoading && setShowBusinessTypeDropdown(!showBusinessTypeDropdown)}
+                                    className={`${fieldClass} w-full text-left`}
+                                    style={inputClass(form.businessType.length > 0)}
+                                >
+                                    <Briefcase size={18} className="shrink-0 text-slate-400" />
+                                    <span className={`flex-1 text-sm font-semibold outline-none ${form.businessType ? 'text-slate-900' : 'text-slate-400'}`}>
+                                        {form.businessType || 'Select Business Type *'}
+                                    </span>
+                                    <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform duration-200 ${showBusinessTypeDropdown ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {showBusinessTypeDropdown && (
+                                    <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200 custom-scrollbar">
+                                        {businessTypes.map((type) => (
+                                            <button
+                                                key={type}
+                                                type="button"
+                                                onClick={() => {
+                                                    setForm(prev => ({ ...prev, businessType: type }));
+                                                    setShowBusinessTypeDropdown(false);
+                                                }}
+                                                className="w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950 transition-colors flex items-center justify-between"
+                                            >
+                                                {type}
+                                                {form.businessType === type && (
+                                                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: BRAND_COLOR }} />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Custom Business Type input */}
+                            {form.businessType === 'Other' && (
+                                <div className={fieldClass} style={inputClass(form.customBusinessType.length > 0)}>
+                                    <Briefcase size={18} className="shrink-0 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={form.customBusinessType}
+                                        onChange={handleChange('customBusinessType')}
+                                        placeholder="Specify business type *"
+                                        maxLength={50}
+                                        disabled={isLoading}
+                                        className={inputInnerClass}
+                                    />
+                                </div>
+                            )}
 
                             {/* PAN No */}
                             <div className={fieldClass} style={inputClass(form.panNo.length > 0)}>
@@ -294,7 +439,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                     type="text"
                                     value={form.panNo}
                                     onChange={handleChange('panNo')}
-                                    placeholder="PAN number"
+                                    placeholder="PAN number *"
                                     maxLength={10}
                                     disabled={isLoading}
                                     className={`${inputInnerClass} uppercase`}
@@ -308,7 +453,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                     type="text"
                                     value={form.gstNo}
                                     onChange={handleChange('gstNo')}
-                                    placeholder="GST number"
+                                    placeholder="GST number *"
                                     maxLength={15}
                                     disabled={isLoading}
                                     className={`${inputInnerClass} uppercase`}
@@ -322,7 +467,7 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                                     type="text"
                                     value={form.fssaiNumber}
                                     onChange={handleChange('fssaiNumber')}
-                                    placeholder="FSSAI number"
+                                    placeholder="FSSAI number *"
                                     maxLength={14}
                                     disabled={isLoading}
                                     className={inputInnerClass}
@@ -333,13 +478,13 @@ const SetNameModal = ({ open, onSuccess, onSkip }) => {
                             <button
                                 id="set-name-save-btn"
                                 type="submit"
-                                disabled={isLoading || !isFormValid}
+                                disabled={isLoading}
                                 className="relative w-full overflow-hidden rounded-2xl py-4 text-base font-bold text-white transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
                                 style={{
-                                    background: isLoading || !isFormValid
+                                    background: isLoading
                                         ? '#9ca3af'
                                         : `linear-gradient(135deg, ${BRAND_COLOR} 0%, ${BRAND_COLOR_DARK} 100%)`,
-                                    boxShadow: isFormValid && !isLoading
+                                    boxShadow: !isLoading
                                         ? `0 8px 24px ${BRAND_COLOR}40`
                                         : 'none',
                                 }}

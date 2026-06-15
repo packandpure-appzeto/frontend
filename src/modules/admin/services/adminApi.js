@@ -154,6 +154,12 @@ export const adminApi = {
     getHeroConfig: (params) => axiosInstance.get('/admin/experience/hero', { params }),
     setHeroConfig: (data) => axiosInstance.put('/admin/experience/hero', data),
 
+    // Dynamic Pages
+    getDynamicPages: () => axiosInstance.get('/dynamic-pages/admin'),
+    getDynamicPage: (slug) => axiosInstance.get(`/dynamic-pages/admin/${slug}`),
+    upsertDynamicPage: (slug, data) => axiosInstance.put(`/dynamic-pages/admin/${slug}`, data),
+    deleteDynamicPage: (slug) => axiosInstance.delete(`/dynamic-pages/admin/${slug}`),
+
     // Offers Management
     getOffers: (params) => axiosInstance.get('/admin-offers', { params }),
     createOffer: (data) => axiosInstance.post('/admin-offers', data),
@@ -161,16 +167,15 @@ export const adminApi = {
     deleteOffer: (id) => axiosInstance.delete(`/admin-offers/${id}`),
     reorderOffers: (items) => axiosInstance.put('/admin-offers/reorder', { items }),
 
-    // Offer Sections (category → products, banner + side image)
-    getOfferSections: (params) => axiosInstance.get('/admin-offer-sections', { params }),
-    createOfferSection: (data) => axiosInstance.post('/admin-offer-sections', data),
-    updateOfferSection: (id, data) => axiosInstance.put(`/admin-offer-sections/${id}`, data),
-    deleteOfferSection: (id) => axiosInstance.delete(`/admin-offer-sections/${id}`),
-    reorderOfferSections: (items) => axiosInstance.put('/admin-offer-sections/reorder', { items }),
+
 
     // Coupons & Promos
     getCoupons: (params) => axiosInstance.get('/admin/promotions', { params }),
     createCoupon: (data) => axiosInstance.post('/admin/promotions', data),
     updateCoupon: (id, data) => axiosInstance.put(`/admin/promotions/${id}`, data),
     deleteCoupon: (id) => axiosInstance.delete(`/admin/promotions/${id}`),
+
+    // Product Requests
+    getProductRequests: (params) => axiosInstance.get('/product-requests', { params }),
+    updateProductRequestStatus: (id, status) => axiosInstance.put(`/product-requests/${id}/status`, { status }),
 };

@@ -7,6 +7,7 @@ import { useSettings } from '@core/context/SettingsContext';
 import { customerApi } from '../../services/customerApi';
 import { brandColor, brandColorDark } from '../../constants/brandTheme';
 import SetNameModal from './SetNameModal';
+import { isCustomerProfileComplete } from '@core/utils/profile';
 
 const OTP_LENGTH = 4;
 
@@ -95,8 +96,8 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
             const { token, customer, isNewUser } = response.data.result;
             login({ ...customer, token, role: 'customer' });
 
-            // Show name prompt if it's a new user or the profile has no name yet
-            if (isNewUser || !customer?.name) {
+            // Show name prompt if it's a new user or the profile is not complete
+            if (isNewUser || !isCustomerProfileComplete(customer)) {
                 setPendingLoginData({ customer, token });
                 setShowSetName(true);
                 return; // hold navigation until modal is handled
@@ -126,12 +127,12 @@ const CustomerLoginForm = ({ variant = 'page', onSuccess, onClose }) => {
         }
     };
 
-    const handleNameSaved = (savedName) => {
+    const handleNameSaved = (savedName, updatedCustomerData) => {
         setShowSetName(false);
         const { customer, token } = pendingLoginData || {};
-        const updatedCustomer = { ...customer, name: savedName };
+        const updatedCustomer = updatedCustomerData || { ...customer, name: savedName };
         setPendingLoginData(null);
-        patchUser({ name: savedName });
+        patchUser(updatedCustomer);
         toast.success(`Welcome, ${savedName}!`);
         if (onSuccess) {
             onSuccess(updatedCustomer, token);

@@ -13,11 +13,14 @@ import { cn } from "@/lib/utils";
 
 const emptyBannerItem = () => ({
   imageUrl: "",
+  mobileImageUrl: "",
   title: "",
   subtitle: "",
   linkType: "none",
   linkValue: "",
+  status: "active",
   isUploading: false,
+  isMobileUploading: false,
 });
 
 export default function HeroCategoriesPerPage() {
@@ -134,20 +137,25 @@ export default function HeroCategoriesPerPage() {
     setFormBanners((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleBannerFileChange = async (idx, file) => {
+  const handleBannerFileChange = async (idx, file, isMobile = false) => {
     if (!file) return;
-    updateBannerItem(idx, { isUploading: true });
+    updateBannerItem(idx, isMobile ? { isMobileUploading: true } : { isUploading: true });
     try {
       const fd = new FormData();
       fd.append("image", file);
       const res = await adminApi.uploadExperienceBanner(fd);
       const url = res.data?.result?.url || res.data?.url;
       if (!url) throw new Error("Upload failed");
-      updateBannerItem(idx, { imageUrl: url, isUploading: false });
+      
+      if (isMobile) {
+        updateBannerItem(idx, { mobileImageUrl: url, isMobileUploading: false });
+      } else {
+        updateBannerItem(idx, { imageUrl: url, isUploading: false });
+      }
       showToast("Banner image uploaded", "success");
     } catch (e) {
       console.error(e);
-      updateBannerItem(idx, { isUploading: false });
+      updateBannerItem(idx, isMobile ? { isMobileUploading: false } : { isUploading: false });
       showToast("Failed to upload banner image", "error");
     }
   };
@@ -159,8 +167,9 @@ export default function HeroCategoriesPerPage() {
   };
 
   const handleSave = async () => {
-    const items = formBanners.filter((b) => b.imageUrl).map((b) => ({
-      imageUrl: b.imageUrl,
+    const items = formBanners.filter((b) => b.imageUrl || b.mobileImageUrl).map((b) => ({
+      imageUrl: b.imageUrl || "",
+      mobileImageUrl: b.mobileImageUrl || "",
       title: b.title || "",
       subtitle: b.subtitle || "",
       linkType: b.linkType || "none",
@@ -337,9 +346,9 @@ export default function HeroCategoriesPerPage() {
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
                           <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-                            {item.imageUrl ? (
+                            {item.imageUrl || item.mobileImageUrl ? (
                               <img
-                                src={item.imageUrl}
+                                src={item.imageUrl || item.mobileImageUrl}
                                 alt={item.title || `Banner ${idx + 1}`}
                                 className="w-full h-full object-cover"
                               />
@@ -347,32 +356,93 @@ export default function HeroCategoriesPerPage() {
                               <HiOutlinePhoto className="h-6 w-6 text-slate-300" />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              id={`hero-banner-file-${idx}`}
-                              onChange={(e) => handleBannerFileChange(idx, e.target.files?.[0])}
-                            />
-                            <label
-                              htmlFor={`hero-banner-file-${idx}`}
-                              className="inline-block px-2 py-1 rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 cursor-pointer hover:bg-slate-200"
-                            >
-                              {item.isUploading ? "Uploading…" : item.imageUrl ? "Change" : "Upload"}
-                            </label>
-                            <input
-                              value={item.title || ""}
-                              onChange={(e) => updateBannerItem(idx, { title: e.target.value })}
-                              className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
-                              placeholder="Title (optional)"
-                            />
-                            <input
-                              value={item.subtitle || ""}
-                              onChange={(e) => updateBannerItem(idx, { subtitle: e.target.value })}
-                              className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
-                              placeholder="Subtitle (optional)"
-                            />
+                          <div className="flex-1 min-w-0 space-y-3">
+                            <div className="flex items-center gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Desktop Image</label>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id={`hero-banner-file-${idx}`}
+                                      onChange={(e) => handleBannerFileChange(idx, e.target.files?.[0], false)}
+                                    />
+                                    <label
+                                      htmlFor={`hero-banner-file-${idx}`}
+                                      className="inline-block px-3 py-1.5 text-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 cursor-pointer hover:bg-slate-200 w-fit"
+                                    >
+                                      {item.isUploading ? "Uploading…" : item.imageUrl ? "Change" : "Upload"}
+                                    </label>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">Mobile Image {item.mobileImageUrl && <span className="w-1.5 h-1.5 rounded-full bg-[#0c831f]"></span>}</label>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      id={`hero-mobile-file-${idx}`}
+                                      onChange={(e) => handleBannerFileChange(idx, e.target.files?.[0], true)}
+                                    />
+                                    <label
+                                      htmlFor={`hero-mobile-file-${idx}`}
+                                      className="inline-block px-3 py-1.5 text-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 cursor-pointer hover:bg-slate-200 w-fit"
+                                    >
+                                      {item.isMobileUploading ? "Uploading…" : item.mobileImageUrl ? "Change" : "Upload (Opt)"}
+                                    </label>
+                                </div>
+                                <div className="ml-auto flex items-center gap-2">
+                                    <label className="text-[10px] font-bold text-slate-500">ACTIVE</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => updateBannerItem(idx, { status: item.status === 'active' ? 'inactive' : 'active' })}
+                                        className={cn(
+                                          "w-8 h-4 rounded-full relative transition-colors duration-200",
+                                          item.status === 'active' ? "bg-[#0c831f]" : "bg-slate-300"
+                                        )}
+                                      >
+                                        <div className={cn(
+                                          "absolute top-0.5 bottom-0.5 w-3 rounded-full bg-white transition-transform duration-200 shadow-sm",
+                                          item.status === 'active' ? "translate-x-4" : "translate-x-0.5"
+                                        )} />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  value={item.title || ""}
+                                  onChange={(e) => updateBannerItem(idx, { title: e.target.value })}
+                                  className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
+                                  placeholder="Title (optional)"
+                                />
+                                <input
+                                  value={item.subtitle || ""}
+                                  onChange={(e) => updateBannerItem(idx, { subtitle: e.target.value })}
+                                  className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
+                                  placeholder="Subtitle (optional)"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <select
+                                  value={item.linkType || "none"}
+                                  onChange={(e) => updateBannerItem(idx, { linkType: e.target.value })}
+                                  className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none"
+                                >
+                                  <option value="none">No Link</option>
+                                  <option value="category">Category</option>
+                                  <option value="subcategory">Subcategory</option>
+                                  <option value="product">Product</option>
+                                  <option value="url">External URL</option>
+                                </select>
+                                <input
+                                  value={item.linkValue || ""}
+                                  onChange={(e) => updateBannerItem(idx, { linkValue: e.target.value })}
+                                  className="w-full p-2 bg-slate-50 rounded-xl text-xs font-bold border-none outline-none disabled:opacity-50"
+                                  placeholder={item.linkType === 'none' ? "No link required" : "Enter ID or URL"}
+                                  disabled={item.linkType === 'none'}
+                                />
+                            </div>
                           </div>
                         </div>
                       </div>

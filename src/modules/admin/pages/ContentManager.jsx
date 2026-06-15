@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { adminApi } from '../services/adminApi';
+import DynamicPagesManager from './DynamicPagesManager';
 
 const DISPLAY_TYPES = [
     { id: 'banners', label: 'Banners' },
@@ -398,6 +399,7 @@ const ContentManager = () => {
                     {[
                         { id: 'home', label: 'Home Page' },
                         { id: 'header', label: 'Parent category pages' },
+                        { id: 'static-pages', label: 'Static Pages' },
                     ].map((opt) => (
                         <button
                             key={opt.id}
@@ -428,9 +430,14 @@ const ContentManager = () => {
             </div>
 
             {/* Canvas Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                {/* Visual Editor */}
-                <div className="lg:col-span-8 space-y-6">
+            {pageType === 'static-pages' ? (
+                <div className="mt-8">
+                    <DynamicPagesManager />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    {/* Visual Editor */}
+                    <div className="lg:col-span-8 space-y-6">
                     {/* Section list */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between px-2">
@@ -535,7 +542,7 @@ const ContentManager = () => {
                 </div>
 
                 {/* Mobile Device Mockup */}
-                <div className="lg:col-span-4 sticky top-4">
+                <div className="hidden lg:block lg:col-span-4 sticky top-4">
                     <div className="relative mx-auto border-[8px] border-slate-900 rounded-[3rem] h-[650px] w-[320px] shadow-2xl overflow-hidden bg-white ring-8 ring-slate-100">
                         {/* Notch */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20" />
@@ -607,12 +614,12 @@ const ContentManager = () => {
 
                         {/* App Bottom Nav */}
                         <div className="absolute bottom-0 inset-x-0 h-16 bg-white/80 backdrop-blur-md border-t border-slate-100 flex items-center justify-around px-4">
-                            {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-6 rounded-lg bg-slate-100" />)}
                         </div>
                     </div>
                     <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6">LIVE APP OVERVIEW</p>
                 </div>
             </div>
+            )}
 
             {/* Modal */}
             <Modal

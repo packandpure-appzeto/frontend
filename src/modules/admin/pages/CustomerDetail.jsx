@@ -311,6 +311,15 @@ const CustomerDetail = () => {
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
                             {/* Personal Info */}
+                            {customer.name && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-sky-50 rounded-xl text-sky-500 shrink-0"><User className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.name}</p>
+                                    </div>
+                                </div>
+                            )}
                             {customer.phone && (
                                 <div className="flex items-start gap-3">
                                     <div className="p-2 bg-sky-50 rounded-xl text-sky-500 shrink-0"><Phone className="h-4 w-4" /></div>
@@ -349,6 +358,15 @@ const CustomerDetail = () => {
                                     </div>
                                 </div>
                             )}
+                            {customer.businessType && (
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-violet-50 rounded-xl text-violet-500 shrink-0"><Building2 className="h-4 w-4" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Type</p>
+                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{customer.businessType}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Compliance Info */}
                             {customer.panNo && (
@@ -380,7 +398,7 @@ const CustomerDetail = () => {
                             )}
 
                             {/* No data fallback */}
-                            {!customer.email && !customer.businessName && !customer.businessAddress && !customer.panNo && !customer.gstNo && !customer.fssaiNumber && (
+                            {!customer.email && !customer.businessName && !customer.businessAddress && !customer.businessType && !customer.panNo && !customer.gstNo && !customer.fssaiNumber && (
                                 <div className="col-span-2 py-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                                     <User className="h-8 w-8 text-slate-200 mx-auto mb-2" />
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No additional profile details</p>
@@ -401,7 +419,13 @@ const CustomerDetail = () => {
                             {(Array.isArray(customer.addresses) ? customer.addresses : []).length > 0 ? (
                                 (Array.isArray(customer.addresses) ? customer.addresses : []).map((addr, idx) => {
                                     const type = (addr.label || addr.type || 'other').toUpperCase();
-                                    const parts = [addr.fullAddress || addr.address, addr.landmark, addr.city, addr.state, addr.pincode].filter(Boolean);
+                                    const parts = [
+                                        addr.fullAddress || addr.address,
+                                        addr.landmark ? `Landmark: ${addr.landmark}` : null,
+                                        addr.city,
+                                        addr.state,
+                                        addr.pincode
+                                    ].filter(Boolean);
                                     const fullAddress = parts.length > 0 ? parts.join(', ') : 'No address';
                                     const isDefault = addr.isDefault ?? (idx === 0);
                                     return (

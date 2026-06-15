@@ -12,9 +12,6 @@ export const homeService = {
   getExperienceSections: (params) =>
     customerApi.getExperienceSections(params).catch(() => null),
 
-  getOfferSections: (params) =>
-    customerApi.getOfferSections(params).catch(() => ({ data: {} })),
-
   getHeroConfig: (params) =>
     customerApi.getHeroConfig(params).catch(() => null),
 };
